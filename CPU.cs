@@ -767,84 +767,100 @@ class CPU
                 }
             case 0x40:
                 {
-
+                    // LD B, B
+                    Load(ref B, B);
                     break;
                 }
             case 0x41:
                 {
-
+                    // LD B, C
+                    Load(ref B, C);
                     break;
                 }
 
             case 0x42:
                 {
-
+                    // LD B, D
+                    Load(ref B, D);
                     break;
                 }
 
             case 0x43:
                 {
-
+                    // LD B, E
+                    Load(ref B, E);
                     break;
                 }
             case 0x44:
                 {
-
+                    // LD B, H
+                    Load(ref B, H);
                     break;
                 }
             case 0x45:
                 {
-
+                    // LD B, L
+                    Load(ref B, L);
                     break;
                 }
             case 0x46:
                 {
-
+                    // LD B, (HL)
+                    LoadFromMem(ref B, HL);
                     break;
                 }
             case 0x47:
                 {
-
+                    // LD B, A
+                    Load(ref B, A);
                     break;
                 }
             case 0x48:
                 {
-
+                    // LD C, B
+                    Load(ref C, B);
                     break;
                 }
             case 0x49:
                 {
-
+                    // LD C, C
+                    Load(ref C, C);
                     break;
                 }
             case 0x4A:
                 {
-
+                    // LD C, D
+                    Load(ref C, D);
                     break;
                 }
             case 0x4B:
                 {
-
+                    // LD C, E
+                    Load(ref C, E);
                     break;
                 }
             case 0x4C:
                 {
-
+                    // LD C, H
+                    Load(ref C, H);
                     break;
                 }
             case 0x4D:
                 {
-
+                    // LD C, L
+                    Load(ref C, L);
                     break;
                 }
             case 0x4E:
                 {
-
+                    // LD C, (HL)
+                    LoadFromMem(ref C, HL);
                     break;
                 }
             case 0x4F:
                 {
-
+                    // LD C, A
+                    Load(ref C, A);
                     break;
                 }
             case 0x50:
