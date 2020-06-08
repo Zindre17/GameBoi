@@ -167,6 +167,42 @@ class CPU
         Add(ref targetHigh, ref targetLow, operandHigh, operandLow);
     }
 
+    private void AddFromMem(ref byte target, ushort address)
+    {
+        bus.Read(address, out byte value);
+        Add(ref target, value);
+    }
+
+    private void AddWithCarry(ref byte target, byte operand)
+    {
+        byte newOperand = (byte)(operand + (CarryFlag ? 1 : 0));
+        Add(ref target, newOperand);
+    }
+
+    private void Subtract(ref byte target, byte operand)
+    {
+        SetFlag(Flag.Subtract, true);
+        int result = target - operand;
+        SetFlag(Flag.Zero, result == 0);
+        SetFlag(Flag.Carry, result < 0);
+        SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(target, operand));
+        target = (byte)result;
+    }
+
+    private void SubtractFromMem(ref byte target, ushort address)
+    {
+        if (bus.Read(address, out byte value))
+            Subtract(ref target, value);
+        else
+            throw new FailedMemoryReadException(address);
+    }
+
+    private void SubtractWithCarry(ref byte target, byte operand)
+    {
+        byte newOperand = (byte)(operand + (CarryFlag ? 1 : 0));
+        Subtract(ref target, newOperand);
+    }
+
     private bool IsHalfCarryOnAddition(byte target, byte operand)
     {
         int target4 = target & 0x0F;
@@ -339,6 +375,41 @@ class CPU
         target ^= 0xFF;
     }
 
+    private void And(ref byte target, byte operand)
+    {
+        target &= operand;
+        SetFlag(Flag.Zero, target == 0);
+        SetFlag(Flag.Subtract, false);
+        SetFlag(Flag.HalfCarry, true);
+        SetFlag(Flag.Carry, false);
+    }
+
+    private void Xor(ref byte target, byte operand)
+    {
+        target ^= operand;
+        SetFlag(Flag.Zero, target == 0);
+        SetFlag(Flag.Subtract, false);
+        SetFlag(Flag.HalfCarry, false);
+        SetFlag(Flag.Carry, false);
+    }
+
+    private void Or(ref byte target, byte operand)
+    {
+        target |= operand;
+        SetFlag(Flag.Zero, target == 0);
+        SetFlag(Flag.Subtract, false);
+        SetFlag(Flag.HalfCarry, false);
+        SetFlag(Flag.Carry, false);
+    }
+
+    private void Compare(byte target, byte operand)
+    {
+        int result = target - operand;
+        SetFlag(Flag.Zero, result == 0);
+        SetFlag(Flag.Subtract, true);
+        SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(target, operand));
+        SetFlag(Flag.Carry, result < 0);
+    }
     #endregion
 
     public void PerformInstruction(byte opCode, byte arg1 = 0, byte arg2 = 0)
@@ -1124,330 +1195,356 @@ class CPU
                 }
             case 0x80:
                 {
-
+                    // ADD A, ...
+                    Add(ref A, B);
                     break;
                 }
             case 0x81:
                 {
-
+                    Add(ref A, C);
                     break;
                 }
 
             case 0x82:
                 {
-
+                    Add(ref A, D);
                     break;
                 }
 
             case 0x83:
                 {
-
+                    Add(ref A, E);
                     break;
                 }
             case 0x84:
                 {
-
+                    Add(ref A, H);
                     break;
                 }
             case 0x85:
                 {
-
+                    Add(ref A, L);
                     break;
                 }
             case 0x86:
                 {
-
+                    AddFromMem(ref A, HL);
                     break;
                 }
             case 0x87:
                 {
-
+                    Add(ref A, A);
                     break;
                 }
             case 0x88:
                 {
-
+                    // ADC A, ...
+                    AddWithCarry(ref A, B);
                     break;
                 }
             case 0x89:
                 {
-
+                    AddWithCarry(ref A, C);
                     break;
                 }
             case 0x8A:
                 {
-
+                    AddWithCarry(ref A, D);
                     break;
                 }
             case 0x8B:
                 {
-
+                    AddWithCarry(ref A, E);
                     break;
                 }
             case 0x8C:
                 {
-
+                    AddWithCarry(ref A, H);
                     break;
                 }
             case 0x8D:
                 {
-
+                    AddWithCarry(ref A, L);
                     break;
                 }
             case 0x8E:
                 {
-
+                    if (bus.Read(HL, out byte value))
+                        AddWithCarry(ref A, value);
+                    else
+                        throw new FailedMemoryReadException(HL);
                     break;
                 }
             case 0x8F:
                 {
-
+                    AddWithCarry(ref A, A);
                     break;
                 }
             case 0x90:
                 {
-
+                    // SUB ...
+                    Subtract(ref A, B);
                     break;
                 }
             case 0x91:
                 {
-
+                    Subtract(ref A, C);
                     break;
                 }
 
             case 0x92:
                 {
-
+                    Subtract(ref A, D);
                     break;
                 }
 
             case 0x93:
                 {
-
+                    Subtract(ref A, E);
                     break;
                 }
             case 0x94:
                 {
-
+                    Subtract(ref A, H);
                     break;
                 }
             case 0x95:
                 {
-
+                    Subtract(ref A, L);
                     break;
                 }
             case 0x96:
                 {
-
+                    SubtractFromMem(ref A, HL);
                     break;
                 }
             case 0x97:
                 {
-
+                    Subtract(ref A, A);
                     break;
                 }
             case 0x98:
                 {
-
+                    // SBC ..
+                    SubtractWithCarry(ref A, B);
                     break;
                 }
             case 0x99:
                 {
-
+                    SubtractWithCarry(ref A, C);
                     break;
                 }
             case 0x9A:
                 {
-
+                    SubtractWithCarry(ref A, D);
                     break;
                 }
             case 0x9B:
                 {
-
+                    SubtractWithCarry(ref A, E);
                     break;
                 }
             case 0x9C:
                 {
-
+                    SubtractWithCarry(ref A, H);
                     break;
                 }
             case 0x9D:
                 {
-
+                    SubtractWithCarry(ref A, L);
                     break;
                 }
             case 0x9E:
                 {
-
+                    if (bus.Read(HL, out byte value))
+                        SubtractWithCarry(ref A, value);
+                    else
+                        throw new FailedMemoryReadException(HL);
                     break;
                 }
             case 0x9F:
                 {
-
+                    SubtractWithCarry(ref A, A);
                     break;
                 }
             case 0xA0:
                 {
-
+                    // AND ...
+                    And(ref A, B);
                     break;
                 }
             case 0xA1:
                 {
-
+                    And(ref A, C);
                     break;
                 }
 
             case 0xA2:
                 {
-
+                    And(ref A, D);
                     break;
                 }
 
             case 0xA3:
                 {
-
+                    And(ref A, E);
                     break;
                 }
             case 0xA4:
                 {
-
+                    And(ref A, H);
                     break;
                 }
             case 0xA5:
                 {
-
+                    And(ref A, F);
                     break;
                 }
             case 0xA6:
                 {
-
+                    if (bus.Read(HL, out byte value))
+                        And(ref A, value);
+                    else
+                        throw new FailedMemoryReadException(HL);
                     break;
                 }
             case 0xA7:
                 {
-
+                    And(ref A, A);
                     break;
                 }
             case 0xA8:
                 {
-
+                    // XOR ...
+                    Xor(ref A, B);
                     break;
                 }
             case 0xA9:
                 {
-
+                    Xor(ref A, C);
                     break;
                 }
             case 0xAA:
                 {
-
+                    Xor(ref A, D);
                     break;
                 }
             case 0xAB:
                 {
-
+                    Xor(ref A, E);
                     break;
                 }
             case 0xAC:
                 {
-
+                    Xor(ref A, H);
                     break;
                 }
             case 0xAD:
                 {
-
+                    Xor(ref A, F);
                     break;
                 }
             case 0xAE:
                 {
-
+                    if (bus.Read(HL, out byte value))
+                        Xor(ref A, value);
+                    else
+                        throw new FailedMemoryReadException(HL);
                     break;
                 }
             case 0xAF:
                 {
-
+                    Xor(ref A, A);
                     break;
                 }
             case 0xB0:
                 {
-
+                    // OR ...
+                    Or(ref A, B);
                     break;
                 }
             case 0xB1:
                 {
-
+                    Or(ref A, C);
                     break;
                 }
 
             case 0xB2:
                 {
-
+                    Or(ref A, D);
                     break;
                 }
 
             case 0xB3:
                 {
-
+                    Or(ref A, E);
                     break;
                 }
             case 0xB4:
                 {
-
+                    Or(ref A, H);
                     break;
                 }
             case 0xB5:
                 {
-
+                    Or(ref A, F);
                     break;
                 }
             case 0xB6:
                 {
-
+                    if (bus.Read(HL, out byte value))
+                        Or(ref A, value);
+                    else
+                        throw new FailedMemoryReadException(HL);
                     break;
                 }
             case 0xB7:
                 {
-
+                    Or(ref A, A);
                     break;
                 }
             case 0xB8:
                 {
-
+                    // CP ...
+                    Compare(A, B);
                     break;
                 }
             case 0xB9:
                 {
-
+                    Compare(A, C);
                     break;
                 }
             case 0xBA:
                 {
-
+                    Compare(A, D);
                     break;
                 }
             case 0xBB:
                 {
-
+                    Compare(A, E);
                     break;
                 }
             case 0xBC:
                 {
-
+                    Compare(A, H);
                     break;
                 }
             case 0xBD:
                 {
-
+                    Compare(A, L);
                     break;
                 }
             case 0xBE:
                 {
-
+                    if (bus.Read(HL, out byte value))
+                        Compare(A, value);
+                    else
+                        throw new FailedMemoryReadException(HL);
                     break;
                 }
             case 0xBF:
                 {
-
+                    Compare(A, A);
                     break;
                 }
             case 0xC0:
