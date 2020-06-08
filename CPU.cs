@@ -4,6 +4,7 @@ class CPU
 {
     private Bus bus;
 
+    private bool isHalted = false;
     #region Registers
 
     private byte A; // accumulator
@@ -89,7 +90,11 @@ class CPU
     //4 cycles 
     private void NOP() { }
     private void STOP(byte arg) { }
-    private void HALT() { }
+    private void HALT()
+    {
+        // Halts CPU until interrupt happens => Perform NOPs meanwhile to not fuck up memory
+        isHalted = true;
+    }
 
     private void DI() { }
     private void EI() { }
@@ -1033,84 +1038,88 @@ class CPU
                 }
             case 0x70:
                 {
-
+                    // LD (HL),  ...
+                    LoadToMem(HL, B);
                     break;
                 }
             case 0x71:
                 {
-
+                    LoadToMem(HL, C);
                     break;
                 }
 
             case 0x72:
                 {
-
+                    LoadToMem(HL, D);
                     break;
                 }
 
             case 0x73:
                 {
-
+                    LoadToMem(HL, E);
                     break;
                 }
             case 0x74:
                 {
-
+                    LoadToMem(HL, H);
                     break;
                 }
             case 0x75:
                 {
-
+                    LoadToMem(HL, L);
                     break;
                 }
             case 0x76:
                 {
-
+                    // HALT | 1 | 4
+                    HALT();
                     break;
                 }
             case 0x77:
                 {
-
+                    // LD (HL), A
+                    LoadToMem(HL, A);
                     break;
                 }
             case 0x78:
                 {
-
+                    // LD A, ...
+                    Load(ref A, B);
                     break;
                 }
             case 0x79:
                 {
-
+                    Load(ref A, C);
                     break;
                 }
             case 0x7A:
                 {
-
+                    Load(ref A, D);
                     break;
                 }
             case 0x7B:
                 {
-
+                    Load(ref A, E);
                     break;
                 }
             case 0x7C:
                 {
-
+                    Load(ref A, H);
                     break;
                 }
             case 0x7D:
                 {
-
+                    Load(ref A, L);
                     break;
                 }
             case 0x7E:
                 {
-
+                    LoadFromMem(ref A, HL);
                     break;
                 }
             case 0x7F:
                 {
-
+                    Load(ref A, A);
                     break;
                 }
             case 0x80:
