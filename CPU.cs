@@ -1,9 +1,7 @@
 using System;
 
-class CPU
+class CPU : Hardware<IBus>
 {
-    private Bus bus;
-
     private bool isHalted = false;
     private bool isInterruptEnabled = true;
     #region Registers
@@ -83,6 +81,26 @@ class CPU
 
     #endregion
 
+    long clock = 0;
+
+    public void Tick()
+    {
+        //increase clock
+        clock++;
+        if (isHalted)
+        {
+            //if interrupt happening
+            //  procede as normal
+            //else NOP()
+            NOP();
+            return;
+        }
+        //Standard procedure
+        if (!bus.Read(PC, out byte opCode))
+            throw new MemoryWriteException(PC);
+
+        PerformInstruction(opCode);
+    }
 
 
     #region Instructions

@@ -1,11 +1,9 @@
 using System;
 
-class Controller
+class Controller : Hardware<IBus>
 {
 
     const ushort P1_address = 0xFF00;
-    private Bus bus;
-
     public enum Button
     {
         Left, Right, Up, Down,

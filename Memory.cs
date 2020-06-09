@@ -8,6 +8,7 @@ abstract class Memory
     public Memory(ushort size, bool isReadOnly = false)
     {
         this.isReadOnly = isReadOnly;
+        memory = new byte[size];
     }
 
     public virtual bool Write(ushort address, byte value)

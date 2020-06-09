@@ -6,15 +6,21 @@ class GameBoy
     private Screen screen;
     private Controller controller;
     private Cartridge game;
-    private Bus bus;
+    private MainBus bus;
     private Speaker speaker;
 
+    private bool isPowered = false;
     public GameBoy()
     {
-        bus = new Bus();
+        // Create hardware
+        bus = new MainBus();
         cpu = new CPU();
         screen = new Screen();
         controller = new Controller();
+
+        //Connect it all to the bus
+        cpu.Connect(bus);
+        controller.Connect(bus);
     }
 
 
@@ -27,8 +33,25 @@ class GameBoy
         //  3: Jump to starting address of  interrupt
     }
 
+    private void Play()
+    {
+        while (isPowered)
+        {
+            //check for poweroff
+            cpu.Tick();
+        }
+    }
+
+    private void Freeze()
+    {
+        while (isPowered)
+        {
+            //Check for poweroff
+        }
+    }
     public void TurnOn()
     {
+        isPowered = true;
         //start internal program at 0x0
 
         //if check ok => run program at 0x100 on cartridge
@@ -70,7 +93,10 @@ class GameBoy
         // [$FF4A] = $00   ; WY   
         // [$FF4B] = $00   ; WX   
         // [$FFFF] = $00   ; IE
-
+        if (true/* replace with cartridge header check passing*/)
+            Play();
+        else
+            Freeze();
     }
 
     public void TurnOff() { }

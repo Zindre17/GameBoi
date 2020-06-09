@@ -1,5 +1,30 @@
-class Bus
+class MainBus : IBus
 {
+    public MainBus()
+    {
+        //assume no cartridge yet
+        ROM_bank_0 = null;
+        ROM_bank_n = null;
+
+        VRAM = new RAM(0x2000);
+
+        ExtRAM = null;
+        WRAM_0 = new RAM(0x1000);
+        WRAM_1 = new RAM(0x1000);
+        WRAM_ECHO = new RAM(0x1E00);
+        OAM = new RAM(0x50);
+        IO = new RAM(0x80);
+        HRAM = new RAM(0x6F);
+    }
+
+    //not sure about this...
+    public void ConnectCartridge(Cartridge cartridge)
+    {
+        ROM_bank_0 = cartridge.ROM_Bank0;
+        ROM_bank_n = cartridge.ROM_BankN;
+        ExtRAM = cartridge.RAM;
+    }
+
     //  General Memory Map
     //   0000-3FFF   16KB ROM Bank 00     (in cartridge, fixed at bank 00)
     const ushort ROM_bank_0_StartAddress = 0;
@@ -178,4 +203,10 @@ class Bus
         // address is 0xFFFF which is the IE Register...
         return NoLocation(out relativeAddress);
     }
+}
+
+interface IBus
+{
+    bool Read(ushort address, out byte value);
+    bool Write(ushort address, byte value);
 }
