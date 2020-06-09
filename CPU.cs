@@ -5,6 +5,7 @@ class CPU
     private Bus bus;
 
     private bool isHalted = false;
+    private bool isInterruptEnabled = true;
     #region Registers
 
     private byte A; // accumulator
@@ -194,7 +195,7 @@ class CPU
         if (bus.Read(address, out byte value))
             Subtract(ref target, value);
         else
-            throw new FailedMemoryReadException(address);
+            throw new MemoryReadException(address);
     }
 
     private void SubtractWithCarry(ref byte target, byte operand)
@@ -363,9 +364,15 @@ class CPU
             target = (byte)rotated;
     }
 
-    private void Jump(byte increment)
+    private void JumpBy(byte increment) //actually signed
     {
-        PC += increment;
+        PC = (byte)(PC + (sbyte)increment);
+        PC += 2;
+    }
+
+    private void JumpTo(ushort newPC)
+    {
+        PC = newPC;
     }
 
     private void Complement(ref byte target)
@@ -409,6 +416,82 @@ class CPU
         SetFlag(Flag.Subtract, true);
         SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(target, operand));
         SetFlag(Flag.Carry, result < 0);
+    }
+
+    private void Return()
+    {
+        if (bus.Read(SP++, out byte newPCLow) && bus.Read(SP++, out byte newPCHigh))
+        {
+            PC = ConcatBytes(newPCHigh, newPCLow);
+        }
+    }
+
+    private void ReturnFromInterrupt()
+    {
+        //TODO
+    }
+
+    private void ReturnFromNonMaskableInterrupt()
+    {
+        //TODO
+    }
+
+    private void Push(byte high, byte low)
+    {
+        if (!bus.Write(--SP, high))
+            throw new MemoryWriteException(++SP);
+        if (!bus.Write(--SP, low))
+            throw new MemoryWriteException(++SP);
+
+    }
+
+    private void Pop(ref byte targetHigh, ref byte targetLow)
+    {
+        if (bus.Read(SP++, out byte sourceLow))
+            targetLow = sourceLow;
+        else
+            throw new MemoryReadException(--SP);
+
+        if (bus.Read(SP++, out byte sourceHigh))
+            targetHigh = sourceHigh;
+        else
+            throw new MemoryReadException(--SP);
+    }
+
+    private void Call(ushort address)
+    {
+        bus.Write(--SP, GetHighByte(PC));
+        bus.Write(--SP, GetLowByte(PC));
+        PC = address;
+    }
+
+    private void RST(byte newPC)
+    {
+        if (!bus.Write(--SP, GetHighByte(PC)))
+            throw new MemoryWriteException(++SP);
+
+        if (!bus.Write(--SP, GetLowByte(PC)))
+            throw new MemoryWriteException(++SP);
+
+        PC = newPC;
+    }
+
+    private void AddToStackPointer(sbyte operand)
+    {
+        int result = (SP + operand);
+        SP = (ushort)result;
+        SetFlag(Flag.Zero, false);
+        SetFlag(Flag.Subtract, false);
+        if (operand < 0)
+        {
+            SetFlag(Flag.Carry, IsCarryOnSubtraction(result));
+            SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(GetLowByte(SP), (byte)operand));
+        }
+        else
+        {
+            SetFlag(Flag.Carry, IsCarryOnAddition(result));
+            SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(GetLowByte(SP), (byte)operand));
+        }
     }
     #endregion
 
@@ -587,7 +670,7 @@ class CPU
             case 0x18:
                 {
                     // JR r8 | 2 | 12
-                    Jump(arg1);
+                    JumpBy(arg1);
                     break;
                 }
             case 0x19:
@@ -636,7 +719,7 @@ class CPU
                 {
                     // JR NZ, r8
                     if (!ZeroFlag)
-                        Jump(arg1);
+                        JumpBy(arg1);
                     break;
                 }
             case 0x21:
@@ -687,7 +770,7 @@ class CPU
             case 0x28:
                 {
                     // JR Z, r8
-                    if (ZeroFlag) Jump(arg1);
+                    if (ZeroFlag) JumpBy(arg1);
                     break;
                 }
             case 0x29:
@@ -736,7 +819,7 @@ class CPU
             case 0x30:
                 {
                     // JR NC, r8 | 2 | 12/8
-                    if (!CarryFlag) Jump(arg1);
+                    if (!CarryFlag) JumpBy(arg1);
                     break;
                 }
             case 0x31:
@@ -789,7 +872,7 @@ class CPU
             case 0x38:
                 {
                     // JR C, r8
-                    if (CarryFlag) Jump(arg1);
+                    if (CarryFlag) JumpBy(arg1);
                     break;
                 }
             case 0x39:
@@ -804,7 +887,7 @@ class CPU
                     if (bus.Read(HL, out byte value))
                         Load(ref A, value);
                     else
-                        throw new FailedMemoryReadException(HL);
+                        throw new MemoryReadException(HL);
 
                     Decrement(ref H, ref L);
                     break;
@@ -1272,7 +1355,7 @@ class CPU
                     if (bus.Read(HL, out byte value))
                         AddWithCarry(ref A, value);
                     else
-                        throw new FailedMemoryReadException(HL);
+                        throw new MemoryReadException(HL);
                     break;
                 }
             case 0x8F:
@@ -1359,7 +1442,7 @@ class CPU
                     if (bus.Read(HL, out byte value))
                         SubtractWithCarry(ref A, value);
                     else
-                        throw new FailedMemoryReadException(HL);
+                        throw new MemoryReadException(HL);
                     break;
                 }
             case 0x9F:
@@ -1405,7 +1488,7 @@ class CPU
                     if (bus.Read(HL, out byte value))
                         And(ref A, value);
                     else
-                        throw new FailedMemoryReadException(HL);
+                        throw new MemoryReadException(HL);
                     break;
                 }
             case 0xA7:
@@ -1449,7 +1532,7 @@ class CPU
                     if (bus.Read(HL, out byte value))
                         Xor(ref A, value);
                     else
-                        throw new FailedMemoryReadException(HL);
+                        throw new MemoryReadException(HL);
                     break;
                 }
             case 0xAF:
@@ -1495,7 +1578,7 @@ class CPU
                     if (bus.Read(HL, out byte value))
                         Or(ref A, value);
                     else
-                        throw new FailedMemoryReadException(HL);
+                        throw new MemoryReadException(HL);
                     break;
                 }
             case 0xB7:
@@ -1539,7 +1622,7 @@ class CPU
                     if (bus.Read(HL, out byte value))
                         Compare(A, value);
                     else
-                        throw new FailedMemoryReadException(HL);
+                        throw new MemoryReadException(HL);
                     break;
                 }
             case 0xBF:
@@ -1549,330 +1632,366 @@ class CPU
                 }
             case 0xC0:
                 {
-
+                    // RET NZ | 1 | 20/8
+                    if (!ZeroFlag) Return();
                     break;
                 }
             case 0xC1:
                 {
-
+                    // POP BC | 1 | 12
+                    Pop(ref B, ref C);
                     break;
                 }
 
             case 0xC2:
                 {
-
+                    // JP NZ, a16
+                    if (!ZeroFlag) JumpTo(ConcatBytes(arg1, arg2));
                     break;
                 }
 
             case 0xC3:
                 {
-
+                    // JP a16
+                    JumpTo(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xC4:
                 {
-
+                    // CALL NZ, a16
+                    Call(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xC5:
                 {
-
+                    // Push BC | 1 | 16
+                    Push(B, C);
                     break;
                 }
             case 0xC6:
                 {
-
+                    // ADD A, d8
+                    Add(ref A, arg1);
                     break;
                 }
             case 0xC7:
                 {
-
+                    // RST 00H | 1 | 16
+                    RST(0x00);
                     break;
                 }
             case 0xC8:
                 {
-
+                    // RET Z
+                    if (ZeroFlag) Return();
                     break;
                 }
             case 0xC9:
                 {
-
+                    // RET
+                    Return();
                     break;
                 }
             case 0xCA:
                 {
-
+                    // JP Z, a16
+                    if (ZeroFlag) JumpTo(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xCB:
                 {
+                    // I think the solution will be to use same switch but with a flag. To save lines...and my sanity
+                    // PREFIX CB => Another set of instructions
 
                     break;
                 }
             case 0xCC:
                 {
-
+                    // CALL Z, a16
+                    if (ZeroFlag) Call(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xCD:
                 {
-
+                    // CALL a16
+                    Call(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xCE:
                 {
-
+                    // ADC A, d8
+                    AddWithCarry(ref A, arg1);
                     break;
                 }
             case 0xCF:
                 {
-
+                    // RST 08H
+                    RST(0x08);
                     break;
                 }
             case 0xD0:
                 {
-
+                    if (!CarryFlag) Return();
                     break;
                 }
             case 0xD1:
                 {
-
+                    Pop(ref D, ref E);
                     break;
                 }
 
             case 0xD2:
                 {
-
+                    if (!CarryFlag) JumpTo(ConcatBytes(arg1, arg2));
                     break;
                 }
 
             case 0xD3:
                 {
-
+                    // EMPTY Maybe case a crash?
                     break;
                 }
             case 0xD4:
                 {
-
+                    if (!CarryFlag) Call(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xD5:
                 {
-
+                    Push(D, E);
                     break;
                 }
             case 0xD6:
                 {
-
+                    Subtract(ref A, arg1);
                     break;
                 }
             case 0xD7:
                 {
-
+                    RST(0x10);
                     break;
                 }
             case 0xD8:
                 {
-
+                    if (CarryFlag) Return();
                     break;
                 }
             case 0xD9:
                 {
-
+                    ReturnFromInterrupt();
                     break;
                 }
             case 0xDA:
                 {
-
+                    if (CarryFlag) JumpTo(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xDB:
                 {
-
+                    //EMpty
                     break;
                 }
             case 0xDC:
                 {
-
+                    if (CarryFlag) Call(ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xDD:
                 {
-
+                    // Empty
                     break;
                 }
             case 0xDE:
                 {
-
+                    SubtractWithCarry(ref A, arg1);
                     break;
                 }
             case 0xDF:
                 {
-
+                    RST(0x18);
                     break;
                 }
             case 0xE0:
                 {
-
+                    // LDH (a8), A
+                    LoadToMem((ushort)(0xFF00 + arg1), A);
                     break;
                 }
             case 0xE1:
                 {
-
+                    Pop(ref H, ref L);
                     break;
                 }
 
             case 0xE2:
                 {
-
+                    LoadToMem((ushort)(0xFF00 + C), A);
                     break;
                 }
 
             case 0xE3:
                 {
-
+                    //Empty
                     break;
                 }
             case 0xE4:
                 {
-
+                    //Empty
                     break;
                 }
             case 0xE5:
                 {
-
+                    Push(H, L);
                     break;
                 }
             case 0xE6:
                 {
-
+                    And(ref A, arg1);
                     break;
                 }
             case 0xE7:
                 {
-
+                    RST(0x20);
                     break;
                 }
             case 0xE8:
                 {
-
+                    AddToStackPointer((sbyte)arg1);
                     break;
                 }
             case 0xE9:
                 {
-
+                    JumpTo(HL);
                     break;
                 }
             case 0xEA:
                 {
-
+                    LoadToMem(ConcatBytes(arg1, arg2), A);
                     break;
                 }
             case 0xEB:
                 {
-
+                    // EMpty
                     break;
                 }
             case 0xEC:
                 {
-
+                    // Empty
                     break;
                 }
             case 0xED:
                 {
-
+                    // Empty
                     break;
                 }
             case 0xEE:
                 {
-
+                    Xor(ref A, arg1);
                     break;
                 }
             case 0xEF:
                 {
-
+                    RST(0x28);
                     break;
                 }
             case 0xF0:
                 {
-
+                    LoadFromMem(ref A, (ushort)(0xFF00 + arg1));
                     break;
                 }
             case 0xF1:
                 {
-
+                    Pop(ref A, ref F);
                     break;
                 }
 
             case 0xF2:
                 {
-
+                    LoadFromMem(ref A, (ushort)(0xFF00 + C));
                     break;
                 }
 
             case 0xF3:
                 {
-
+                    // DI | 1 | 4 (Disable Interupts)
+                    isInterruptEnabled = false;
                     break;
                 }
             case 0xF4:
                 {
-
+                    //Empty
                     break;
                 }
             case 0xF5:
                 {
-
+                    Push(A, F);
                     break;
                 }
             case 0xF6:
                 {
-
+                    Or(ref A, arg1);
                     break;
                 }
             case 0xF7:
                 {
-
+                    RST(0x30);
                     break;
                 }
             case 0xF8:
                 {
-
+                    // LD HL, SP + r8
+                    sbyte r8 = (sbyte)arg1;
+                    int tempValue = SP + r8;
+                    SetFlag(Flag.Zero, false);
+                    SetFlag(Flag.Subtract, false);
+                    if (r8 < 0)
+                    {
+                        SetFlag(Flag.Carry, IsCarryOnSubtraction(tempValue));
+                        SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(GetLowByte(SP), (byte)r8));
+                    }
+                    else
+                    {
+                        SetFlag(Flag.Carry, IsCarryOnAddition(tempValue));
+                        SetFlag(Flag.HalfCarry, IsHalfCarryOnAddition(GetLowByte(SP), arg1));
+                    }
+                    Load(ref H, ref L, (ushort)tempValue);
                     break;
                 }
             case 0xF9:
                 {
-
+                    // LD SP, HL
+                    Load(ref SP, HL);
                     break;
                 }
             case 0xFA:
                 {
-
+                    LoadFromMem(ref A, ConcatBytes(arg1, arg2));
                     break;
                 }
             case 0xFB:
                 {
-
+                    // EI (enable interrupts)
+                    isInterruptEnabled = true;
                     break;
                 }
             case 0xFC:
                 {
-
+                    // Empty
                     break;
                 }
             case 0xFD:
                 {
-
+                    // Empty
                     break;
                 }
             case 0xFE:
                 {
-
+                    Compare(A, arg1);
                     break;
                 }
             case 0xFF:
                 {
-
+                    RST(0x38);
                     break;
                 }
         }
@@ -1881,7 +2000,13 @@ class CPU
     // source http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 }
 
-class FailedMemoryReadException : Exception
+class MemoryReadException : Exception
 {
-    public FailedMemoryReadException(ushort address) : base($"Failed to read from memory. Address: {address}") { }
+    public MemoryReadException(ushort address) : base($"Failed to read from memory. Address: {address}") { }
 }
+
+class MemoryWriteException : Exception
+{
+    public MemoryWriteException(ushort address) : base($"Failed to write to memory. Address: {address}") { }
+}
+
