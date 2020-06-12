@@ -2,8 +2,13 @@ using System;
 
 class CPU : Hardware<IBus>
 {
+    private bool IME = true; // Interrupt Master Enable
+    private const ushort IE_address = 0xFFFF;
+    private const ushort IF_address = 0xFF0F;
+
     private bool isHalted = false;
-    private bool isInterruptEnabled = true;
+
+
     #region Registers
 
     private byte A; // accumulator
@@ -20,6 +25,8 @@ class CPU : Hardware<IBus>
 
     private ushort HL => ConcatBytes(H, L);
     private ushort PC; //progarm counter
+    private byte PC_P => GetHighByte(PC);
+    private byte PC_C => GetLowByte(PC);
 
     private ushort SP; //stack pointer
 
@@ -87,38 +94,129 @@ class CPU : Hardware<IBus>
     {
         //increase clock
         clock++;
+
         if (isHalted)
         {
-            //if interrupt happening
-            //  procede as normal
-            //else NOP()
-            NOP();
+            NoOperation();
             return;
         }
-        //Standard procedure
-        if (!bus.Read(PC, out byte opCode))
-            throw new MemoryWriteException(PC);
 
+        //---------------- Standard procedure ----------------
+
+        byte opCode = Fetch();
         PerformInstruction(opCode);
+
+        //----------------------------------------------------
+
+        //---------------- Handle Interrupts -----------------
+
+        HandleInterrupts();
+
+        //----------------------------------------------------
     }
 
+    private const byte V_Blank_mask = (1 << 0);
+    private const byte LCDC_mask = (1 << 1);
+    private const byte Timer_mask = (1 << 2);
+    private const byte Serial_mask = (1 << 3);
+    private const byte Hi_Lo_mask = (1 << 4);
+
+    private void HandleInterrupts()
+    {
+        byte IF = Read(IF_address);
+
+        // if IF is 0 there are no interrupt requests => exit
+        if (IF == 0) return;
+
+        byte IE = Read(IE_address);
+
+        // type             :   prio    : address   : bit
+        //---------------------------------------------------
+        // V-Blank          :     1     : 0x0040    : 0
+        // LCDC Status      :     2     : 0x0048    : 1
+        // Timer Overflow   :     3     : 0x0050    : 2
+        // Serial Transfer  :     4     : 0x0058    : 3
+        // Hi-Lo of P10-P13 :     5     : 0x0060    : 4
+
+        if (ShouldInterrupt(IE, IF, V_Blank_mask))
+        {
+            Interrupt(0x0040, V_Blank_mask, IF);
+        }
+        else if (ShouldInterrupt(IE, IF, LCDC_mask))
+        {
+            Interrupt(0x0048, LCDC_mask, IF);
+        }
+        else if (ShouldInterrupt(IE, IF, Timer_mask))
+        {
+            Interrupt(0x0050, Timer_mask, IF);
+        }
+        else if (ShouldInterrupt(IE, IF, Serial_mask))
+        {
+            Interrupt(0x0058, Serial_mask, IF);
+        }
+        else if (ShouldInterrupt(IE, IF, Hi_Lo_mask))
+        {
+            Interrupt(0x0060, Hi_Lo_mask, IF);
+        }
+    }
+
+    private void Interrupt(ushort startingAddress, byte flag, byte IF)
+    {
+        IME = false;
+        Write(IF_address, (byte)(IF ^ flag)); // remove the interrupt request that is granted 
+        Push(PC_P, PC_C);
+        JumpTo(startingAddress);
+    }
+
+    private bool ShouldInterrupt(byte IE, byte IF, byte mask)
+    {
+        return (IE & mask) == mask && (IF & mask) == mask;
+    }
+
+    private byte Fetch()
+    {
+        //Fetch instruction and increment PC after
+        return Read(PC++);
+    }
+
+    private byte Read(ushort address)
+    {
+        if (!bus.Read(address, out byte value))
+            throw new MemoryReadException(address);
+        return value;
+    }
+
+    private void Write(ushort address, byte value)
+    {
+        if (!bus.Write(address, value))
+            throw new MemoryWriteException(address);
+    }
 
     #region Instructions
 
     // 0x00
     //4 cycles 
-    private void NOP() { }
-    private void STOP(byte arg) { }
-    private void HALT()
+    private void NoOperation() { }
+    private void Stop(byte arg) { }
+    private void Halt()
     {
         // Halts CPU until interrupt happens => Perform NOPs meanwhile to not fuck up memory
         isHalted = true;
     }
 
-    private void DI() { }
-    private void EI() { }
+    private void DisableInterrupt()
+    {
+        IME = false;
+    }
+    private void EnableInterrupt()
+    {
+        IME = true;
+    }
 
-    private void PREFIX_CB() { }
+    private void PREFIX_CB()
+    {
+        PerformInstruction(Fetch(), true); //TODO: ensure this is correct
+    }
 
 
     private void Load(ref byte target, byte source)
@@ -139,20 +237,18 @@ class CPU : Hardware<IBus>
 
     private void LoadToMem(ushort address, byte source)
     {
-        bus.Write(address, source);
+        Write(address, source);
     }
 
     private void LoadToMem(ushort address, ushort source)
     {
-        bus.Write(address, GetLowByte(source));
-        bus.Write(address++, GetHighByte(source));
+        Write(address, GetLowByte(source));
+        Write((ushort)(address + 1), GetHighByte(source));
     }
 
     private void LoadFromMem(ref byte target, ushort address)
     {
-        if (bus.Read(address, out byte value))
-            target = value;
-        else throw new Exception("Failed to load byte form memory");
+        target = Read(address);
     }
 
     private void Add(ref byte target, byte operand)
@@ -188,8 +284,7 @@ class CPU : Hardware<IBus>
 
     private void AddFromMem(ref byte target, ushort address)
     {
-        bus.Read(address, out byte value);
-        Add(ref target, value);
+        Add(ref target, Read(address));
     }
 
     private void AddWithCarry(ref byte target, byte operand)
@@ -210,10 +305,7 @@ class CPU : Hardware<IBus>
 
     private void SubtractFromMem(ref byte target, ushort address)
     {
-        if (bus.Read(address, out byte value))
-            Subtract(ref target, value);
-        else
-            throw new MemoryReadException(address);
+        Subtract(ref target, Read(address));
     }
 
     private void SubtractWithCarry(ref byte target, byte operand)
@@ -271,9 +363,9 @@ class CPU : Hardware<IBus>
     private void IncrementInMemory(byte addressHigh, byte addressLow)
     {
         ushort address = ConcatBytes(addressHigh, addressLow);
-        bus.Read(address, out byte value);
+        byte value = Read(address);
         Increment(ref value);
-        bus.Write(address, value);
+        Write(address, value);
     }
 
     private void Decrement(ref byte target)
@@ -301,9 +393,9 @@ class CPU : Hardware<IBus>
     private void DecrementInMemory(byte addresshigh, byte addressLow)
     {
         ushort address = ConcatBytes(addresshigh, addressLow);
-        bus.Read(address, out byte value);
+        byte value = Read(address);
         Decrement(ref value);
-        bus.Write(address, value);
+        Write(address, value);
     }
 
     private ushort ConcatBytes(byte h, byte l)
@@ -385,7 +477,6 @@ class CPU : Hardware<IBus>
     private void JumpBy(byte increment) //actually signed
     {
         PC = (byte)(PC + (sbyte)increment);
-        PC += 2;
     }
 
     private void JumpTo(ushort newPC)
@@ -438,60 +529,39 @@ class CPU : Hardware<IBus>
 
     private void Return()
     {
-        if (bus.Read(SP++, out byte newPCLow) && bus.Read(SP++, out byte newPCHigh))
-        {
-            PC = ConcatBytes(newPCHigh, newPCLow);
-        }
+        byte newPCLow = Read(SP++);
+        byte newPCHigh = Read(SP++);
+        PC = ConcatBytes(newPCHigh, newPCLow);
     }
 
-    private void ReturnFromInterrupt()
+    private void ReturnAndEnableInterrupt()
     {
-        //TODO
-    }
-
-    private void ReturnFromNonMaskableInterrupt()
-    {
-        //TODO
+        Return();
+        EnableInterrupt();
     }
 
     private void Push(byte high, byte low)
     {
-        if (!bus.Write(--SP, high))
-            throw new MemoryWriteException(++SP);
-        if (!bus.Write(--SP, low))
-            throw new MemoryWriteException(++SP);
-
+        Write(--SP, high);
+        Write(--SP, low);
     }
 
     private void Pop(ref byte targetHigh, ref byte targetLow)
     {
-        if (bus.Read(SP++, out byte sourceLow))
-            targetLow = sourceLow;
-        else
-            throw new MemoryReadException(--SP);
-
-        if (bus.Read(SP++, out byte sourceHigh))
-            targetHigh = sourceHigh;
-        else
-            throw new MemoryReadException(--SP);
+        targetLow = Read(SP++);
+        targetHigh = Read(SP++);
     }
 
     private void Call(ushort address)
     {
-        bus.Write(--SP, GetHighByte(PC));
-        bus.Write(--SP, GetLowByte(PC));
-        PC = address;
+        Push(PC_P, PC_C);
+        JumpTo(address);
     }
 
-    private void RST(byte newPC)
+    private void Restart(byte newPC)
     {
-        if (!bus.Write(--SP, GetHighByte(PC)))
-            throw new MemoryWriteException(++SP);
-
-        if (!bus.Write(--SP, GetLowByte(PC)))
-            throw new MemoryWriteException(++SP);
-
-        PC = newPC;
+        Push(PC_P, PC_C);
+        JumpTo(newPC);
     }
 
     private void AddToStackPointer(sbyte operand)
@@ -513,7 +583,7 @@ class CPU : Hardware<IBus>
     }
     #endregion
 
-    public void PerformInstruction(byte opCode, byte arg1 = 0, byte arg2 = 0)
+    public void PerformInstruction(byte opCode, bool CB_mode = false)
     {
         switch (opCode)
         {
@@ -522,14 +592,14 @@ class CPU : Hardware<IBus>
             case 0x00:
                 {
                     //NOP | 1 | 4
-                    NOP();
+                    NoOperation();
                     break;
                 }
 
             case 0x01:
                 {
                     // LD BC, d16 | 3 | 12
-                    Load(ref B, ref C, ConcatBytes(arg1, arg2));
+                    Load(ref B, ref C, ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
 
@@ -567,7 +637,7 @@ class CPU : Hardware<IBus>
             case 0x06:
                 {
                     // LD B, d8 | 2 | 8
-                    Load(ref B, arg1);
+                    Load(ref B, Fetch());
                     break;
                 }
 
@@ -582,7 +652,7 @@ class CPU : Hardware<IBus>
             case 0x08:
                 {
                     // LD (a16), SP | 3 | 20
-                    ushort address = ConcatBytes(arg1, arg2);
+                    ushort address = ConcatBytes(Fetch(), Fetch());
                     LoadToMem(address, SP);
                     break;
                 }
@@ -624,7 +694,7 @@ class CPU : Hardware<IBus>
             case 0x0E:
                 {
                     // LD C, d8 | 2 | 8
-                    Load(ref C, arg1);
+                    Load(ref C, Fetch());
                     break;
                 }
             case 0x0F:
@@ -638,19 +708,19 @@ class CPU : Hardware<IBus>
             case 0x10:
                 {
                     // STOP 0 | 2 | 4
-                    STOP(arg1);
+                    Stop(Fetch());
                     break;
                 }
             case 0x11:
                 {
                     // LD DE, d16 | 3 | 12 
-                    Load(ref D, ref E, ConcatBytes(arg1, arg2));
+                    Load(ref D, ref E, ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
 
             case 0x12:
                 {
-                    // LD (DE), A | 3 | 12
+                    // LD (DE), A | 1 | 8
                     LoadToMem(ConcatBytes(D, E), A);
                     break;
                 }
@@ -676,7 +746,7 @@ class CPU : Hardware<IBus>
             case 0x16:
                 {
                     // LD D, d8
-                    Load(ref D, arg1);
+                    Load(ref D, Fetch());
                     break;
                 }
             case 0x17:
@@ -688,7 +758,7 @@ class CPU : Hardware<IBus>
             case 0x18:
                 {
                     // JR r8 | 2 | 12
-                    JumpBy(arg1);
+                    JumpBy(Fetch());
                     break;
                 }
             case 0x19:
@@ -724,7 +794,7 @@ class CPU : Hardware<IBus>
             case 0x1E:
                 {
                     // LD E, d8
-                    Load(ref E, arg1);
+                    Load(ref E, Fetch());
                     break;
                 }
             case 0x1F:
@@ -737,13 +807,13 @@ class CPU : Hardware<IBus>
                 {
                     // JR NZ, r8
                     if (!ZeroFlag)
-                        JumpBy(arg1);
+                        JumpBy(Fetch());
                     break;
                 }
             case 0x21:
                 {
                     // LD HL, d16 | 3 | 12 
-                    Load(ref H, ref L, ConcatBytes(arg1, arg2));
+                    Load(ref H, ref L, ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
 
@@ -776,7 +846,7 @@ class CPU : Hardware<IBus>
             case 0x26:
                 {
                     // LD H, d8
-                    Load(ref H, arg1);
+                    Load(ref H, Fetch());
                     break;
                 }
             case 0x27:
@@ -788,7 +858,7 @@ class CPU : Hardware<IBus>
             case 0x28:
                 {
                     // JR Z, r8
-                    if (ZeroFlag) JumpBy(arg1);
+                    if (ZeroFlag) JumpBy(Fetch());
                     break;
                 }
             case 0x29:
@@ -825,7 +895,7 @@ class CPU : Hardware<IBus>
             case 0x2E:
                 {
                     // LD L, d8
-                    Load(ref L, arg1);
+                    Load(ref L, Fetch());
                     break;
                 }
             case 0x2F:
@@ -837,13 +907,13 @@ class CPU : Hardware<IBus>
             case 0x30:
                 {
                     // JR NC, r8 | 2 | 12/8
-                    if (!CarryFlag) JumpBy(arg1);
+                    if (!CarryFlag) JumpBy(Fetch());
                     break;
                 }
             case 0x31:
                 {
                     // LD SP, d16
-                    Load(ref SP, ConcatBytes(arg1, arg2));
+                    Load(ref SP, ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
 
@@ -876,7 +946,7 @@ class CPU : Hardware<IBus>
             case 0x36:
                 {
                     // LD (HL), d8
-                    LoadToMem(HL, arg1);
+                    LoadToMem(HL, Fetch());
                     break;
                 }
             case 0x37:
@@ -890,7 +960,7 @@ class CPU : Hardware<IBus>
             case 0x38:
                 {
                     // JR C, r8
-                    if (CarryFlag) JumpBy(arg1);
+                    if (CarryFlag) JumpBy(Fetch());
                     break;
                 }
             case 0x39:
@@ -902,11 +972,8 @@ class CPU : Hardware<IBus>
             case 0x3A:
                 {
                     // LD A, (HL-)
-                    if (bus.Read(HL, out byte value))
-                        Load(ref A, value);
-                    else
-                        throw new MemoryReadException(HL);
 
+                    Load(ref A, Read(HL));
                     Decrement(ref H, ref L);
                     break;
                 }
@@ -931,7 +998,7 @@ class CPU : Hardware<IBus>
             case 0x3E:
                 {
                     // LD A, d8
-                    Load(ref A, arg1);
+                    Load(ref A, Fetch());
                     break;
                 }
             case 0x3F:
@@ -1244,7 +1311,7 @@ class CPU : Hardware<IBus>
             case 0x76:
                 {
                     // HALT | 1 | 4
-                    HALT();
+                    Halt();
                     break;
                 }
             case 0x77:
@@ -1370,10 +1437,7 @@ class CPU : Hardware<IBus>
                 }
             case 0x8E:
                 {
-                    if (bus.Read(HL, out byte value))
-                        AddWithCarry(ref A, value);
-                    else
-                        throw new MemoryReadException(HL);
+                    AddWithCarry(ref A, Read(HL));
                     break;
                 }
             case 0x8F:
@@ -1457,10 +1521,7 @@ class CPU : Hardware<IBus>
                 }
             case 0x9E:
                 {
-                    if (bus.Read(HL, out byte value))
-                        SubtractWithCarry(ref A, value);
-                    else
-                        throw new MemoryReadException(HL);
+                    SubtractWithCarry(ref A, Read(HL));
                     break;
                 }
             case 0x9F:
@@ -1503,10 +1564,8 @@ class CPU : Hardware<IBus>
                 }
             case 0xA6:
                 {
-                    if (bus.Read(HL, out byte value))
-                        And(ref A, value);
-                    else
-                        throw new MemoryReadException(HL);
+
+                    And(ref A, Read(HL));
                     break;
                 }
             case 0xA7:
@@ -1547,10 +1606,8 @@ class CPU : Hardware<IBus>
                 }
             case 0xAE:
                 {
-                    if (bus.Read(HL, out byte value))
-                        Xor(ref A, value);
-                    else
-                        throw new MemoryReadException(HL);
+
+                    Xor(ref A, Read(HL));
                     break;
                 }
             case 0xAF:
@@ -1593,10 +1650,7 @@ class CPU : Hardware<IBus>
                 }
             case 0xB6:
                 {
-                    if (bus.Read(HL, out byte value))
-                        Or(ref A, value);
-                    else
-                        throw new MemoryReadException(HL);
+                    Or(ref A, Read(HL));
                     break;
                 }
             case 0xB7:
@@ -1637,10 +1691,7 @@ class CPU : Hardware<IBus>
                 }
             case 0xBE:
                 {
-                    if (bus.Read(HL, out byte value))
-                        Compare(A, value);
-                    else
-                        throw new MemoryReadException(HL);
+                    Compare(A, Read(HL));
                     break;
                 }
             case 0xBF:
@@ -1664,20 +1715,20 @@ class CPU : Hardware<IBus>
             case 0xC2:
                 {
                     // JP NZ, a16
-                    if (!ZeroFlag) JumpTo(ConcatBytes(arg1, arg2));
+                    if (!ZeroFlag) JumpTo(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
 
             case 0xC3:
                 {
                     // JP a16
-                    JumpTo(ConcatBytes(arg1, arg2));
+                    JumpTo(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xC4:
                 {
                     // CALL NZ, a16
-                    Call(ConcatBytes(arg1, arg2));
+                    Call(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xC5:
@@ -1689,13 +1740,13 @@ class CPU : Hardware<IBus>
             case 0xC6:
                 {
                     // ADD A, d8
-                    Add(ref A, arg1);
+                    Add(ref A, Fetch());
                     break;
                 }
             case 0xC7:
                 {
                     // RST 00H | 1 | 16
-                    RST(0x00);
+                    Restart(0x00);
                     break;
                 }
             case 0xC8:
@@ -1713,7 +1764,7 @@ class CPU : Hardware<IBus>
             case 0xCA:
                 {
                     // JP Z, a16
-                    if (ZeroFlag) JumpTo(ConcatBytes(arg1, arg2));
+                    if (ZeroFlag) JumpTo(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xCB:
@@ -1726,25 +1777,25 @@ class CPU : Hardware<IBus>
             case 0xCC:
                 {
                     // CALL Z, a16
-                    if (ZeroFlag) Call(ConcatBytes(arg1, arg2));
+                    if (ZeroFlag) Call(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xCD:
                 {
                     // CALL a16
-                    Call(ConcatBytes(arg1, arg2));
+                    Call(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xCE:
                 {
                     // ADC A, d8
-                    AddWithCarry(ref A, arg1);
+                    AddWithCarry(ref A, Fetch());
                     break;
                 }
             case 0xCF:
                 {
                     // RST 08H
-                    RST(0x08);
+                    Restart(0x08);
                     break;
                 }
             case 0xD0:
@@ -1760,7 +1811,7 @@ class CPU : Hardware<IBus>
 
             case 0xD2:
                 {
-                    if (!CarryFlag) JumpTo(ConcatBytes(arg1, arg2));
+                    if (!CarryFlag) JumpTo(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
 
@@ -1771,7 +1822,7 @@ class CPU : Hardware<IBus>
                 }
             case 0xD4:
                 {
-                    if (!CarryFlag) Call(ConcatBytes(arg1, arg2));
+                    if (!CarryFlag) Call(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xD5:
@@ -1781,12 +1832,12 @@ class CPU : Hardware<IBus>
                 }
             case 0xD6:
                 {
-                    Subtract(ref A, arg1);
+                    Subtract(ref A, Fetch());
                     break;
                 }
             case 0xD7:
                 {
-                    RST(0x10);
+                    Restart(0x10);
                     break;
                 }
             case 0xD8:
@@ -1796,12 +1847,12 @@ class CPU : Hardware<IBus>
                 }
             case 0xD9:
                 {
-                    ReturnFromInterrupt();
+                    ReturnAndEnableInterrupt();
                     break;
                 }
             case 0xDA:
                 {
-                    if (CarryFlag) JumpTo(ConcatBytes(arg1, arg2));
+                    if (CarryFlag) JumpTo(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xDB:
@@ -1811,7 +1862,7 @@ class CPU : Hardware<IBus>
                 }
             case 0xDC:
                 {
-                    if (CarryFlag) Call(ConcatBytes(arg1, arg2));
+                    if (CarryFlag) Call(ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xDD:
@@ -1821,18 +1872,18 @@ class CPU : Hardware<IBus>
                 }
             case 0xDE:
                 {
-                    SubtractWithCarry(ref A, arg1);
+                    SubtractWithCarry(ref A, Fetch());
                     break;
                 }
             case 0xDF:
                 {
-                    RST(0x18);
+                    Restart(0x18);
                     break;
                 }
             case 0xE0:
                 {
                     // LDH (a8), A
-                    LoadToMem((ushort)(0xFF00 + arg1), A);
+                    LoadToMem((ushort)(0xFF00 + Fetch()), A);
                     break;
                 }
             case 0xE1:
@@ -1864,17 +1915,17 @@ class CPU : Hardware<IBus>
                 }
             case 0xE6:
                 {
-                    And(ref A, arg1);
+                    And(ref A, Fetch());
                     break;
                 }
             case 0xE7:
                 {
-                    RST(0x20);
+                    Restart(0x20);
                     break;
                 }
             case 0xE8:
                 {
-                    AddToStackPointer((sbyte)arg1);
+                    AddToStackPointer((sbyte)Fetch());
                     break;
                 }
             case 0xE9:
@@ -1884,7 +1935,7 @@ class CPU : Hardware<IBus>
                 }
             case 0xEA:
                 {
-                    LoadToMem(ConcatBytes(arg1, arg2), A);
+                    LoadToMem(ConcatBytes(Fetch(), Fetch()), A);
                     break;
                 }
             case 0xEB:
@@ -1904,17 +1955,17 @@ class CPU : Hardware<IBus>
                 }
             case 0xEE:
                 {
-                    Xor(ref A, arg1);
+                    Xor(ref A, Fetch());
                     break;
                 }
             case 0xEF:
                 {
-                    RST(0x28);
+                    Restart(0x28);
                     break;
                 }
             case 0xF0:
                 {
-                    LoadFromMem(ref A, (ushort)(0xFF00 + arg1));
+                    LoadFromMem(ref A, (ushort)(0xFF00 + Fetch()));
                     break;
                 }
             case 0xF1:
@@ -1931,8 +1982,8 @@ class CPU : Hardware<IBus>
 
             case 0xF3:
                 {
-                    // DI | 1 | 4 (Disable Interupts)
-                    isInterruptEnabled = false;
+                    // DI | 1 | 4 (Disable Interrupts)
+                    DisableInterrupt();
                     break;
                 }
             case 0xF4:
@@ -1947,18 +1998,18 @@ class CPU : Hardware<IBus>
                 }
             case 0xF6:
                 {
-                    Or(ref A, arg1);
+                    Or(ref A, Fetch());
                     break;
                 }
             case 0xF7:
                 {
-                    RST(0x30);
+                    Restart(0x30);
                     break;
                 }
             case 0xF8:
                 {
                     // LD HL, SP + r8
-                    sbyte r8 = (sbyte)arg1;
+                    sbyte r8 = (sbyte)Fetch();
                     int tempValue = SP + r8;
                     SetFlag(Flag.Zero, false);
                     SetFlag(Flag.Subtract, false);
@@ -1970,7 +2021,7 @@ class CPU : Hardware<IBus>
                     else
                     {
                         SetFlag(Flag.Carry, IsCarryOnAddition(tempValue));
-                        SetFlag(Flag.HalfCarry, IsHalfCarryOnAddition(GetLowByte(SP), arg1));
+                        SetFlag(Flag.HalfCarry, IsHalfCarryOnAddition(GetLowByte(SP), Fetch()));
                     }
                     Load(ref H, ref L, (ushort)tempValue);
                     break;
@@ -1983,13 +2034,13 @@ class CPU : Hardware<IBus>
                 }
             case 0xFA:
                 {
-                    LoadFromMem(ref A, ConcatBytes(arg1, arg2));
+                    LoadFromMem(ref A, ConcatBytes(Fetch(), Fetch()));
                     break;
                 }
             case 0xFB:
                 {
                     // EI (enable interrupts)
-                    isInterruptEnabled = true;
+                    EnableInterrupt();
                     break;
                 }
             case 0xFC:
@@ -2004,12 +2055,12 @@ class CPU : Hardware<IBus>
                 }
             case 0xFE:
                 {
-                    Compare(A, arg1);
+                    Compare(A, Fetch());
                     break;
                 }
             case 0xFF:
                 {
-                    RST(0x38);
+                    Restart(0x38);
                     break;
                 }
         }
