@@ -1,3 +1,5 @@
+using System;
+
 abstract class Memory
 {
     private bool isReadOnly;
@@ -22,4 +24,14 @@ abstract class Memory
         value = memory[address];
         return true;
     }
+}
+
+public class MemoryReadException : Exception
+{
+    public MemoryReadException(ushort address) : base($"Failed to read from memory. Address: {address}") { }
+}
+
+public class MemoryWriteException : Exception
+{
+    public MemoryWriteException(ushort address) : base($"Failed to write to memory. Address: {address}") { }
 }

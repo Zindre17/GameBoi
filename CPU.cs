@@ -2069,13 +2069,4 @@ class CPU : Hardware<IBus>
     // source http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 }
 
-class MemoryReadException : Exception
-{
-    public MemoryReadException(ushort address) : base($"Failed to read from memory. Address: {address}") { }
-}
-
-class MemoryWriteException : Exception
-{
-    public MemoryWriteException(ushort address) : base($"Failed to write to memory. Address: {address}") { }
-}
 
