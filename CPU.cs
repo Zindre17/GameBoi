@@ -29,61 +29,46 @@ class CPU : Hardware<IBus>
     private byte PC_C => GetLowByte(PC);
 
     private ushort SP; //stack pointer
+    private byte SP_S => GetHighByte(SP);
+    private byte SP_P => GetLowByte(SP);
 
     #endregion
 
 
     #region Flags
 
-    const byte zeroBitMask = (1 << 7);
-    const byte subtractBitMask = (1 << 6);
-    const byte halfCarryBitMask = (1 << 5);
-    const byte carryBitMask = (1 << 4);
-    public bool ZeroFlag => (F & zeroBitMask) == zeroBitMask;
-    public bool SubtractFlag => (F & subtractBitMask) == subtractBitMask;
-    public bool HalfCarryFlag => (F & halfCarryBitMask) == halfCarryBitMask;
-    public bool CarryFlag => (F & carryBitMask) == carryBitMask;
+    const byte zero_mask = (1 << 7);
+    const byte subtract_mask = (1 << 6);
+    const byte halfCarry_mask = (1 << 5);
+    const byte carry_mask = (1 << 4);
+    public bool ZeroFlag => (F & zero_mask) == zero_mask;
+    public bool SubtractFlag => (F & subtract_mask) == subtract_mask;
+    public bool HalfCarryFlag => (F & halfCarry_mask) == halfCarry_mask;
+    public bool CarryFlag => (F & carry_mask) == carry_mask;
 
-    public enum Flag
+    private void SetFlags(bool Z, bool S, bool H, bool C)
     {
-        Zero, Subtract, HalfCarry, Carry
+        SetZeroFlag(Z);
+        SetSubtractFlag(S);
+        SetHalfCarryFlag(H);
+        SetCarryFlag(C);
     }
-    public void SetFlag(Flag flag, bool on)
+
+    private void SetZeroFlag(bool Z) => SetFlag(zero_mask, Z);
+    private void SetSubtractFlag(bool S) => SetFlag(subtract_mask, S);
+    private void SetHalfCarryFlag(bool H) => SetFlag(halfCarry_mask, H);
+    private void SetCarryFlag(bool C) => SetFlag(carry_mask, C);
+
+
+    private void SetFlag(byte mask, bool on)
     {
-        byte mask;
-        switch (flag)
-        {
-            case Flag.Zero:
-                {
-                    mask = zeroBitMask;
-                    break;
-                }
-            case Flag.Subtract:
-                {
-                    mask = subtractBitMask;
-                    break;
-                }
-            case Flag.HalfCarry:
-                {
-                    mask = halfCarryBitMask;
-                    break;
-                }
-            case Flag.Carry:
-                {
-                    mask = carryBitMask;
-                    break;
-                }
-            default: throw new Exception("Not valid flag");
-        }
+        if (on) F |= mask;
+        else F &= Invert(mask);
+    }
 
-        if (on)
-            F |= mask;
-        else
-        {
-            byte flippedMask = (byte)(mask ^ 0xff);
-            F &= flippedMask;
-        }
-
+    private byte Invert(byte b)
+    {
+        return (byte)(b ^ 0xFF);
     }
 
     #endregion
@@ -253,12 +238,11 @@ class CPU : Hardware<IBus>
 
     private void Add(ref byte target, byte operand)
     {
-        SetFlag(Flag.HalfCarry, IsHalfCarryOnAddition(target, operand));
+        bool H = IsHalfCarryOnAddition(target, operand);
         int result = target + operand;
-        SetFlag(Flag.Carry, IsCarryOnAddition(result));
+        bool C = IsCarryOnAddition(result);
+        SetFlags(result == 0, false, H, C);
         target = (byte)result;
-        SetFlag(Flag.Zero, target == 0);
-        SetFlag(Flag.Subtract, false);
     }
 
     private void Add(ref byte targetHigh, ref byte targetLow, byte operandHigh, byte operandLow)
@@ -267,10 +251,10 @@ class CPU : Hardware<IBus>
         int carryLow = IsCarryOnAddition(resultLow) ? 1 : 0;
         int resultHigh = targetHigh + operandHigh + carryLow;
         bool isCarryHigh = IsCarryOnAddition(resultHigh);
-        SetFlag(Flag.Carry, isCarryHigh);
-        SetFlag(Flag.Subtract, false);
+        SetCarryFlag(isCarryHigh);
+        SetSubtractFlag(false);
         byte highAddition = (byte)(carryLow + operandHigh);
-        SetFlag(Flag.HalfCarry, IsHalfCarryOnAddition(targetHigh, highAddition));
+        SetHalfCarryFlag(IsHalfCarryOnAddition(targetHigh, highAddition));
         targetLow = (byte)resultLow;
         targetHigh = (byte)resultHigh;
     }
@@ -295,11 +279,8 @@ class CPU : Hardware<IBus>
 
     private void Subtract(ref byte target, byte operand)
     {
-        SetFlag(Flag.Subtract, true);
         int result = target - operand;
-        SetFlag(Flag.Zero, result == 0);
-        SetFlag(Flag.Carry, result < 0);
-        SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(target, operand));
+        SetFlags(result == 0, true, IsHalfCarryOnSubtraction(target, operand), result < 0);
         target = (byte)result;
     }
 
@@ -340,10 +321,10 @@ class CPU : Hardware<IBus>
     }
     private void Increment(ref byte target)
     {
-        SetFlag(Flag.HalfCarry, IsHalfCarryOnAddition(target, 1)); // set if carry from bit 3
+        SetHalfCarryFlag(IsHalfCarryOnAddition(target, 1)); // set if carry from bit 3
         target++;
-        SetFlag(Flag.Zero, target == 0);
-        SetFlag(Flag.Subtract, false);
+        SetZeroFlag(target == 0);
+        SetSubtractFlag(false);
     }
     private void Increment(ref byte targetHigh, ref byte targetLow)
     {
@@ -370,10 +351,10 @@ class CPU : Hardware<IBus>
 
     private void Decrement(ref byte target)
     {
-        SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(target, 1)); // set if borrow from bit 4
+        SetHalfCarryFlag(IsHalfCarryOnSubtraction(target, 1)); // set if borrow from bit 4
         target--;
-        SetFlag(Flag.Zero, target == 0);
-        SetFlag(Flag.Subtract, true);
+        SetZeroFlag(target == 0);
+        SetSubtractFlag(true);
     }
     private void Decrement(ref byte targetHigh, ref byte targetLow)
     {
@@ -418,10 +399,7 @@ class CPU : Hardware<IBus>
     {
         int rotated = target << 1;
         bool isCarry = IsCarryOnAddition(rotated);
-        SetFlag(Flag.Zero, false);
-        SetFlag(Flag.Subtract, false);
-        SetFlag(Flag.HalfCarry, false);
-        SetFlag(Flag.Carry, isCarry);
+        SetFlags(false, false, false, isCarry);
         if (isCarry)
             target = (byte)(rotated | 1); //wrap around carry bit
         else
@@ -432,10 +410,7 @@ class CPU : Hardware<IBus>
     {
         bool isCarry = (target & 1) != 0;
         int rotated = target >> 1;
-        SetFlag(Flag.Zero, false);
-        SetFlag(Flag.Subtract, false);
-        SetFlag(Flag.HalfCarry, false);
-        SetFlag(Flag.Carry, isCarry);
+        SetFlags(false, false, false, isCarry);
         if (isCarry)
             target = (byte)(rotated | 0x80);
         else
@@ -449,9 +424,9 @@ class CPU : Hardware<IBus>
         bool isCarry = IsCarryOnAddition(rotated);
         // Some conflicting  documentation on flagging from this instruction....
         //SetFlag(Flag.Zero, false);
-        SetFlag(Flag.Subtract, false);
-        SetFlag(Flag.HalfCarry, false);
-        SetFlag(Flag.Carry, isCarry);
+        SetSubtractFlag(false);
+        SetHalfCarryFlag(false);
+        SetCarryFlag(isCarry);
         if (oldIsCarry)
             target = (byte)(rotated | 1);
         else
@@ -465,9 +440,9 @@ class CPU : Hardware<IBus>
         int rotated = target >> 1;
         // Some conflicting  documentation on flagging from this instruction....
         //SetFlag(Flag.Zero, false);
-        SetFlag(Flag.Subtract, false);
-        SetFlag(Flag.HalfCarry, false);
-        SetFlag(Flag.Carry, isCarry);
+        SetSubtractFlag(false);
+        SetHalfCarryFlag(false);
+        SetCarryFlag(isCarry);
         if (oldIsCarry)
             target = (byte)(rotated | 0x80);
         else
@@ -486,45 +461,33 @@ class CPU : Hardware<IBus>
 
     private void Complement(ref byte target)
     {
-        SetFlag(Flag.HalfCarry, true);
-        SetFlag(Flag.Subtract, true);
+        SetHalfCarryFlag(true);
+        SetSubtractFlag(true);
         target ^= 0xFF;
     }
 
     private void And(ref byte target, byte operand)
     {
         target &= operand;
-        SetFlag(Flag.Zero, target == 0);
-        SetFlag(Flag.Subtract, false);
-        SetFlag(Flag.HalfCarry, true);
-        SetFlag(Flag.Carry, false);
+        SetFlags(target == 0, false, true, false);
     }
 
     private void Xor(ref byte target, byte operand)
     {
         target ^= operand;
-        SetFlag(Flag.Zero, target == 0);
-        SetFlag(Flag.Subtract, false);
-        SetFlag(Flag.HalfCarry, false);
-        SetFlag(Flag.Carry, false);
+        SetFlags(target == 0, false, false, false);
     }
 
     private void Or(ref byte target, byte operand)
     {
         target |= operand;
-        SetFlag(Flag.Zero, target == 0);
-        SetFlag(Flag.Subtract, false);
-        SetFlag(Flag.HalfCarry, false);
-        SetFlag(Flag.Carry, false);
+        SetFlags(target == 0, false, false, false);
     }
 
     private void Compare(byte target, byte operand)
     {
         int result = target - operand;
-        SetFlag(Flag.Zero, result == 0);
-        SetFlag(Flag.Subtract, true);
-        SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(target, operand));
-        SetFlag(Flag.Carry, result < 0);
+        SetFlags(result == 0, true, IsHalfCarryOnSubtraction(target, operand), result < 0);
     }
 
     private void Return()
@@ -567,19 +530,13 @@ class CPU : Hardware<IBus>
     private void AddToStackPointer(sbyte operand)
     {
         int result = (SP + operand);
+        SetFlags(
+            false,
+            false,
+            operand < 0 ? IsHalfCarryOnSubtraction(SP_P, (byte)operand) : IsHalfCarryOnAddition(SP_P, (byte)operand),
+            operand < 0 ? IsCarryOnSubtraction(result) : IsCarryOnAddition(result)
+        );
         SP = (ushort)result;
-        SetFlag(Flag.Zero, false);
-        SetFlag(Flag.Subtract, false);
-        if (operand < 0)
-        {
-            SetFlag(Flag.Carry, IsCarryOnSubtraction(result));
-            SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(GetLowByte(SP), (byte)operand));
-        }
-        else
-        {
-            SetFlag(Flag.Carry, IsCarryOnAddition(result));
-            SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(GetLowByte(SP), (byte)operand));
-        }
     }
     #endregion
 
@@ -952,9 +909,9 @@ class CPU : Hardware<IBus>
             case 0x37:
                 {
                     // SCF | 1 | 4 (Set Carry Flag)
-                    SetFlag(Flag.Carry, true);
-                    SetFlag(Flag.HalfCarry, false);
-                    SetFlag(Flag.Subtract, false);
+                    SetCarryFlag(true);
+                    SetHalfCarryFlag(false);
+                    SetSubtractFlag(false);
                     break;
                 }
             case 0x38:
@@ -1004,9 +961,9 @@ class CPU : Hardware<IBus>
             case 0x3F:
                 {
                     // CCF
-                    SetFlag(Flag.Carry, !CarryFlag);
-                    SetFlag(Flag.HalfCarry, false);
-                    SetFlag(Flag.Subtract, false);
+                    SetSubtractFlag(false);
+                    SetHalfCarryFlag(CarryFlag); // Z80 doc says copy carry flag, gameboy-doc says reset...
+                    SetCarryFlag(!CarryFlag);
                     break;
                 }
             case 0x40:
@@ -2010,20 +1967,11 @@ class CPU : Hardware<IBus>
                 {
                     // LD HL, SP + r8
                     sbyte r8 = (sbyte)Fetch();
-                    int tempValue = SP + r8;
-                    SetFlag(Flag.Zero, false);
-                    SetFlag(Flag.Subtract, false);
-                    if (r8 < 0)
-                    {
-                        SetFlag(Flag.Carry, IsCarryOnSubtraction(tempValue));
-                        SetFlag(Flag.HalfCarry, IsHalfCarryOnSubtraction(GetLowByte(SP), (byte)r8));
-                    }
-                    else
-                    {
-                        SetFlag(Flag.Carry, IsCarryOnAddition(tempValue));
-                        SetFlag(Flag.HalfCarry, IsHalfCarryOnAddition(GetLowByte(SP), Fetch()));
-                    }
-                    Load(ref H, ref L, (ushort)tempValue);
+                    ushort prevSP = SP;
+                    AddToStackPointer(r8);
+                    Load(ref H, ref L, SP);
+                    //Hack to set flags the same way as "AddToStackPointer" but without adding to SP
+                    SP = prevSP;
                     break;
                 }
             case 0xF9:
