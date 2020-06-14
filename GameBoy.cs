@@ -3,6 +3,7 @@ using System;
 class GameBoy
 {
     private CPU cpu;
+    private Timer timer;
     private Screen screen;
     private Controller controller;
     private Cartridge game;
@@ -15,22 +16,14 @@ class GameBoy
         // Create hardware
         bus = new MainBus();
         cpu = new CPU();
+        timer = new Timer();
         screen = new Screen();
         controller = new Controller();
 
         //Connect it all to the bus
         cpu.Connect(bus);
         controller.Connect(bus);
-    }
-
-
-    private void InterruptProcedure()
-    {
-        // Interrupt => IF flag set
-        // If IME flag && IE flag: 
-        //  1: Reset IME flag
-        //  2: Push PC to stack
-        //  3: Jump to starting address of  interrupt
+        timer.Connect(bus);
     }
 
     private void Play()
@@ -38,7 +31,9 @@ class GameBoy
         while (isPowered)
         {
             //check for poweroff
-            cpu.Tick();
+            ulong cpuCycles = cpu.Tick();
+            timer.Clock(cpuCycles);
+            screen.Render();
         }
     }
 

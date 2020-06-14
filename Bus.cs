@@ -25,6 +25,20 @@ class MainBus : IBus
         ExtRAM = cartridge.RAM;
     }
 
+    private CPU cpu;
+
+    public void ConnectCPU(CPU cpu)
+    {
+        this.cpu = cpu;
+    }
+
+    public void RequestInterrrupt(InterruptType type)
+    {
+        if (cpu != null)
+            cpu.RequestInterrupt(type);
+    }
+
+
     //  General Memory Map
     //   0000-3FFF   16KB ROM Bank 00     (in cartridge, fixed at bank 00)
     const ushort ROM_bank_0_StartAddress = 0;
@@ -110,6 +124,9 @@ class MainBus : IBus
             Memory mem = GetLocation(address, out ushort relativeAddress);
 
             if (mem == null) return false;
+
+            //any write to DIV makes it 0
+            if (address == 0xFF04) value = 0;
 
             return mem.Write(relativeAddress, value);
         }

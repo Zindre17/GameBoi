@@ -1,6 +1,15 @@
 using static ByteOperations;
 
-class CPU : Hardware<IBus>
+public enum InterruptType
+{
+    VBlank,
+    LCDC,
+    Timer,
+    Link,
+    Joypad
+}
+
+class CPU : Hardware<MainBus>
 {
     private bool IME = true; // Interrupt Master Enable
     private const ushort IE_address = 0xFFFF;
@@ -12,8 +21,8 @@ class CPU : Hardware<IBus>
     private delegate void Instruction();
 
     private Instruction[] instructions;
+    private byte[] durations;
     private Instruction[] cbInstructions;
-
 
     #region Registers
     private byte A; // accumulator
@@ -68,23 +77,28 @@ class CPU : Hardware<IBus>
     #endregion
 
 
-    long clock = 0;
+    ulong cycles = 0;
+    long instructionsPerformed = 0;
 
-    public void Tick()
+    public ulong Tick()
     {
-        //increase clock
-        clock++;
+        instructionsPerformed++;
+
+        HandleInterrupts();
 
         if (isHalted)
         {
             NoOperation();
-            return;
+            cycles += 4;
         }
-
-        // Fetch, Decode, Execute
-        instructions[Fetch()]();
-
-        HandleInterrupts();
+        else
+        {
+            // Fetch, Decode, Execute
+            byte opCode = Fetch();
+            instructions[opCode]();
+            cycles += durations[opCode];
+        }
+        return cycles;
     }
 
 
@@ -92,8 +106,8 @@ class CPU : Hardware<IBus>
     private const byte V_Blank_bit = 0;
     private const byte LCDC_bit = 1;
     private const byte Timer_bit = 2;
-    private const byte Serial_bit = 3;
-    private const byte Hi_Lo_bit = 4;
+    private const byte Link_bit = 3;
+    private const byte Joypad_bit = 4;
 
     private void HandleInterrupts()
     {
@@ -126,13 +140,13 @@ class CPU : Hardware<IBus>
         {
             Interrupt(0x0050, Timer_bit, IF);
         }
-        else if (ShouldInterrupt(IE, IF, Serial_bit))
+        else if (ShouldInterrupt(IE, IF, Link_bit))
         {
-            Interrupt(0x0058, Serial_bit, IF);
+            Interrupt(0x0058, Link_bit, IF);
         }
-        else if (ShouldInterrupt(IE, IF, Hi_Lo_bit))
+        else if (ShouldInterrupt(IE, IF, Joypad_bit))
         {
-            Interrupt(0x0060, Hi_Lo_bit, IF);
+            Interrupt(0x0060, Joypad_bit, IF);
         }
     }
 
@@ -148,10 +162,52 @@ class CPU : Hardware<IBus>
     {
         return TestBit(bit, IE) && TestBit(bit, IF);
     }
+
+    public void RequestInterrupt(InterruptType type)
+    {
+        switch (type)
+        {
+            case InterruptType.VBlank:
+                {
+                    SetInterruptRequest(V_Blank_bit);
+                    break;
+                }
+            case InterruptType.LCDC:
+                {
+                    SetInterruptRequest(LCDC_bit);
+                    break;
+                }
+            case InterruptType.Timer:
+                {
+                    SetInterruptRequest(Timer_bit);
+                    break;
+                }
+            case InterruptType.Link:
+                {
+                    SetInterruptRequest(Link_bit);
+                    break;
+                }
+            case InterruptType.Joypad:
+                {
+                    SetInterruptRequest(Joypad_bit);
+                    break;
+                }
+        }
+    }
+
+    private void SetInterruptRequest(int bit)
+    {
+        Write(IF_address, SetBit(bit, Read(IF_address)));
+    }
     #endregion
 
 
     #region Helpers
+    public override void Connect(MainBus bus)
+    {
+        bus.ConnectCPU(this);
+        base.Connect(bus);
+    }
     private byte Fetch()
     {
         //Fetch instruction and increment PC after
@@ -204,7 +260,11 @@ class CPU : Hardware<IBus>
 
     private void Prefix_CB()
     {
-        cbInstructions[Fetch()]();
+        byte opCode = Fetch();
+        cbInstructions[opCode]();
+        byte modded = (byte)(opCode % 8);
+        byte duration = (byte)(modded == 6 ? 16 : 8);
+        cycles += duration;
     }
 
     private void SetCarryFlagInstruction()
@@ -243,10 +303,6 @@ class CPU : Hardware<IBus>
     {
         Write(address, GetLowByte(source));
         Write((ushort)(address + 1), GetHighByte(source));
-    }
-    private void LoadFromMem(ref byte target, ushort address)
-    {
-        target = Read(address);
     }
     #endregion
 
@@ -572,13 +628,37 @@ class CPU : Hardware<IBus>
     #endregion
 
     #region Jumps
+    private void ConditionalJumpBy(bool condition, byte increment)
+    {
+        if (condition)
+        {
+            cycles += 4;
+            JumpBy(increment);
+        }
+    }
     private void JumpBy(byte increment) //actually signed
     {
         PC = (byte)(PC + (sbyte)increment);
     }
+    private void ConditionalJumpTo(bool condition, ushort address)
+    {
+        if (condition)
+        {
+            cycles += 4;
+            JumpTo(address);
+        }
+    }
     private void JumpTo(ushort newPC)
     {
         PC = newPC;
+    }
+    private void ConditionalReturn(bool condition)
+    {
+        if (condition)
+        {
+            cycles += 12;
+            Return();
+        }
     }
     private void Return()
     {
@@ -590,6 +670,14 @@ class CPU : Hardware<IBus>
     {
         Return();
         EnableInterrupt();
+    }
+    private void ConditionalCall(bool condition, ushort address)
+    {
+        if (condition)
+        {
+            cycles += 12;
+            Call(address);
+        }
     }
     private void Call(ushort address)
     {
@@ -675,7 +763,7 @@ class CPU : Hardware<IBus>
             () => RotateLeftWithCarry(ref A, false),
             () => LoadToMem(GetDirectAddress(),SP),
             () => Add(ref H, ref L, B, C),
-            () => LoadFromMem(ref A, BC),
+            () => Load(ref A, Read(BC)),
             () => Decrement(ref B, ref C),
             () => Increment(ref C),
             () => Decrement(ref C),
@@ -695,7 +783,7 @@ class CPU : Hardware<IBus>
             () => RotateLeft(ref A, false),
             () => JumpBy(Fetch()),
             () => Add(ref H, ref L, D, E),
-            () => LoadFromMem(ref A, DE),
+            () => Load(ref A, Read(DE)),
             () => Decrement(ref D, ref E),
             () => Increment(ref E),
             () => Decrement(ref E),
@@ -705,7 +793,7 @@ class CPU : Hardware<IBus>
 
 
             // 0x2X
-            () => { if (!ZeroFlag) JumpBy(Fetch()); },
+            () => ConditionalJumpBy(!ZeroFlag,Fetch()),
             () => Load(ref H, ref L, GetDirectAddress()),
             () => { LoadToMem(HL, A); Increment(ref H, ref L); },
             () => Increment(ref H, ref L),
@@ -713,9 +801,9 @@ class CPU : Hardware<IBus>
             () => Decrement(ref H),
             () => Load(ref H, Fetch()),
             DAA,
-            () => { if (ZeroFlag) JumpBy(Fetch()); },
+            () => ConditionalJumpBy(ZeroFlag, Fetch()),
             () => Add(ref H, ref L, H, L),
-            () => { LoadFromMem(ref A, HL); Increment(ref H, ref L); },
+            () => { Load(ref A, Read(HL)); Increment(ref H, ref L); },
             () => Decrement(ref H, ref L),
             () => Increment(ref L),
             () => Decrement(ref L),
@@ -725,7 +813,7 @@ class CPU : Hardware<IBus>
 
 
             // 0x3X
-            () => { if (!CarryFlag) JumpBy(Fetch()); },
+            () => ConditionalJumpBy(!CarryFlag, Fetch()),
             () => Load(ref SP, GetDirectAddress()),
             () => { LoadToMem(HL, A); Decrement(ref H, ref L); },
             () => Increment(ref SP),
@@ -733,7 +821,7 @@ class CPU : Hardware<IBus>
             () => DecrementInMemory(H, L),
             () => LoadToMem(HL, Fetch()),
             SetCarryFlagInstruction,
-            () => { if (CarryFlag) JumpBy(Fetch()); },
+            () => ConditionalJumpBy(CarryFlag, Fetch()),
             () => Add(ref H, ref L, SP),
             () => { Load(ref A, Read(HL)); Decrement(ref H, ref L); },
             () => Decrement(ref SP),
@@ -751,7 +839,7 @@ class CPU : Hardware<IBus>
             () => Load(ref B, E),
             () => Load(ref B, H),
             () => Load(ref B, L),
-            () => LoadFromMem(ref B, HL),
+            () => Load(ref B, Read(HL)),
             () => Load(ref B, A),
             () => Load(ref C, B),
             () => Load(ref C, C),
@@ -759,7 +847,7 @@ class CPU : Hardware<IBus>
             () => Load(ref C, E),
             () => Load(ref C, H),
             () => Load(ref C, L),
-            () => LoadFromMem(ref C, HL),
+            () => Load(ref C, Read(HL)),
             () => Load(ref C, A),
 
 
@@ -771,7 +859,7 @@ class CPU : Hardware<IBus>
             () => Load(ref D, E),
             () => Load(ref D, H),
             () => Load(ref D, L),
-            () => LoadFromMem(ref D, HL),
+            () => Load(ref D, Read(HL)),
             () => Load(ref D, A),
             () => Load(ref E, B),
             () => Load(ref E, C),
@@ -779,7 +867,7 @@ class CPU : Hardware<IBus>
             () => Load(ref E, E),
             () => Load(ref E, H),
             () => Load(ref E, L),
-            () => LoadFromMem(ref E, HL),
+            () => Load(ref E, Read(HL)),
             () => Load(ref E, A),
 
 
@@ -791,7 +879,7 @@ class CPU : Hardware<IBus>
             () => Load(ref H, E),
             () => Load(ref H, H),
             () => Load(ref H, L),
-            () => LoadFromMem(ref H, HL),
+            () => Load(ref H, Read(HL)),
             () => Load(ref H, A),
             () => Load(ref L, B),
             () => Load(ref L, C),
@@ -799,7 +887,7 @@ class CPU : Hardware<IBus>
             () => Load(ref L, E),
             () => Load(ref L, H),
             () => Load(ref L, L),
-            () => LoadFromMem(ref L, HL),
+            () => Load(ref L, Read(HL)),
             () => Load(ref L, A),
 
 
@@ -905,19 +993,19 @@ class CPU : Hardware<IBus>
 
 
             // 0xCX
-            () => { if (!ZeroFlag) Return(); },
+            () => ConditionalReturn(!ZeroFlag),
             () => Pop(ref B, ref C),
-            () => { if (!ZeroFlag) JumpTo(GetDirectAddress()); },
+            () => ConditionalJumpTo(!ZeroFlag, GetDirectAddress()),
             () => JumpTo(GetDirectAddress()),
-            () => { if (!ZeroFlag) Call(GetDirectAddress()); },
+            () => ConditionalCall(!ZeroFlag, GetDirectAddress()),
             () => Push(B, C),
             () => Add(ref A, Fetch()),
             () => Restart(0x00),
-            () => { if (ZeroFlag) Return(); },
+            () => ConditionalReturn(ZeroFlag),
             Return,
-            () => { if (ZeroFlag) JumpTo(GetDirectAddress()); },
+            () => ConditionalJumpTo(ZeroFlag, GetDirectAddress()),
             Prefix_CB,
-            () => { if (ZeroFlag) Call(GetDirectAddress()); },
+            () => ConditionalCall(ZeroFlag, GetDirectAddress()),
             () => Call(GetDirectAddress()),
             () => AddWithCarry(ref A, Fetch()),
             () => Restart(0x08),
@@ -925,19 +1013,19 @@ class CPU : Hardware<IBus>
 
 
             // 0xDX
-            () => { if (!CarryFlag) Return(); },
+            () => ConditionalReturn(!CarryFlag),
             () => Pop(ref D, ref E),
-            () => { if (!CarryFlag) JumpTo(GetDirectAddress()); },
+            () => ConditionalJumpTo(!CarryFlag, GetDirectAddress()),
             Empty,
-            () => { if (!CarryFlag) Call(GetDirectAddress()); },
+            () => ConditionalCall(!CarryFlag, GetDirectAddress()),
             () => Push(D, E),
             () => Subtract(ref A, Fetch()),
             () => Restart(0x10),
-            () => { if (CarryFlag) Return(); },
+            () => ConditionalReturn(CarryFlag),
             ReturnAndEnableInterrupt,
-            () => { if (CarryFlag) JumpTo(GetDirectAddress()); },
+            () => ConditionalJumpTo(CarryFlag, GetDirectAddress()),
             Empty,
-            () => { if (CarryFlag) Call(GetDirectAddress()); },
+            () => ConditionalCall(CarryFlag, GetDirectAddress()),
             Empty,
             () => SubtractWithCarry(ref A, Fetch()),
             () => Restart(0x18),
@@ -954,7 +1042,7 @@ class CPU : Hardware<IBus>
             () => And(ref A, Fetch()),
             () => Restart(0x20),
             () => AddToStackPointer((sbyte)Fetch()),
-            () => JumpTo(HL),
+            () => JumpTo(Read(HL)),
             () => LoadToMem(GetDirectAddress(), A),
             Empty,
             Empty,
@@ -965,9 +1053,9 @@ class CPU : Hardware<IBus>
 
 
             // 0xFX
-            () => LoadFromMem(ref A, (ushort)(0xFF00 + Fetch())),
+            () => Load(ref A, Read((ushort)(0xFF00 + Fetch()))),
             () => Pop(ref A, ref F),
-            () => LoadFromMem(ref A, (ushort)(0xFF00 + C)),
+            () => Load(ref A, Read((ushort)(0xFF00 + C))),
             DisableInterrupt,
             Empty,
             () => Push(A, F),
@@ -981,6 +1069,28 @@ class CPU : Hardware<IBus>
             Empty,
             () => Compare(A, Fetch()),
             () => Restart(0x38)
+        };
+
+        durations = new byte[0x100]{
+             4,12, 8, 8, 4, 4, 8, 4,  20, 8, 8, 8, 4, 4, 8, 4,
+             4,12, 8, 8, 4, 4, 8, 4,  12, 8, 8, 8, 4, 4, 8, 4,
+             8,12, 8, 8, 4, 4, 8, 4,   8, 8, 8, 8, 4, 4, 8, 4,
+             8,12, 8, 8,12,12,12, 4,   8, 8, 8, 8, 4, 4, 8, 4,
+
+             4, 4, 4, 4, 4, 4, 8, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+             4, 4, 4, 4, 4, 4, 8, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+             4, 4, 4, 4, 4, 4, 8, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+             4, 4, 4, 4, 4, 4, 4, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+
+             4, 4, 4, 4, 4, 4, 8, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+             4, 4, 4, 4, 4, 4, 8, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+             4, 4, 4, 4, 4, 4, 8, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+             4, 4, 4, 4, 4, 4, 8, 4,   4, 4, 4, 4, 4, 4, 8, 4,
+
+             8,12,12,16,12,16, 8,16,   8,16,12, 4,12,24, 8,16,
+             8,12,12, 0,12,16, 8,16,   8,16,12, 0,12, 0, 8,16,
+            12,12, 8, 0, 0,16, 8,16,  16, 4,16, 0, 0, 0, 8,16,
+            12,12, 8, 4, 0,16, 8,16,  12, 8,16, 4, 0, 0, 8,16,
         };
 
         //setup cb instructions
