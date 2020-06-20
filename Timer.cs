@@ -32,22 +32,9 @@ class Timer : Hardware<MainBus>
 
     private static readonly uint divRatio = ratios[3];
 
-    private byte Read(ushort address)
-    {
-        if (!bus.Read(address, out byte value))
-            throw new MemoryReadException(address);
-        return value;
-    }
-
-    private void Write(ushort address, byte value)
-    {
-        if (!bus.Write(address, value))
-            throw new MemoryWriteException(address);
-    }
-
     private ulong prevCpuCycle = 0;
 
-    public void Clock(ulong cpuCycle)
+    public void Tick(ulong cpuCycle)
     {
         ulong elapsedCycles = cpuCycle - prevCpuCycle;
         if (elapsedCycles >= divRatio)
