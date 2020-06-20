@@ -5,7 +5,9 @@ abstract class Memory
     private bool isReadOnly;
     public bool IsReadOnly => isReadOnly;
 
-    private byte[] memory;
+    protected byte[] memory;
+
+    public int Size => memory.Length;
 
     public Memory(ushort size, bool isReadOnly = false)
     {
