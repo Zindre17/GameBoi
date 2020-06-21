@@ -1,3 +1,5 @@
+using static ByteOperations;
+
 class Sprite
 {
     private byte x;
@@ -5,11 +7,19 @@ class Sprite
     private byte pattern;
     private byte flags;
 
-    public Sprite(int block)
+    public Sprite(byte x, byte y, byte pattern, byte flags)
     {
-        x = (byte)block;
-        y = (byte)(block >> 8);
-        pattern = (byte)(block >> 16);
-        flags = (byte)(block >> 24);
+        this.x = x;
+        this.y = y;
+        this.pattern = pattern;
+        this.flags = flags;
     }
+
+    public byte X => x;
+    public byte Y => y;
+    public byte Pattern => pattern;
+    public bool Hidden => TestBit(7, flags); // Other refer to it as "Priority" => 0: display on top, 1: hide under 1,2 and 3 of bg and
+    public bool Yflip => TestBit(6, flags);
+    public bool Xflip => TestBit(5, flags);
+    public bool Pallet1 => TestBit(4, flags);
 }
