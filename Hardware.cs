@@ -9,14 +9,14 @@ abstract class Hardware<T> where T : IBus
         this.bus = bus;
     }
 
-    virtual protected byte Read(ushort address)
+    virtual protected Byte Read(Address address)
     {
-        if (!bus.Read(address, out byte value))
+        if (!bus.Read(address, out Byte value))
             throw new MemoryReadException(address);
         return value;
     }
 
-    virtual protected void Write(ushort address, byte value)
+    virtual protected void Write(Address address, Byte value)
     {
         if (!bus.Write(address, value))
             throw new MemoryWriteException(address);

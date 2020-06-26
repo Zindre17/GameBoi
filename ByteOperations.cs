@@ -59,14 +59,14 @@ public static class ByteOperations
 
     public static bool IsCarryOnAddition(int result)
     {
-        return result > 0x00FF;
+        return result > 0xFF;
     }
 
     public static bool IsHalfCarryOnSubtraction(byte source, byte operand)
     {
         int sourceLowNibble = GetLowNibble(source);
         int operandLowNibble = GetLowNibble(operand);
-        return sourceLowNibble - operandLowNibble < 0;
+        return (sourceLowNibble - operandLowNibble) < 0;
     }
 
     public static bool IsCarryOnSubtraction(int result)

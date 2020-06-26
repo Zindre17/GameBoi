@@ -12,6 +12,10 @@ public enum InterruptType
 class CPU : Hardware<MainBus>
 {
     private bool IME = true; // Interrupt Master Enable
+
+    private bool shouldUpdateIME = false;
+    private bool nextIMEValue = false;
+
     private const ushort IE_address = 0xFFFF;
     private const ushort IF_address = 0xFF0F;
 
@@ -36,7 +40,7 @@ class CPU : Hardware<MainBus>
     private byte H = 1;
     private byte L = 0x4D;
     private ushort HL => ConcatBytes(H, L);
-    private ushort PC = 0x100; //progarm counter
+    private ushort PC = 0x00; //progarm counter
     private byte PC_P => GetHighByte(PC);
     private byte PC_C => GetLowByte(PC);
     private ushort SP = 0xFFFE; //stack pointer
@@ -44,6 +48,8 @@ class CPU : Hardware<MainBus>
     private byte SP_P => GetLowByte(SP);
     public string ProgramCounter => PC.ToString("X");
     public string StackPointer => SP.ToString("X");
+    public string _BC => BC.ToString("X");
+    public string _DE => DE.ToString("X");
     #endregion
 
 
@@ -113,6 +119,13 @@ class CPU : Hardware<MainBus>
 
     private void HandleInterrupts()
     {
+        if (shouldUpdateIME)
+        {
+            IME = nextIMEValue;
+            shouldUpdateIME = false;
+            return;
+        }
+
         if (!IME) return;
 
         byte IF = Read(IF_address);
@@ -121,6 +134,7 @@ class CPU : Hardware<MainBus>
         if (IF == 0) return;
 
         byte IE = Read(IE_address);
+        if (IE == 0) return;
 
         // type             :   prio    : address   : bit
         //---------------------------------------------------
@@ -205,7 +219,7 @@ class CPU : Hardware<MainBus>
 
 
     #region Helpers
-    protected override void Write(ushort address, byte value)
+    protected override void Write(Address address, Byte value)
     {
         if (address == 0xFF04 || address == 0xFF44)
             base.Write(address, 0);
@@ -248,11 +262,13 @@ class CPU : Hardware<MainBus>
 
     private void DisableInterrupt()
     {
-        IME = false;
+        shouldUpdateIME = true;
+        nextIMEValue = false;
     }
     private void EnableInterrupt()
     {
-        IME = true;
+        shouldUpdateIME = true;
+        nextIMEValue = true;
     }
 
     private void Prefix_CB()
@@ -273,7 +289,7 @@ class CPU : Hardware<MainBus>
     private void ComplementCarryFlag()
     {
         SetSubtractFlag(false);
-        SetHalfCarryFlag(CarryFlag); // Z80 doc says copy carry flag, gameboy-doc says reset...
+        SetHalfCarryFlag(false);
         SetCarryFlag(!CarryFlag);
     }
     #endregion
@@ -307,8 +323,8 @@ class CPU : Hardware<MainBus>
     private void DAA()
     {
         //an attempt at implementing this...
-        byte highNibble = (byte)((A & 0xF0) >> 4);
-        byte lowNibble = (byte)(A & 0x0F);
+        byte highNibble = GetHighNibble(A);
+        byte lowNibble = GetLowNibble(A);
         byte correction = 0;
         bool setC = CarryFlag;
 
@@ -367,7 +383,7 @@ class CPU : Hardware<MainBus>
         }
 
         int correctedValue = A + correction;
-        setC = setC || SubtractFlag ? correctedValue > 0xFF : correctedValue < 0;
+        setC |= SubtractFlag ? correctedValue > 0xFF : correctedValue < 0;
 
         A = (byte)correctedValue;
 
@@ -376,13 +392,18 @@ class CPU : Hardware<MainBus>
         SetHalfCarryFlag(false);
     }
 
-    private void Add(ref byte target, byte operand)
+    private void Add(ref byte target, byte operand, bool withCarry = false)
     {
         bool H = IsHalfCarryOnAddition(target, operand);
         int result = target + operand;
+        if (withCarry)
+        {
+            H |= IsHalfCarryOnAddition((byte)(target + operand), 1);
+            result++;
+        }
         bool C = IsCarryOnAddition(result);
-        SetFlags(result == 0, false, H, C);
         target = (byte)result;
+        SetFlags(target == 0, false, H, C);
     }
     private void Add(ref byte targetHigh, ref byte targetLow, byte operandHigh, byte operandLow)
     {
@@ -390,35 +411,29 @@ class CPU : Hardware<MainBus>
         int carryLow = IsCarryOnAddition(resultLow) ? 1 : 0;
         int resultHigh = targetHigh + operandHigh + carryLow;
         bool isCarryHigh = IsCarryOnAddition(resultHigh);
-        SetCarryFlag(isCarryHigh);
-        SetSubtractFlag(false);
         byte highAddition = (byte)(carryLow + operandHigh);
-        SetHalfCarryFlag(IsHalfCarryOnAddition(targetHigh, highAddition));
         targetLow = (byte)resultLow;
         targetHigh = (byte)resultHigh;
-    }
-    private void Add(ref byte targetHigh, ref byte targetLow, ushort operand)
-    {
-        byte operandHigh = GetHighByte(operand);
-        byte operandLow = GetLowByte(operand);
-        Add(ref targetHigh, ref targetLow, operandHigh, operandLow);
-    }
-    private void AddWithCarry(ref byte target, byte operand)
-    {
-        byte newOperand = (byte)(operand + (CarryFlag ? 1 : 0));
-        Add(ref target, newOperand);
+
+        SetFlags(
+            targetHigh + targetLow == 0,
+            false,
+            carryLow == 1,
+            isCarryHigh
+        );
     }
 
-    private void Subtract(ref byte target, byte operand)
+    private void Subtract(ref byte target, byte operand, bool withCarry = false)
     {
         int result = target - operand;
-        SetFlags(result == 0, true, IsHalfCarryOnSubtraction(target, operand), result < 0);
+        bool H = IsHalfCarryOnSubtraction(target, operand);
+        if (withCarry)
+        {
+            H |= IsHalfCarryOnSubtraction((byte)(target - operand), 1);
+            result--;
+        }
         target = (byte)result;
-    }
-    private void SubtractWithCarry(ref byte target, byte operand)
-    {
-        byte newOperand = (byte)(operand + (CarryFlag ? 1 : 0));
-        Subtract(ref target, newOperand);
+        SetFlags(target == 0, true, H, result < 0);
     }
 
     private void Increment(ref byte target)
@@ -481,43 +496,43 @@ class CPU : Hardware<MainBus>
     {
         int rotated = target << 1;
         bool isCarry = IsCarryOnAddition(rotated);
-        SetFlags(cb_mode ? rotated == 0 : false, false, false, isCarry);
         if (isCarry)
             target = (byte)(rotated | 1); //wrap around carry bit
         else
             target = (byte)rotated; //no need for wrap around
+        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
     }
     private void RotateRightWithCarry(ref byte target, bool cb_mode = true)
     {
         bool isCarry = (target & 1) != 0;
         int rotated = target >> 1;
-        SetFlags(false, false, false, isCarry);
         if (isCarry)
             target = (byte)(rotated | 0x80);
         else
             target = (byte)rotated;
+        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
     }
     private void RotateLeft(ref byte target, bool cb_mode = true)
     {
         int rotated = target << 1;
         bool oldIsCarry = CarryFlag;
         bool isCarry = IsCarryOnAddition(rotated);
-        SetFlags(cb_mode ? rotated == 0 : false, false, false, isCarry);
         if (oldIsCarry)
             target = (byte)(rotated | 1);
         else
             target = (byte)rotated;
+        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
     }
     private void RotateRight(ref byte target, bool cb_mode = true)
     {
         bool oldIsCarry = CarryFlag;
         bool isCarry = (target & 1) != 0;
         int rotated = target >> 1;
-        SetFlags(cb_mode ? rotated == 0 : false, false, false, isCarry);
         if (oldIsCarry)
             target = (byte)(rotated | 0x80);
         else
             target = (byte)rotated;
+        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
     }
 
     private void Set(int bit, ushort address)
@@ -554,11 +569,11 @@ class CPU : Hardware<MainBus>
         byte value = Read(address);
         Swap(ref value);
         Write(address, value);
-        SetFlags(value == 0, false, false, false);
     }
     private void Swap(ref byte target)
     {
         target = SwapNibbles(target);
+        SetFlags(target == 0, false, false, false);
     }
 
     private void ShiftLeftA(ushort address)
@@ -570,8 +585,8 @@ class CPU : Hardware<MainBus>
     private void ShiftLeftA(ref byte target)
     {
         int shifted = (target << 1);
-        SetFlags(shifted == 0, false, false, (target & 0x80) == 0x80);
         target = (byte)shifted;
+        SetFlags(target == 0, false, false, shifted > 0xFF);
     }
     private void ShiftRightA(ushort address)
     {
@@ -581,9 +596,10 @@ class CPU : Hardware<MainBus>
     }
     private void ShiftRightA(ref byte target)
     {
+        bool isCarry = (target & 1) == 1;
         int shifted = (target >> 1);
-        SetFlags(shifted == 0, false, false, (target & 0x01) == 0x01);
         target = (byte)(shifted | (target & 0x80));
+        SetFlags(target == 0, false, false, isCarry);
     }
     private void ShiftRightL(ushort address)
     {
@@ -593,9 +609,10 @@ class CPU : Hardware<MainBus>
     }
     private void ShiftRightL(ref byte target)
     {
+        bool isCarry = (target & 1) == 1;
         int shifted = (target >> 1);
-        SetFlags(shifted == 0, false, false, (target & 1) == 1);
         target = (byte)shifted;
+        SetFlags(target == 0, false, false, isCarry);
     }
 
     private void RotateLeft(ushort address)
@@ -636,6 +653,14 @@ class CPU : Hardware<MainBus>
     private void JumpBy(byte increment) //actually signed
     {
         PC = (ushort)(PC + (sbyte)increment);
+        CheckIfDebugBreakPoint();
+    }
+    private void CheckIfDebugBreakPoint()
+    {
+        if (PC < 0x100)
+        {
+            PC = PC;
+        }
     }
     private void ConditionalJumpTo(bool condition, ushort address)
     {
@@ -648,6 +673,7 @@ class CPU : Hardware<MainBus>
     private void JumpTo(ushort newPC)
     {
         PC = newPC;
+        CheckIfDebugBreakPoint();
     }
     private void ConditionalReturn(bool condition)
     {
@@ -662,6 +688,7 @@ class CPU : Hardware<MainBus>
         byte newPCLow = Read(SP++);
         byte newPCHigh = Read(SP++);
         PC = ConcatBytes(newPCHigh, newPCLow);
+        CheckIfDebugBreakPoint();
     }
     private void ReturnAndEnableInterrupt()
     {
@@ -713,7 +740,7 @@ class CPU : Hardware<MainBus>
     private void Compare(byte target, byte operand)
     {
         int result = target - operand;
-        SetFlags(result == 0, true, IsHalfCarryOnSubtraction(target, operand), result < 0);
+        SetFlags((byte)result == 0, true, IsHalfCarryOnSubtraction(target, operand), result < 0);
     }
     #endregion
 
@@ -723,9 +750,11 @@ class CPU : Hardware<MainBus>
         Write(--SP, high);
         Write(--SP, low);
     }
-    private void Pop(ref byte targetHigh, ref byte targetLow)
+    private void Pop(ref byte targetHigh, ref byte targetLow, bool isFlagRegister = false)
     {
         targetLow = Read(SP++);
+        if (isFlagRegister)
+            targetLow &= 0xF0;
         targetHigh = Read(SP++);
     }
     private void AddToStackPointer(sbyte operand)
@@ -819,7 +848,7 @@ class CPU : Hardware<MainBus>
             () => LoadToMem(HL, Fetch()),
             SetCarryFlagInstruction,
             () => ConditionalJumpBy(CarryFlag, Fetch()),
-            () => Add(ref H, ref L, SP),
+            () => Add(ref H, ref L, SP_S, SP_P),
             () => { Load(ref A, Read(HL)); Decrement(ref H, ref L); },
             () => Decrement(ref SP),
             () => Increment(ref A),
@@ -918,14 +947,14 @@ class CPU : Hardware<MainBus>
             () => Add(ref A, L),
             () => Add(ref A, Read(HL)),
             () => Add(ref A, A),
-            () => AddWithCarry(ref A, B),
-            () => AddWithCarry(ref A, C),
-            () => AddWithCarry(ref A, D),
-            () => AddWithCarry(ref A, E),
-            () => AddWithCarry(ref A, H),
-            () => AddWithCarry(ref A, L),
-            () => AddWithCarry(ref A, Read(HL)),
-            () => AddWithCarry(ref A, A),
+            () => Add(ref A, B, CarryFlag),
+            () => Add(ref A, C, CarryFlag),
+            () => Add(ref A, D, CarryFlag),
+            () => Add(ref A, E, CarryFlag),
+            () => Add(ref A, H, CarryFlag),
+            () => Add(ref A, L, CarryFlag),
+            () => Add(ref A, Read(HL), CarryFlag),
+            () => Add(ref A, A, CarryFlag),
 
 
 
@@ -938,14 +967,14 @@ class CPU : Hardware<MainBus>
             () => Subtract(ref A, L),
             () => Subtract(ref A, Read(HL)),
             () => Subtract(ref A, A),
-            () => SubtractWithCarry(ref A, B),
-            () => SubtractWithCarry(ref A, C),
-            () => SubtractWithCarry(ref A, D),
-            () => SubtractWithCarry(ref A, E),
-            () => SubtractWithCarry(ref A, H),
-            () => SubtractWithCarry(ref A, L),
-            () => SubtractWithCarry(ref A, Read(HL)),
-            () => SubtractWithCarry(ref A, A),
+            () => Subtract(ref A, B, CarryFlag),
+            () => Subtract(ref A, C, CarryFlag),
+            () => Subtract(ref A, D, CarryFlag),
+            () => Subtract(ref A, E, CarryFlag),
+            () => Subtract(ref A, H, CarryFlag),
+            () => Subtract(ref A, L, CarryFlag),
+            () => Subtract(ref A, Read(HL), CarryFlag),
+            () => Subtract(ref A, A, CarryFlag),
 
 
 
@@ -1004,7 +1033,7 @@ class CPU : Hardware<MainBus>
             Prefix_CB,
             () => ConditionalCall(ZeroFlag, GetDirectAddress()),
             () => Call(GetDirectAddress()),
-            () => AddWithCarry(ref A, Fetch()),
+            () => Add(ref A, Fetch(), CarryFlag),
             () => Restart(0x08),
 
 
@@ -1024,7 +1053,7 @@ class CPU : Hardware<MainBus>
             Empty,
             () => ConditionalCall(CarryFlag, GetDirectAddress()),
             Empty,
-            () => SubtractWithCarry(ref A, Fetch()),
+            () => Subtract(ref A, Fetch(), CarryFlag),
             () => Restart(0x18),
 
 
@@ -1039,7 +1068,7 @@ class CPU : Hardware<MainBus>
             () => And(ref A, Fetch()),
             () => Restart(0x20),
             () => AddToStackPointer((sbyte)Fetch()),
-            () => JumpTo(Read(HL)),
+            () => JumpTo(HL),
             () => LoadToMem(GetDirectAddress(), A),
             Empty,
             Empty,
@@ -1051,7 +1080,7 @@ class CPU : Hardware<MainBus>
 
             // 0xFX
             () => Load(ref A, Read((ushort)(0xFF00 + Fetch()))),
-            () => Pop(ref A, ref F),
+            () => Pop(ref A, ref F, true),
             () => Load(ref A, Read((ushort)(0xFF00 + C))),
             DisableInterrupt,
             Empty,

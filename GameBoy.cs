@@ -4,7 +4,7 @@ class GameBoy
 {
     private CPU cpu;
     private Timer timer;
-    private Screen screen;
+    public LCD lcd;
     private Controller controller;
     private Cartridge game;
     private MainBus bus;
@@ -17,23 +17,29 @@ class GameBoy
         bus = new MainBus();
         cpu = new CPU();
         timer = new Timer();
-        screen = new Screen();
+        lcd = new LCD();
         controller = new Controller();
+        game = new Cartridge("roms/02-interrupts.gb", true);
 
         //Connect it all to the bus
         cpu.Connect(bus);
         controller.Connect(bus);
         timer.Connect(bus);
+        lcd.Connect(bus);
+        bus.ConnectCartridge(game);
     }
 
-    private void Play()
+    public void Play()
     {
-        while (isPowered)
+        bool frameDrawn = false;
+        // bus.ScrambleVRAM();
+        while (!frameDrawn)
         {
-            //check for poweroff
+            //TODO: check for poweroff
             ulong cpuCycles = cpu.Tick();
-            timer.Clock(cpuCycles);
-            screen.Render();
+            timer.Tick(cpuCycles);
+            // controller.CheckInputs();
+            frameDrawn = lcd.Tick(cpuCycles);
         }
     }
 

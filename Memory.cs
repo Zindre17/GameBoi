@@ -1,9 +1,14 @@
 using System;
 
-abstract class Memory
+interface IMemory
+{
+    bool Read(Address address, out Byte value);
+    bool Write(Address address, Byte value);
+}
+
+class Memory : IMemory
 {
     private bool isReadOnly;
-    public bool IsReadOnly => isReadOnly;
 
     protected byte[] memory;
 
@@ -15,13 +20,20 @@ abstract class Memory
         memory = new byte[size];
     }
 
-    public virtual bool Write(ushort address, byte value)
+    public Memory(byte[] data, bool isReadOnly = false)
+    {
+        this.isReadOnly = isReadOnly;
+        memory = new byte[data.Length];
+        data.CopyTo(memory, 0);
+    }
+
+    public virtual bool Write(Address address, Byte value)
     {
         if (isReadOnly) return false;
         memory[address] = value;
         return true;
     }
-    public virtual bool Read(ushort address, out byte value)
+    public virtual bool Read(Address address, out Byte value)
     {
         value = memory[address];
         return true;
