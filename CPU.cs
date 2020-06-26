@@ -653,15 +653,8 @@ class CPU : Hardware<MainBus>
     private void JumpBy(byte increment) //actually signed
     {
         PC = (ushort)(PC + (sbyte)increment);
-        CheckIfDebugBreakPoint();
     }
-    private void CheckIfDebugBreakPoint()
-    {
-        if (PC < 0x100)
-        {
-            PC = PC;
-        }
-    }
+
     private void ConditionalJumpTo(bool condition, ushort address)
     {
         if (condition)
@@ -673,7 +666,6 @@ class CPU : Hardware<MainBus>
     private void JumpTo(ushort newPC)
     {
         PC = newPC;
-        CheckIfDebugBreakPoint();
     }
     private void ConditionalReturn(bool condition)
     {
@@ -688,7 +680,6 @@ class CPU : Hardware<MainBus>
         byte newPCLow = Read(SP++);
         byte newPCHigh = Read(SP++);
         PC = ConcatBytes(newPCHigh, newPCLow);
-        CheckIfDebugBreakPoint();
     }
     private void ReturnAndEnableInterrupt()
     {
