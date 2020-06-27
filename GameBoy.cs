@@ -19,7 +19,20 @@ class GameBoy
         timer = new Timer();
         lcd = new LCD();
         controller = new Controller();
-        game = new Cartridge("roms/02-interrupts.gb", true);
+        // game = new Cartridge("roms/01-special.gb", true);
+        // game = new Cartridge("roms/02-interrupts.gb", true);
+        // game = new Cartridge("roms/03-op sp,hl.gb", true);
+        // game = new Cartridge("roms/04-op r,imm.gb", true);
+        // game = new Cartridge("roms/05-op rp.gb", true);
+        // game = new Cartridge("roms/06-ld r,r.gb", true);
+        // game = new Cartridge("roms/07-jr,jp,call,ret,rst.gb", true);
+        // game = new Cartridge("roms/08-misc instrs.gb", true);
+        // game = new Cartridge("roms/09-op r,r.gb", true);
+        // game = new Cartridge("roms/10-bit ops.gb", true);
+        // game = new Cartridge("roms/11-op a,(hl).gb", true);
+        game = new Cartridge("roms/cpu_instrs.gb", true);
+        // game = new Cartridge("roms/cgb_sound.gb", true);
+        // game = new Cartridge("roms/Pokemon Red.gb", true);
 
         //Connect it all to the bus
         cpu.Connect(bus);
@@ -32,13 +45,11 @@ class GameBoy
     public void Play()
     {
         bool frameDrawn = false;
-        // bus.ScrambleVRAM();
+        controller.CheckInputs();
         while (!frameDrawn)
         {
-            //TODO: check for poweroff
             ulong cpuCycles = cpu.Tick();
             timer.Tick(cpuCycles);
-            // controller.CheckInputs();
             frameDrawn = lcd.Tick(cpuCycles);
         }
     }

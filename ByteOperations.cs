@@ -50,30 +50,6 @@ public static class ByteOperations
         return (byte)(doubleWord >> 8);
     }
 
-    public static bool IsHalfCarryOnAddition(byte source, byte operand)
-    {
-        int sourceLowNibble = GetLowNibble(source);
-        int operandLowNibble = GetLowNibble(operand);
-        return (sourceLowNibble + operandLowNibble) > 0x0F;
-    }
-
-    public static bool IsCarryOnAddition(int result)
-    {
-        return result > 0xFF;
-    }
-
-    public static bool IsHalfCarryOnSubtraction(byte source, byte operand)
-    {
-        int sourceLowNibble = GetLowNibble(source);
-        int operandLowNibble = GetLowNibble(operand);
-        return (sourceLowNibble - operandLowNibble) < 0;
-    }
-
-    public static bool IsCarryOnSubtraction(int result)
-    {
-        return result < 0;
-    }
-
     public static byte SwapNibbles(byte source)
     {
         int highNibble = GetHighNibble(source);
@@ -81,7 +57,7 @@ public static class ByteOperations
         return (byte)((lowNibble << 4) | (highNibble >> 4));
     }
 
-    public static Address Add16(Address a, Address b, out bool C, out bool H)
+    public static Address Add16(ushort a, ushort b, out bool C, out bool H)
     {
         int result = a + b;
         C = result > 0xFFFF;
@@ -91,17 +67,23 @@ public static class ByteOperations
         return result;
     }
 
-    public static Byte Add8(Byte a, Byte b, out bool C, out bool H)
+    public static Byte Add8(byte a, byte b, out bool C, out bool H, bool withCarry = false)
     {
         int result = a + b;
+        Byte low4a = a & 0x0F;
+        Byte low4b = b & 0x0F;
+        int lowRes = low4a + low4b;
+        if (withCarry)
+        {
+            lowRes++;
+            result++;
+        }
+        H = lowRes > 0x0F;
         C = result > 0xFF;
-        Byte alow4 = a & 0xF;
-        Byte blow4 = b & 0xF;
-        H = alow4 + blow4 > 0xF;
         return result;
     }
 
-    public static Address Sub16(Address a, Address b, out bool C, out bool H)
+    public static Address Sub16(ushort a, ushort b, out bool C, out bool H)
     {
         int result = a - b;
         C = result < 0;
@@ -111,13 +93,19 @@ public static class ByteOperations
         return result;
     }
 
-    public static Byte Sub8(Byte a, Byte b, out bool C, out bool H)
+    public static Byte Sub8(ushort a, ushort b, out bool C, out bool H, bool withCarry = false)
     {
         int result = a - b;
-        C = result < 0;
         Byte alow4 = a & 0xF;
         Byte blow4 = b & 0xF;
-        H = alow4 - blow4 < 0;
+        int lowRes = alow4.Value - blow4.Value;
+        if (withCarry)
+        {
+            result--;
+            lowRes--;
+        }
+        C = result < 0;
+        H = lowRes < 0;
         return result;
     }
 

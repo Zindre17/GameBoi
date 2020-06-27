@@ -2,6 +2,7 @@ public struct Byte
 {
     private readonly byte value;
     public Byte(byte value) { this.value = value; }
+    public byte Value => value;
 
     public static implicit operator byte(Byte b) => b.value;
     public static implicit operator Byte(byte value) => new Byte(value);

@@ -126,12 +126,14 @@ class CPU : Hardware<MainBus>
             return;
         }
 
-        if (!IME) return;
-
-        byte IF = Read(IF_address);
 
         // if IF is 0 there are no interrupt requests => exit
+        byte IF = Read(IF_address);
         if (IF == 0) return;
+
+        isHalted = false;
+
+        if (!IME) return;
 
         byte IE = Read(IE_address);
         if (IE == 0) return;
@@ -143,7 +145,6 @@ class CPU : Hardware<MainBus>
         // Timer Overflow   :     3     : 0x0050    : 2
         // Serial Transfer  :     4     : 0x0058    : 3
         // Hi-Lo of P10-P13 :     5     : 0x0060    : 4
-
         if (ShouldInterrupt(IE, IF, V_Blank_bit))
         {
             Interrupt(0x0040, V_Blank_bit, IF);
@@ -351,54 +352,31 @@ class CPU : Hardware<MainBus>
 
     private void Add(ref byte target, byte operand, bool withCarry = false)
     {
-        bool H = IsHalfCarryOnAddition(target, operand);
-        int result = target + operand;
-        if (withCarry)
-        {
-            H |= IsHalfCarryOnAddition((byte)(target + operand), 1);
-            result++;
-        }
-        bool C = IsCarryOnAddition(result);
-        target = (byte)result;
+        target = Add8(target, operand, out bool C, out bool H, withCarry);
         SetFlags(target == 0, false, H, C);
     }
     private void Add(ref byte targetHigh, ref byte targetLow, byte operandHigh, byte operandLow)
     {
-        int resultLow = targetLow + operandLow;
-        int carryLow = IsCarryOnAddition(resultLow) ? 1 : 0;
-        int resultHigh = targetHigh + operandHigh + carryLow;
-        bool isCarryHigh = IsCarryOnAddition(resultHigh);
-        byte highAddition = (byte)(carryLow + operandHigh);
-
-        SetCarryFlag(isCarryHigh);
-        SetHalfCarryFlag(
-            IsHalfCarryOnAddition(targetHigh, operandHigh)
-            ||
-            IsHalfCarryOnAddition((byte)(targetHigh + operandHigh), (byte)carryLow)
-        );
-
+        ushort target = ConcatBytes(targetHigh, targetLow);
+        ushort operand = ConcatBytes(operandHigh, operandLow);
+        ushort result = Add16(target, operand, out bool C, out bool H);
+        targetHigh = GetHighByte(result);
+        targetLow = GetLowByte(result);
         SetSubtractFlag(false);
-
-        targetLow = (byte)resultLow;
-        targetHigh = (byte)resultHigh;
+        SetCarryFlag(C);
+        SetHalfCarryFlag(H);
     }
 
     private void Subtract(ref byte target, byte operand, bool withCarry = false)
     {
-        int result = target - operand;
-        bool H = IsHalfCarryOnSubtraction(target, operand);
-        if (withCarry)
-        {
-            H |= IsHalfCarryOnSubtraction((byte)(target - operand), 1);
-            result--;
-        }
-        target = (byte)result;
-        SetFlags(target == 0, true, H, result < 0);
+        target = Sub8(target, operand, out bool C, out bool H, withCarry);
+        SetFlags(target == 0, true, H, C);
     }
 
     private void Increment(ref byte target)
     {
-        SetHalfCarryFlag(IsHalfCarryOnAddition(target, 1)); // set if carry from bit 3
+        Byte low4 = target & 0xF;
+        SetHalfCarryFlag(low4 == 0xF); // set if carry from bit 3
         target++;
         SetZeroFlag(target == 0);
         SetSubtractFlag(false);
@@ -426,7 +404,8 @@ class CPU : Hardware<MainBus>
 
     private void Decrement(ref byte target)
     {
-        SetHalfCarryFlag(IsHalfCarryOnSubtraction(target, 1)); // set if borrow from bit 4
+        Byte low4 = target & 0xF;
+        SetHalfCarryFlag(low4 == 0); // set if borrow from bit 4
         target--;
         SetZeroFlag(target == 0);
         SetSubtractFlag(true);
@@ -455,7 +434,7 @@ class CPU : Hardware<MainBus>
     private void RotateLeftWithCarry(ref byte target, bool cb_mode = true)
     {
         int rotated = target << 1;
-        bool isCarry = IsCarryOnAddition(rotated);
+        bool isCarry = rotated > 0xFF;
         if (isCarry)
             target = (byte)(rotated | 1); //wrap around carry bit
         else
@@ -476,7 +455,7 @@ class CPU : Hardware<MainBus>
     {
         int rotated = target << 1;
         bool oldIsCarry = CarryFlag;
-        bool isCarry = IsCarryOnAddition(rotated);
+        bool isCarry = rotated > 0xFF;
         if (oldIsCarry)
             target = (byte)(rotated | 1);
         else
@@ -690,8 +669,8 @@ class CPU : Hardware<MainBus>
     }
     private void Compare(byte target, byte operand)
     {
-        int result = target - operand;
-        SetFlags((byte)result == 0, true, IsHalfCarryOnSubtraction(target, operand), result < 0);
+        byte result = Sub8(target, operand, out bool C, out bool H);
+        SetFlags(result == 0, true, H, C);
     }
     #endregion
 
@@ -710,30 +689,11 @@ class CPU : Hardware<MainBus>
     }
     private void AddToStackPointer(byte operand)
     {
-        Byte p;
+        //Set flags by add8 and unsigned operand
         Add8(SP_P, operand, out bool C, out bool H);
-        if (TestBit(7, operand))
-        {
-            Byte newOperand = (operand ^ 0xFF) + 1;
-            p = Sub8(SP_P, newOperand, out bool c, out _);
-            SP = c ? ((SP_S - 1) << 8) | p : (SP_S << 8) | p;
-        }
-        else
-        {
-            p = Add8(SP, operand, out bool c, out _);
-            SP = c ? ((SP_S + 1) << 8) | p : (SP_S << 8) | p;
-        }
+        //treat operand as signed when adding to SP
+        SP = (ushort)(SP + (sbyte)operand);
         SetFlags(false, false, H, C);
-
-        // int result = (SP + operand);
-        // bool isSTouched = SP_P + operand > 0xFF || SP_P + operand < 0;
-        // SetFlags(
-        //     false,
-        //     false,
-        //     isSTouched && (operand < 0 ? IsHalfCarryOnSubtraction(SP_S, 1) : IsHalfCarryOnAddition(SP_S, 1)),
-        //     operand < 0 ? isSTouched && SP_S == 0 : SP_S == 0xFF && isSTouched
-        // );
-        // SP = (ushort)result;
     }
     #endregion
 

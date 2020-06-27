@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
 
 class MainBus : IBus
 {
@@ -15,6 +16,8 @@ class MainBus : IBus
         HRAM = new Memory(0x7F);
 
         //set reset values for special registers
+        // Write(0xFF10, 0x80);//NR10
+        // Write(0xFF11, 0xBF);//NR10
 
         Write(0xFF40, 0x91);// LCDC        
         Write(0xFF41, 2); // STAT
@@ -100,7 +103,7 @@ class MainBus : IBus
     private Memory HRAM;
 
     //   FFFF        Interrupt Enable Register
-    private Register IE;
+    private Register IE = new Register();
 
     public bool Read(Address address, out Byte value)
     {
@@ -128,13 +131,17 @@ class MainBus : IBus
         if (address == 0xff46)
         {
             //start DMA transfer
-            ushort start = (ushort)(value / 0x100);
-            ushort startOut = 0xff80;
-            for (int i = 0; i < 160; i++)
+            new Task(() =>
             {
-                Read(start++, out Byte data);
-                Write(startOut++, data);
-            }
+                ushort start = (ushort)(value / 0x100);
+                ushort startOut = 0xff80;
+                for (int i = 0; i < 160; i++)
+                {
+                    Read(start++, out Byte data);
+                    Write(startOut++, data);
+                }
+            }).Start();
+
             return true;
         }
         else
@@ -142,10 +149,6 @@ class MainBus : IBus
             IMemory mem = GetLocation(address, out ushort relativeAddress);
 
             if (mem == null) return true;
-
-            //any write to DIV makes it 0
-            if (address == 0xFF04) value = 0;
-            if (address == 0xFF00) value = 0xFF;
 
             return mem.Write(relativeAddress, value);
         }
