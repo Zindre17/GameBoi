@@ -192,12 +192,11 @@ class MBC1 : IMemory
 
     private Byte CorrectedROMBankNumber(Byte value)
     {
-        Byte corrected = value;
-        if (ROMBankNumber > 0x60) corrected -= 4;
-        else if (ROMBankNumber > 0x40) corrected -= 3;
-        else if (ROMBankNumber > 0x20) corrected -= 2;
-        else if (RAMBankNumber > 0) corrected--;
-        return corrected;
+        if (ROMBankNumber > 0x60) value -= 4;
+        else if (ROMBankNumber > 0x40) value -= 3;
+        else if (ROMBankNumber > 0x20) value -= 2;
+        else if (ROMBankNumber > 0) value -= 1;
+        return value;
     }
 }
 
