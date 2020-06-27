@@ -33,18 +33,24 @@ class Timer : Hardware<MainBus>
     private static readonly uint divRatio = ratios[3];
 
     private ulong prevCpuCycle = 0;
-
+    private ulong cyclesSinceLastDivTick = 0;
+    private ulong cyclesSinceLasTimerTick = 0;
     public void Tick(ulong cpuCycle)
     {
         ulong elapsedCycles = cpuCycle - prevCpuCycle;
-        if (elapsedCycles >= divRatio)
+        cyclesSinceLastDivTick += elapsedCycles;
+        cyclesSinceLasTimerTick += elapsedCycles;
+        while (cyclesSinceLastDivTick >= divRatio)
+        {
             TickDIV();
-
+            cyclesSinceLastDivTick -= divRatio;
+        }
         bool enabled = ReadTAC(out int mode);
         uint ratio = ratios[mode];
-        if (enabled && elapsedCycles >= ratio)
+        while (enabled && cyclesSinceLasTimerTick >= ratio)
         {
             TickTIMA();
+            cyclesSinceLasTimerTick -= ratio;
         }
         prevCpuCycle = cpuCycle;
     }
@@ -52,7 +58,7 @@ class Timer : Hardware<MainBus>
     private bool ReadTAC(out int mode)
     {
         byte tac = Read(TAC_address);
-        mode = tac & 0b11; // get first two bits
+        mode = tac & 3; // get first two bits
         return TestBit(2, tac);
     }
 
@@ -66,12 +72,12 @@ class Timer : Hardware<MainBus>
     private void TickTIMA()
     {
         byte tima = Read(TIMA_address);
-        tima++;
-        if (tima == 0)
+        if (tima == 0xFF)
         {
-            byte tma = Read(TMA_address);
-            Write(TIMA_address, tma);
             bus.RequestInterrrupt(InterruptType.Timer);
+            tima = Read(TMA_address);
         }
+        else tima++;
+        Write(TIMA_address, tima);
     }
 }
