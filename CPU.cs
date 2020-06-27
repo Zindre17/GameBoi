@@ -322,70 +322,27 @@ class CPU : Hardware<MainBus>
     #region Aritmetic
     private void DAA()
     {
-        //an attempt at implementing this...
-        byte highNibble = GetHighNibble(A);
-        byte lowNibble = GetLowNibble(A);
-        byte correction = 0;
         bool setC = CarryFlag;
 
         if (SubtractFlag)
         {
-            if (!CarryFlag && HalfCarryFlag && highNibble < 9 && lowNibble > 5)
-            {
-                correction = 0xFA;
-            }
-            else if (CarryFlag && !HalfCarryFlag && highNibble > 6 && lowNibble < 0xA)
-            {
-                correction = 0xA0;
-            }
-            else if (CarryFlag && HalfCarryFlag && (highNibble == 6 || highNibble == 7) && lowNibble > 5)
-            {
-                correction = 0x9A;
-            }
+            if (CarryFlag)
+                A -= 0x60;
+            if (HalfCarryFlag)
+                A -= 0x6;
         }
         else
         {
-            if (!CarryFlag && !HalfCarryFlag && highNibble < 9 && lowNibble > 9)
+            if (CarryFlag || A > 0x99)
             {
-                correction = 6;
-            }
-            else if (!CarryFlag && HalfCarryFlag && highNibble < 0xA && lowNibble < 4)
-            {
-                correction = 6;
-            }
-            else if (!CarryFlag && !HalfCarryFlag && highNibble > 9 && lowNibble < 0xA)
-            {
-                correction = 0x60;
+                A += 0x60;
                 setC = true;
             }
-            else if (!CarryFlag && !HalfCarryFlag && highNibble > 8 && lowNibble > 9)
+            if (HalfCarryFlag || (A & 0xF) > 0x09)
             {
-                correction = 0x66;
-                setC = true;
-            }
-            else if (!CarryFlag && HalfCarryFlag && highNibble > 9 && lowNibble < 4)
-            {
-                correction = 0x66;
-                setC = true;
-            }
-            else if (CarryFlag && !HalfCarryFlag && highNibble < 3 && lowNibble < 0xA)
-            {
-                correction = 0x60;
-            }
-            else if (CarryFlag && !HalfCarryFlag && highNibble < 3 && lowNibble > 9)
-            {
-                correction = 0x66;
-            }
-            else if (CarryFlag && HalfCarryFlag && highNibble < 4 && lowNibble < 4)
-            {
-                correction = 0x66;
+                A += 0x6;
             }
         }
-
-        int correctedValue = A + correction;
-        setC |= SubtractFlag ? correctedValue > 0xFF : correctedValue < 0;
-
-        A = (byte)correctedValue;
 
         SetCarryFlag(setC);
         SetZeroFlag(A == 0);
@@ -412,15 +369,18 @@ class CPU : Hardware<MainBus>
         int resultHigh = targetHigh + operandHigh + carryLow;
         bool isCarryHigh = IsCarryOnAddition(resultHigh);
         byte highAddition = (byte)(carryLow + operandHigh);
+
+        SetCarryFlag(isCarryHigh);
+        SetHalfCarryFlag(
+            IsHalfCarryOnAddition(targetHigh, operandHigh)
+            ||
+            IsHalfCarryOnAddition((byte)(targetHigh + operandHigh), (byte)carryLow)
+        );
+
+        SetSubtractFlag(false);
+
         targetLow = (byte)resultLow;
         targetHigh = (byte)resultHigh;
-
-        SetFlags(
-            targetHigh + targetLow == 0,
-            false,
-            carryLow == 1,
-            isCarryHigh
-        );
     }
 
     private void Subtract(ref byte target, byte operand, bool withCarry = false)
@@ -748,16 +708,32 @@ class CPU : Hardware<MainBus>
             targetLow &= 0xF0;
         targetHigh = Read(SP++);
     }
-    private void AddToStackPointer(sbyte operand)
+    private void AddToStackPointer(byte operand)
     {
-        int result = (SP + operand);
-        SetFlags(
-            false,
-            false,
-            operand < 0 ? IsHalfCarryOnSubtraction(SP_P, (byte)operand) : IsHalfCarryOnAddition(SP_P, (byte)operand),
-            operand < 0 ? IsCarryOnSubtraction(result) : IsCarryOnAddition(result)
-        );
-        SP = (ushort)result;
+        Byte p;
+        Add8(SP_P, operand, out bool C, out bool H);
+        if (TestBit(7, operand))
+        {
+            Byte newOperand = (operand ^ 0xFF) + 1;
+            p = Sub8(SP_P, newOperand, out bool c, out _);
+            SP = c ? ((SP_S - 1) << 8) | p : (SP_S << 8) | p;
+        }
+        else
+        {
+            p = Add8(SP, operand, out bool c, out _);
+            SP = c ? ((SP_S + 1) << 8) | p : (SP_S << 8) | p;
+        }
+        SetFlags(false, false, H, C);
+
+        // int result = (SP + operand);
+        // bool isSTouched = SP_P + operand > 0xFF || SP_P + operand < 0;
+        // SetFlags(
+        //     false,
+        //     false,
+        //     isSTouched && (operand < 0 ? IsHalfCarryOnSubtraction(SP_S, 1) : IsHalfCarryOnAddition(SP_S, 1)),
+        //     operand < 0 ? isSTouched && SP_S == 0 : SP_S == 0xFF && isSTouched
+        // );
+        // SP = (ushort)result;
     }
     #endregion
 
@@ -1058,7 +1034,7 @@ class CPU : Hardware<MainBus>
             () => Push(H, L),
             () => And(ref A, Fetch()),
             () => Restart(0x20),
-            () => AddToStackPointer((sbyte)Fetch()),
+            () => AddToStackPointer(Fetch()),
             () => JumpTo(HL),
             () => LoadToMem(GetDirectAddress(), A),
             Empty,
@@ -1078,7 +1054,7 @@ class CPU : Hardware<MainBus>
             () => Push(A, F),
             () => Or(ref A, Fetch()),
             () => Restart(0x30),
-            () => { ushort prevSP = SP; AddToStackPointer((sbyte)Fetch()); Load(ref H, ref L, SP); SP = prevSP; },
+            () => { ushort prevSP = SP; AddToStackPointer(Fetch()); Load(ref H, ref L, SP); SP = prevSP; },
             () => Load(ref SP, HL),
             () => Load(ref A, Read(GetDirectAddress())),
             EnableInterrupt,
