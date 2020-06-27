@@ -5,5 +5,8 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
-
+  
+  <PropertyGroup>
+    <LangVersion>8</LangVersion>
+  </PropertyGroup>
 </Project>
