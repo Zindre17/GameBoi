@@ -80,4 +80,45 @@ public static class ByteOperations
         int lowNibble = GetLowNibble(source);
         return (byte)((lowNibble << 4) | (highNibble >> 4));
     }
+
+    public static Address Add16(Address a, Address b, out bool C, out bool H)
+    {
+        int result = a + b;
+        C = result > 0xFFFF;
+        Address alow12 = a & 0x0FFF;
+        Address blow12 = b & 0x0FFF;
+        H = alow12 + blow12 > 0x0FFF;
+        return result;
+    }
+
+    public static Byte Add8(Byte a, Byte b, out bool C, out bool H)
+    {
+        int result = a + b;
+        C = result > 0xFF;
+        Byte alow4 = a & 0xF;
+        Byte blow4 = b & 0xF;
+        H = alow4 + blow4 > 0xF;
+        return result;
+    }
+
+    public static Address Sub16(Address a, Address b, out bool C, out bool H)
+    {
+        int result = a - b;
+        C = result < 0;
+        Address alow12 = a & 0x0FFF;
+        Address blow12 = b & 0x0FFF;
+        H = alow12 - blow12 < 0;
+        return result;
+    }
+
+    public static Byte Sub8(Byte a, Byte b, out bool C, out bool H)
+    {
+        int result = a - b;
+        C = result < 0;
+        Byte alow4 = a & 0xF;
+        Byte blow4 = b & 0xF;
+        H = alow4 - blow4 < 0;
+        return result;
+    }
+
 }

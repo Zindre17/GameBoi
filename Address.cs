@@ -1,4 +1,4 @@
-struct Address
+public struct Address
 {
     private readonly ushort value;
     public Address(ushort value) { this.value = value; }
