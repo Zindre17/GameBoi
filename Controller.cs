@@ -1,45 +1,52 @@
 using System;
+using System.Windows.Input;
 
-class Controller : Hardware<IBus>
+class Controller : Hardware<MainBus>
 {
 
     const ushort P1_address = 0xFF00;
-    public enum Button
-    {
-        Left, Right, Up, Down,
-        A, B, Start, Select
-    }
 
-    public void Press(Button button)
+    const Key A = Key.K;
+    const Key B = Key.J;
+    const Key Start = Key.Enter;
+    const Key Select = Key.RightShift;
+    const Key Up = Key.W;
+    const Key Left = Key.A;
+    const Key Down = Key.S;
+    const Key Right = Key.D;
+
+    public void CheckInputs()
     {
         byte state = ReadP1();
-        bool p15 = ReadP15(state);
-        bool p14 = ReadP14(state);
-
-        byte newState = (byte)(state & 0xF0); //copy first 4 bits of current state
-        if (p15)
+        Byte newState = 0;
+        if (ReadP15(state))
         {
-            if (button == Button.A) newState |= (1 << 0);
-            if (button == Button.B) newState |= (1 << 1);
-            if (button == Button.Select) newState |= (1 << 2);
-            if (button == Button.Start) newState |= (1 << 3);
+            if (Keyboard.IsKeyDown(A)) newState |= (1 << 0);
+            if (Keyboard.IsKeyDown(B)) newState |= (1 << 1);
+            if (Keyboard.IsKeyDown(Select)) newState |= (1 << 2);
+            if (Keyboard.IsKeyDown(Start)) newState |= (1 << 3);
         }
-        else if (p14)
+        else if (ReadP14(state))
         {
-            if (button == Button.Right) newState |= (1 << 0);
-            if (button == Button.Left) newState |= (1 << 1);
-            if (button == Button.Up) newState |= (1 << 2);
-            if (button == Button.Down) newState |= (1 << 3);
+            if (Keyboard.IsKeyDown(Right)) newState |= (1 << 0);
+            if (Keyboard.IsKeyDown(Left)) newState |= (1 << 1);
+            if (Keyboard.IsKeyDown(Up)) newState |= (1 << 2);
+            if (Keyboard.IsKeyDown(Down)) newState |= (1 << 3);
         }
-
+        newState = (~newState & 0x0F) | (state & 0xF0);
         bus.Write(P1_address, newState);
+        if (state != newState)
+        {
+            Console.WriteLine(newState);
+            bus.RequestInterrrupt(InterruptType.Joypad);
+        }
     }
 
     private byte ReadP1()
     {
         if (bus == null) throw new Exception("Controller not connected");
 
-        bus.Read(P1_address, out byte result);
+        bus.Read(P1_address, out Byte result);
         return result;
     }
 
