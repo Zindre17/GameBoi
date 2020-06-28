@@ -1,43 +1,43 @@
 public static class ByteOperations
 {
-    public static bool TestMask(byte mask, byte source)
+    public static bool TestMask(Byte mask, Byte source)
     {
         return (mask & source) == mask;
     }
 
-    public static bool TestBit(int bit, byte source)
+    public static bool TestBit(int bit, Byte source)
     {
-        return TestMask((byte)(1 << bit), source);
+        return TestMask(1 << bit, source);
     }
 
-    public static byte Invert(byte b)
+    public static Byte Invert(byte b)
     {
-        return (byte)(b ^ 0xFF);
+        return ~b;
     }
 
-    public static byte GetHighNibble(byte source)
+    public static Byte GetHighNibble(byte source)
     {
-        return (byte)(source & 0xF0);
+        return source & 0xF0;
     }
 
-    public static byte GetLowNibble(byte source)
+    public static Byte GetLowNibble(byte source)
     {
-        return (byte)(source & 0x0F);
+        return source & 0x0F;
     }
 
-    public static byte SetBit(int bit, byte target)
+    public static Byte SetBit(int bit, byte target)
     {
-        return (byte)(target | (1 << bit));
+        return target | (1 << bit);
     }
 
-    public static byte ResetBit(int bit, byte target)
+    public static Byte ResetBit(int bit, byte target)
     {
-        return (byte)(target & Invert((byte)(1 << bit)));
+        return target & ~(1 << bit);
     }
 
-    public static ushort ConcatBytes(byte h, byte l)
+    public static Address ConcatBytes(byte h, byte l)
     {
-        return (ushort)((h << 8) | l);
+        return (h << 8) | l;
     }
 
     public static byte GetLowByte(ushort doubleWord)
@@ -50,11 +50,11 @@ public static class ByteOperations
         return (byte)(doubleWord >> 8);
     }
 
-    public static byte SwapNibbles(byte source)
+    public static Byte SwapNibbles(byte source)
     {
         int highNibble = GetHighNibble(source);
         int lowNibble = GetLowNibble(source);
-        return (byte)((lowNibble << 4) | (highNibble >> 4));
+        return (lowNibble << 4) | (highNibble >> 4);
     }
 
     public static Address Add16(ushort a, ushort b, out bool C, out bool H)

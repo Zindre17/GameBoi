@@ -2,14 +2,14 @@ using System;
 using static ByteOperations;
 class Palette
 {
-    private byte c0, c1, c2, c3;
+    private Byte c0, c1, c2, c3;
     public Palette(byte data)
     {
-        byte colors = Invert(data);
-        c3 = (byte)(colors >> 6);
-        c2 = (byte)((colors >> 4) & 3);
-        c1 = (byte)((colors >> 2) & 3);
-        c0 = (byte)(colors & 3);
+        Byte colors = ~data;
+        c3 = colors >> 6;
+        c2 = (colors >> 4) & 3;
+        c1 = (colors >> 2) & 3;
+        c0 = colors & 3;
     }
 
     public byte DecodeColorNumber(byte colorCode)

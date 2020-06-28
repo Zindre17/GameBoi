@@ -7,18 +7,20 @@ public struct Byte
     public static implicit operator byte(Byte b) => b.value;
     public static implicit operator Byte(byte value) => new Byte(value);
     public static implicit operator Byte(int value) => new Byte((byte)value);
-    public static implicit operator Address(Byte b) => new Address(b.value);
+    public static explicit operator Address(Byte b) => new Address(b.value);
 
-    public static Byte operator +(Byte a, Byte b) => new Byte((byte)(a.value + b.value));
-    public static Byte operator -(Byte a, Byte b) => new Byte((byte)(a.value - b.value));
-    public static Byte operator *(Byte a, Byte b) => new Byte((byte)(a.value * b.value));
-    public static Byte operator /(Byte a, Byte b) => new Byte((byte)(a.value / b.value));
-    public static Byte operator |(Byte a, Byte b) => new Byte((byte)(a.value | b.value));
-    public static Byte operator &(Byte a, Byte b) => new Byte((byte)(a.value & b.value));
-    public static Byte operator %(Byte a, Byte b) => new Byte((byte)(a.value % b.value));
-    public static Byte operator ^(Byte a, Byte b) => new Byte((byte)(a.value ^ b.value));
-    public static Byte operator ~(Byte a) => new Byte((byte)(~a.value));
-    public static Byte operator <<(Byte a, int b) => new Byte((byte)(a.value << b));
-    public static Byte operator >>(Byte a, int b) => new Byte((byte)(a.value >> b));
+    public static explicit operator sbyte(Byte b) => (sbyte)b.Value;
+
+    public static Address operator +(Byte a, Byte b) => a.value + b.value;
+    public static Address operator -(Byte a, Byte b) => a.value - b.value;
+    public static Address operator *(Byte a, Byte b) => a.value * b.value;
+    public static Address operator /(Byte a, Byte b) => a.value / b.value;
+    public static Byte operator |(Byte a, Byte b) => a.value | b.value;
+    public static Byte operator &(Byte a, Byte b) => a.value & b.value;
+    public static Byte operator %(Byte a, Byte b) => a.value % b.value;
+    public static Byte operator ^(Byte a, Byte b) => a.value ^ b.value;
+    public static Byte operator ~(Byte a) => ~a.value;
+    public static int operator <<(Byte a, int b) => a.value << b;
+    public static int operator >>(Byte a, int b) => a.value >> b;
 
 }

@@ -33,18 +33,18 @@ class LCD : Hardware<MainBus>
     public WriteableBitmap Screen => screen;
 
 
-    private byte STAT;
-    private bool IsCoincidenceInterruptEnabled { get => TestBit(6, LCDC); set => LCDC = value ? SetBit(6, LCDC) : ResetBit(6, LCDC); }
-    private bool IsOAMInterruptEnabled { get => TestBit(5, LCDC); set => LCDC = value ? SetBit(5, LCDC) : ResetBit(5, LCDC); }
-    private bool IsVblankInterruptEnabled { get => TestBit(4, LCDC); set => LCDC = value ? SetBit(4, LCDC) : ResetBit(4, LCDC); }
-    private bool IsHblankInterruptEnabled { get => TestBit(3, LCDC); set => LCDC = value ? SetBit(3, LCDC) : ResetBit(3, LCDC); }
-    private bool CoincidenceFlag { get => TestBit(2, LCDC); set => LCDC = value ? SetBit(2, LCDC) : ResetBit(2, LCDC); }
+    private Byte STAT;
+    private bool IsCoincidenceInterruptEnabled { get => TestBit(6, STAT); set => STAT = value ? SetBit(6, STAT) : ResetBit(6, STAT); }
+    private bool IsOAMInterruptEnabled { get => TestBit(5, STAT); set => STAT = value ? SetBit(5, STAT) : ResetBit(5, STAT); }
+    private bool IsVblankInterruptEnabled { get => TestBit(4, STAT); set => STAT = value ? SetBit(4, STAT) : ResetBit(4, STAT); }
+    private bool IsHblankInterruptEnabled { get => TestBit(3, STAT); set => STAT = value ? SetBit(3, STAT) : ResetBit(3, STAT); }
+    private bool CoincidenceFlag { get => TestBit(2, STAT); set => STAT = value ? SetBit(2, STAT) : ResetBit(2, STAT); }
     private byte prevMode;
     private byte mode;
     private void SetMode(byte newMode)
     {
-        STAT &= (0xFC); // reset 2 lowest bits
-        STAT |= (byte)(newMode & 3); //copy 2 lowest  bits from mode
+        STAT &= 0xFC; // reset 2 lowest bits
+        STAT |= newMode & 3; //copy 2 lowest  bits from mode
         prevMode = mode;
         mode = newMode;
     }
@@ -100,6 +100,7 @@ class LCD : Hardware<MainBus>
     public bool Tick(ulong cpuCycle)
     {
         Read();
+
         bool isFrameDone = false;
         ulong elapsed = cpuCycle - lastCpuCycle;
 
@@ -149,14 +150,13 @@ class LCD : Hardware<MainBus>
             if (mode == 3)
             {
                 if (prevMode != mode && lastMapLoad != currentFrame)
-                    LoadTiles();
+                    LoadTileMaps();
 
                 if (WillBeDone(mode3End))
                 {
                     SetMode(0);
                     UpdateElapsed(mode3End);
-                    DrawLine();
-                    // isFrameDone = true;
+                    PrepareLine();
                 }
                 else
                 {
@@ -193,8 +193,12 @@ class LCD : Hardware<MainBus>
             if (mode == 1)
             {
 
-                if (prevMode != mode && IsVblankInterruptEnabled)
-                    bus.RequestInterrrupt(InterruptType.VBlank);
+                if (prevMode != mode)
+                {
+                    DrawFrame();
+                    if (IsVblankInterruptEnabled)
+                        bus.RequestInterrrupt(InterruptType.VBlank);
+                }
 
                 if (WillBeDone(vblankClocks))
                 {
@@ -237,7 +241,7 @@ class LCD : Hardware<MainBus>
     private byte[] windowMap = new byte[20 * 18];
 
 
-    private void LoadTiles()
+    private void LoadTileMaps()
     {
         lastMapLoad = currentFrame;
         ushort bgAddress = IsBgTileMap1 ? TileMap1Address : TileMap0Address;
@@ -263,67 +267,133 @@ class LCD : Hardware<MainBus>
     private const byte tileRows = 32;
     private const byte tilesPerScreenRow = 20;
 
+    private byte[] pixels = new byte[screenWidth * screenHeight];
 
-    private void DrawLine()
+    private Tile GetBackgroundTileAtPoint(Byte x, Byte y)
     {
-        //draw background
-        byte scrollY = Read(SCY_address);
-        int tileRow = ((LY + scrollY) / 8) % tileRows;
-
-        int tileMapRowOffset = tileRow * tilesPerRow;
-        byte scrollX = Read(SCX_address);
-        int tileMapColumnOffset = scrollX / 8;
-
-        byte tileX = (byte)(scrollX % 8);
-        byte tileY = (byte)((scrollY + LY) % 8);
-
-        byte[] colorRow = new byte[screenWidth];
-        byte tilePattern = backgroundMap[tileMapRowOffset + tileMapColumnOffset];
-        Tile tile = LoadTilePattern(tilePattern);
-        Palette bgAndWPalette = new Palette(Read(BGP_address));
-
-        for (int pixel = 0; pixel < screenWidth; pixel++)
-        {
-            if (tileX == 8)
-            {
-                tileX = 0;
-                tileMapColumnOffset++;
-                tileMapColumnOffset %= tilesPerRow;
-                tilePattern = backgroundMap[tileMapColumnOffset + tileMapRowOffset];
-                tile = LoadTilePattern(tilePattern);
-            }
-            byte color = tile.GetPaletteColor(tileX, tileY);
-            colorRow[pixel] = bgAndWPalette.DecodeColorNumber(color);
-            tileX++;
-        }
-        //TODO:draw window
-
-        //TODO:draw sprites
-        Int32Rect rect = new Int32Rect(0, LY, screenWidth, 1);
-
-        DrawLineToScreen(rect, colorRow);
+        if (!IsBackgroundEnabled) return new Tile();
+        return GetTileAtPoint(x, y, backgroundMap, tilesPerRow);
+    }
+    private Tile GetTileAtPoint(Byte x, Byte y, byte[] map, Byte width)
+    {
+        Address index = (y / 8) * width + (x / 8);
+        return LoadTilePattern(map[index]);
+    }
+    private Tile GetWindowTile(Byte x, Byte y)
+    {
+        if (!IsWindowEnabled) return new Tile();
+        return GetTileAtPoint(x, y, windowMap, 20);
     }
 
-    private void DrawLineToScreen(Int32Rect rect, byte[] colors)
+
+    private void PrepareLine()
     {
-        byte[] pixels = new byte[colors.Length / 4];
-        int pixelIndex = 0;
-        byte pixelsBatch = 0;
-        for (int i = 0; i < colors.Length; i++)
+        int firstPixelIndex = LY * screenWidth;
+
+        Palette palette = new Palette(Read(BGP_address));
+
+        Byte y = Read(SCY_address) + LY;
+        Byte x = Read(SCX_address);
+
+        Byte tileY = y % 8;
+        Tile tile = GetBackgroundTileAtPoint(x, y);
+        for (int i = 0; i < screenWidth; i++)
         {
-            byte value = (byte)((0x03 & colors[i]) << ((3 - (i % 4))) * 2);
-            pixelsBatch |= value;
-            if (i % 4 == 3)
+            Byte tileX = x % 8;
+            Byte colorCode = tile.GetColorCode(tileX, tileY);
+            pixels[i + firstPixelIndex] = palette.DecodeColorNumber(colorCode);
+            x++;
+            if (tileX == 7)
             {
-                pixels[pixelIndex++] = pixelsBatch;
-                pixelsBatch = 0;
+                tile = GetBackgroundTileAtPoint(x, y);
             }
         }
-        screen.WritePixels(rect, pixels, colors.Length / 4 / rect.Height, 0);
+
+        //window
+        if (IsWindowEnabled)
+        {
+            Byte yWindow = LY - Read(WY_address);
+            tileY = yWindow % 8;
+
+            Byte xWindow = Read(WX_address);
+            int sx = xWindow.Value - 7;
+
+            //ignore space outside
+            if (sx < 0)
+            {
+                int equalizer = 0 - sx;
+                xWindow += equalizer;
+                x = equalizer;
+            }
+            tile = GetWindowTile(xWindow, yWindow);
+            for (int i = x; i < screenWidth; i++)
+            {
+                Byte tileX = xWindow % 8;
+                Byte colorCode = tile.GetColorCode(tileX, tileY);
+                pixels[i + firstPixelIndex] = palette.DecodeColorNumber(colorCode);
+                xWindow++;
+                if (tileX == 7)
+                {
+                    tile = GetWindowTile(xWindow, yWindow);
+                }
+            }
+        }
+
+        //sprites
+        if (IsSpritesEnabled)
+        {
+            int spriteHeight = IsDoubleSpriteSize ? 16 : 8;
+            foreach (Sprite s in spriteAttributes)
+            {
+                int screenY = s.Y - 16;
+                if (screenY <= LY && LY < screenY + spriteHeight) // LY is somewhere within the sprite
+                {
+                    palette = new Palette(Read(s.Palette ? OBP1_address : OBP0_address));
+                    tile = LoadTilePattern(s.Pattern); // swap with correct tileDataTable lookup
+                    int tx;
+                    int ti;
+                    if (s.Xflip)
+                    {
+                        tx = 7;
+                        ti = -1;
+                    }
+                    else
+                    {
+                        tx = 0;
+                        ti = 1;
+                    }
+                    int ty = LY - screenY;
+                    if (s.Yflip) ty = spriteHeight - ty - 1;
+                    for (int screenX = s.X - 8; screenX < screenX + 8; screenX++)
+                    {
+                        if (screenX >= 0 && screenX < screenWidth)
+                        {
+                            Byte colorCode = tile.GetColorCode(tx, ty);
+                            pixels[screenX] = palette.DecodeColorNumber(colorCode);
+                        }
+                        tx += ti;
+                    }
+                }
+            }
+        }
     }
 
-    private Tile LoadTilePattern(byte patternIndex)
+    private static readonly Int32Rect rect = new Int32Rect(0, 0, screenWidth, screenHeight);
+    private void DrawFrame()
     {
+        byte[] formattedPixels = new byte[pixels.Length / 4];
+        int index = 0;
+        for (int i = 0; i < pixels.Length; i += 4)
+        {
+            Byte value = pixels[i] << 6 | pixels[i + 1] << 4 | pixels[i + 2] << 2 | pixels[i + 3];
+            formattedPixels[index++] = value;
+        }
+        screen.WritePixels(rect, formattedPixels, formattedPixels.Length / rect.Height, 0);
+    }
+
+    private Tile LoadTilePattern(Byte patternIndex)
+    {
+
         bool isSignedIndex = !IsBgAndWTileData1;
         ushort startAddress = IsBgAndWTileData1 ? TileData1 : TileData0;
         ushort offset = isSignedIndex ? (ushort)(((sbyte)patternIndex - sbyte.MinValue) * 16) : (ushort)(patternIndex * 16);

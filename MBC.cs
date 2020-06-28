@@ -185,7 +185,7 @@ class MBC1 : IMemory
         {
             if (RAMBankN != null)
                 RAMBankN.Switch(0);
-            Byte concattedNr = (RAMBankNumber << 5) | ROMBankNumber;
+            byte concattedNr = (RAMBankNumber << 5) | ROMBankNumber;
             ROMBankN.Switch(CorrectedROMBankNumber(concattedNr));
         }
     }

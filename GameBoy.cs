@@ -33,6 +33,8 @@ class GameBoy
         game = new Cartridge("roms/cpu_instrs.gb", true);
         // game = new Cartridge("roms/cgb_sound.gb", true);
         // game = new Cartridge("roms/Pokemon Red.gb", true);
+        // game = new Cartridge("roms/Tetris (JUE) (V1.1) [!].gb", true);
+        // game = new Cartridge("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb", true);
 
         //Connect it all to the bus
         cpu.Connect(bus);
