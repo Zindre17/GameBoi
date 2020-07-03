@@ -8,6 +8,8 @@ public struct Address
     public static implicit operator Address(int v) => new Address((ushort)v);
     public static implicit operator Byte(Address a) => a.value;
 
+    public override string ToString() => value.ToString("X4");
+
     public static int operator +(Address a, Address b) => a.value + b.value;
     public static int operator -(Address a, Address b) => a.value - b.value;
     public static int operator /(Address a, Address b) => a.value / b.value;

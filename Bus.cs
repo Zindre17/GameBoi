@@ -1,6 +1,5 @@
 using System;
 using System.Text;
-using System.Threading.Tasks;
 
 class MainBus : IBus
 {
@@ -15,17 +14,18 @@ class MainBus : IBus
         IO = new Memory(0x80);
         HRAM = new Memory(0x7F);
 
+        ScrambleVRAM();
+        // Write(0xFF00, 0xFF);
         //set reset values for special registers
         // Write(0xFF10, 0x80);//NR10
         // Write(0xFF11, 0xBF);//NR10
 
         Write(0xFF40, 0x91);// LCDC        
-        Write(0xFF41, 2); // STAT
+        Write(0xFF41, 0x85); // STAT
         Write(0xFF47, 0xFC); // BGP
         Write(0xFF48, 0xFF); //OBP0
         Write(0xFF49, 0xFF); //OBP1
 
-        ScrambleVRAM();
     }
     private Random random = new Random();
 
@@ -109,10 +109,17 @@ class MainBus : IBus
     {
         if (address == 0xFF00)
         {
-            value = 0x0F;
+            IO.Read(0, out Byte v);
+            value = v | 0xC0;
             return true;
         }
-        IMemory mem = GetLocation(address, out ushort relativeAddress);
+        if (address == 0xFF02)
+        {
+            IO.Read(2, out Byte v);
+            value = v | 0x7E;
+            return true;
+        }
+        IMemory mem = GetLocation(address, out Address relativeAddress);
 
         if (mem == null)
         {
@@ -126,27 +133,26 @@ class MainBus : IBus
     {
         if (address == 0xff01)
         {
-            SerialTransfer += Encoding.ASCII.GetString(new byte[] { value });
+            string a = Encoding.ASCII.GetString(new byte[] { value });
+            SerialTransfer += a;
+            Console.WriteLine(SerialTransfer);
         }
         if (address == 0xff46)
         {
             //start DMA transfer
-            new Task(() =>
+            Address start = (Address)value * 0x100;
+            Address startOut = 0xFE00;
+            while (startOut != 0xFEA0)
             {
-                ushort start = (ushort)(value / 0x100);
-                ushort startOut = 0xff80;
-                for (int i = 0; i < 160; i++)
-                {
-                    Read(start++, out Byte data);
-                    Write(startOut++, data);
-                }
-            }).Start();
+                Read(start++, out Byte data);
+                Write(startOut++, data);
+            }
 
             return true;
         }
         else
         {
-            IMemory mem = GetLocation(address, out ushort relativeAddress);
+            IMemory mem = GetLocation(address, out Address relativeAddress);
 
             if (mem == null) return true;
 
@@ -154,7 +160,7 @@ class MainBus : IBus
         }
     }
 
-    private IMemory GetLocation(ushort address, out ushort relativeAddress)
+    private IMemory GetLocation(ushort address, out Address relativeAddress)
     {
         // in cartridge
         if (address < VRAM_StartAddress)
@@ -166,7 +172,7 @@ class MainBus : IBus
         // VRAM
         if (address < ExtRAM_StartAddress)
         {
-            relativeAddress = (ushort)(address - VRAM_StartAddress);
+            relativeAddress = address - VRAM_StartAddress;
             return VRAM;
         }
 
@@ -180,14 +186,14 @@ class MainBus : IBus
         // WorkRAM bank 0
         if (address < WRAM_1_StartAddress)
         {
-            relativeAddress = (ushort)(address - WRAM_0_StartAddress);
+            relativeAddress = address - WRAM_0_StartAddress;
             return WRAM_0;
         }
 
         // WorkRAM bank 1
         if (address < WRAM_ECHO_StartAddress)
         {
-            relativeAddress = (ushort)(address - WRAM_1_StartAddress);
+            relativeAddress = address - WRAM_1_StartAddress;
             return WRAM_1;
         }
 
@@ -195,14 +201,23 @@ class MainBus : IBus
         if (address < OAM_StartAddress)
         {
             // Emulation shortcut
-            relativeAddress = (ushort)(address - WRAM_ECHO_StartAddress);
-            return WRAM_1;
+            if (address < WRAM_ECHO_StartAddress + 0x1000)
+            {
+                relativeAddress = address - WRAM_ECHO_StartAddress;
+                return WRAM_0;
+            }
+            else
+            {
+                relativeAddress = address - WRAM_ECHO_StartAddress - 0x1000;
+                return WRAM_1;
+            }
+
         }
 
         // Sprite Attribute Table (OAM)
         if (address < Unusable_StartAddress)
         {
-            relativeAddress = (ushort)(address - OAM_StartAddress);
+            relativeAddress = address - OAM_StartAddress;
             return OAM;
         }
 
@@ -216,14 +231,14 @@ class MainBus : IBus
         // I/O ports
         if (address < HRAM_StartAddress)
         {
-            relativeAddress = (ushort)(address - IO_StartAddress);
+            relativeAddress = address - IO_StartAddress;
             return IO;
         }
 
         // HRAM
         if (address < 0xFFFF)
         {
-            relativeAddress = (ushort)(address - HRAM_StartAddress);
+            relativeAddress = address - HRAM_StartAddress;
             return HRAM;
         }
         else

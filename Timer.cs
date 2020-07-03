@@ -34,12 +34,12 @@ class Timer : Hardware<MainBus>
 
     private ulong prevCpuCycle = 0;
     private ulong cyclesSinceLastDivTick = 0;
-    private ulong cyclesSinceLasTimerTick = 0;
+    private ulong cyclesSinceLastTimerTick = 0;
     public void Tick(ulong cpuCycle)
     {
         ulong elapsedCycles = cpuCycle - prevCpuCycle;
         cyclesSinceLastDivTick += elapsedCycles;
-        cyclesSinceLasTimerTick += elapsedCycles;
+        cyclesSinceLastTimerTick += elapsedCycles;
         while (cyclesSinceLastDivTick >= divRatio)
         {
             TickDIV();
@@ -47,10 +47,10 @@ class Timer : Hardware<MainBus>
         }
         bool enabled = ReadTAC(out int mode);
         uint ratio = ratios[mode];
-        while (enabled && cyclesSinceLasTimerTick >= ratio)
+        while (enabled && cyclesSinceLastTimerTick >= ratio)
         {
             TickTIMA();
-            cyclesSinceLasTimerTick -= ratio;
+            cyclesSinceLastTimerTick -= ratio;
         }
         prevCpuCycle = cpuCycle;
     }

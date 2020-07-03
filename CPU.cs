@@ -1,4 +1,5 @@
 using static ByteOperations;
+using System;
 
 public enum InterruptType
 {
@@ -31,16 +32,17 @@ class CPU : Hardware<MainBus>
     #region Registers
     private byte A = 1; // accumulator
     private byte F = 0xB0; // flag register
+    private Address AF => ConcatBytes(A, F);
     private byte B = 0;
     private byte C = 0x13;
-    private ushort BC => ConcatBytes(B, C);
+    private Address BC => ConcatBytes(B, C);
     private byte D = 0;
     private byte E = 0xD8;
-    private ushort DE => ConcatBytes(D, E);
+    private Address DE => ConcatBytes(D, E);
     private byte H = 1;
     private byte L = 0x4D;
-    private ushort HL => ConcatBytes(H, L);
-    private ushort PC = 0x00; //progarm counter
+    private Address HL => ConcatBytes(H, L);
+    private ushort PC = 0x100; //progarm counter
     private byte PC_P => GetHighByte(PC);
     private byte PC_C => GetLowByte(PC);
     private ushort SP = 0xFFFE; //stack pointer
@@ -48,8 +50,6 @@ class CPU : Hardware<MainBus>
     private byte SP_P => GetLowByte(SP);
     public string ProgramCounter => PC.ToString("X");
     public string StackPointer => SP.ToString("X");
-    public string _BC => BC.ToString("X");
-    public string _DE => DE.ToString("X");
     #endregion
 
 
@@ -102,6 +102,8 @@ class CPU : Hardware<MainBus>
         else
         {
             // Fetch, Decode, Execute
+
+            // PrintState();
             byte opCode = Fetch();
             instructions[opCode]();
             cycles += durations[opCode];
@@ -109,6 +111,12 @@ class CPU : Hardware<MainBus>
         return cycles;
     }
 
+    private void PrintState()
+    {
+        Console.WriteLine(
+            $"{instructionsPerformed.ToString("D4")}: PC: {ProgramCounter}, SP: {StackPointer}, AF: {AF}, BC: {BC}, DE: {DE}, HL: {HL}, LCDC: {Read(0xFF40)}, STAT: {Read(0xFF41)}"
+        );
+    }
 
     #region Interrupts
     private const byte V_Blank_bit = 0;
@@ -224,6 +232,10 @@ class CPU : Hardware<MainBus>
     {
         if (address == 0xFF04 || address == 0xFF44)
             base.Write(address, 0);
+        if (address == 0xFF40)
+        {
+            return;
+        }
         base.Write(address, value);
     }
     public override void Connect(MainBus bus)

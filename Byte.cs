@@ -11,6 +11,8 @@ public struct Byte
 
     public static explicit operator sbyte(Byte b) => (sbyte)b.Value;
 
+    public override string ToString() => value.ToString("X2");
+
     public static Address operator +(Byte a, Byte b) => a.value + b.value;
     public static Address operator -(Byte a, Byte b) => a.value - b.value;
     public static Address operator *(Byte a, Byte b) => a.value * b.value;

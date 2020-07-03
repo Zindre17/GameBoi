@@ -37,7 +37,6 @@ class Controller : Hardware<MainBus>
         bus.Write(P1_address, newState);
         if (state != newState)
         {
-            Console.WriteLine(newState);
             bus.RequestInterrrupt(InterruptType.Joypad);
         }
     }

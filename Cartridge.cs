@@ -68,7 +68,7 @@ class Cartridge : IMemory
 
     private void SetupCartridge(byte[] allBytes)
     {
-        byte type = allBytes[cartridgeTypeAddress];
+        Byte type = allBytes[cartridgeTypeAddress];
         byte ROMSizeType = allBytes[ROMSizeAddress];
         byte RAMSizeType = allBytes[RAMSizeAddress];
         byte ROMBanks = TranslateROMSizeTypeToBanks(ROMSizeType);
