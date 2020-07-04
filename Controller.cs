@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Input;
 
-class Controller : Hardware<MainBus>
+class Controller : Hardware
 {
 
     const ushort P1_address = 0xFF00;
@@ -34,7 +34,7 @@ class Controller : Hardware<MainBus>
             if (Keyboard.IsKeyDown(Down)) newState |= (1 << 3);
         }
         newState = (~newState & 0x0F) | (state & 0xF0);
-        bus.Write(P1_address, newState);
+        Write(P1_address, newState);
         if (state != newState)
         {
             bus.RequestInterrrupt(InterruptType.Joypad);
@@ -45,8 +45,7 @@ class Controller : Hardware<MainBus>
     {
         if (bus == null) throw new Exception("Controller not connected");
 
-        bus.Read(P1_address, out Byte result);
-        return result;
+        return Read(P1_address);
     }
 
     private bool ReadP14(byte p1_state)

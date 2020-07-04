@@ -2,47 +2,33 @@ using System;
 using System.IO;
 using System.Text;
 
-class Cartridge : IMemory
+abstract class Cartridge
 {
-    IMemory memory;
+    protected IMemoryRange romBank0;
+    protected IMemoryRange romBankN;
+    protected IMemoryRange ramBankN;
 
-    public bool Read(Address address, out Byte value)
-    {
-        if (bootProgram != null && address < 256)
-        {
-            value = bootProgram[address];
-            return true;
-        }
-        else if (bootProgram != null && address == 256)
-        {
-            bootProgram = null;
-        }
-        return memory.Read(address, out value);
-    }
-    public bool Write(Address address, Byte value)
-    {
-        return memory.Write(address, value);
-    }
+    public IMemoryRange RomBank0 => romBank0;
+    public IMemoryRange RomBankN => romBankN;
+    public IMemoryRange RamBankN => ramBankN;
+
+    protected const ushort ROMSizePerBank = 0x4000;
 
     private string title;
     private const ushort cartridgeTypeAddress = 0x147;
-    private byte[] bootProgram;
 
-    public Cartridge(string pathToROM, bool includeBootRom = false)
+    public static Cartridge LoadGame(string pathToROM)
     {
-        if (includeBootRom)
-        {
-            bootProgram = File.ReadAllBytes("roms/DMG_ROM.bin");
-        }
         //read rom file
         byte[] allBytes = File.ReadAllBytes(pathToROM);
 
         //get info from header
-        ReadTitle(allBytes);
+        Cartridge game = SetupCartridge(allBytes);
 
-        SetupCartridge(allBytes);
+        game.isJapanese = allBytes[isJapaneseAddress] == 0;
+        game.title = ReadTitle(allBytes);
 
-        isJapanese = allBytes[isJapaneseAddress] == 0;
+        return game;
     }
 
     private const ushort ROMSizeAddress = 0x148;
@@ -56,17 +42,17 @@ class Cartridge : IMemory
     private const ushort titleStart = 0x134;
     private const ushort titleEnd = 0x143;
     private const byte titleLength = titleEnd + 1 - titleStart;
-    private void ReadTitle(byte[] allBytes)
+    private static string ReadTitle(byte[] allBytes)
     {
         byte[] titleBytes = new byte[titleLength];
         for (byte i = 0; i < titleLength; i++)
         {
             titleBytes[i] = allBytes[i + titleStart];
         }
-        title = Encoding.ASCII.GetString(titleBytes, 0, titleLength);
+        return Encoding.ASCII.GetString(titleBytes, 0, titleLength);
     }
 
-    private void SetupCartridge(byte[] allBytes)
+    private static Cartridge SetupCartridge(byte[] allBytes)
     {
         Byte type = allBytes[cartridgeTypeAddress];
         byte ROMSizeType = allBytes[ROMSizeAddress];
@@ -92,24 +78,24 @@ class Cartridge : IMemory
         */
         if (type == 0 || type == 8 || type == 9)
         {
-            memory = new NoMBC(type != 0, allBytes);
+            return new NoMBC(type != 0, allBytes);
         }
         else if (type > 0 && type < 4)
         {
-            memory = new MBC1(type > 1, ROMBanks, RAMSize, allBytes);
+            return new MBC1(type > 1, ROMBanks, RAMSize, allBytes);
         }
         else if (type == 5 || type == 6)
         {
-            memory = new MBC2(ROMBanks, allBytes);
+            return new MBC2(ROMBanks, allBytes);
         }
         else if (type > 0xF && type < 0x14)
         {
-            memory = new MBC3(type == 0x12 || type == 0x13, ROMBanks, RAMSize, allBytes);
+            return new MBC3(type == 0x12 || type == 0x13, ROMBanks, RAMSize, allBytes);
         }
         else throw new ArgumentException($"Could not setup cartridge type: {type}");
     }
 
-    private byte TranslateROMSizeTypeToBanks(byte type)
+    private static byte TranslateROMSizeTypeToBanks(byte type)
     {
         // Note: 1 bank is allready subtracted due to bank0 always existing
         switch (type)
@@ -130,7 +116,7 @@ class Cartridge : IMemory
         }
     }
 
-    private ushort TranslateRAMSizeTypeToTotalSize(byte type)
+    private static ushort TranslateRAMSizeTypeToTotalSize(byte type)
     {
         switch (type)
         {
@@ -142,9 +128,10 @@ class Cartridge : IMemory
                 throw new ArgumentException();
         }
     }
-    public static byte[] GetCartridgeChunk(int start, int size, byte[] allBytes)
+
+    protected static Byte[] GetCartridgeChunk(int start, int size, byte[] allBytes)
     {
-        byte[] bytes = new byte[size];
+        Byte[] bytes = new Byte[size];
         for (int i = 0; i < size; i++)
         {
             if (i >= allBytes.Length) throw new ArgumentOutOfRangeException();
@@ -152,9 +139,5 @@ class Cartridge : IMemory
         }
         return bytes;
     }
-}
 
-class NoMemoryAtLocationException : Exception
-{
-    public NoMemoryAtLocationException(ushort address) : base($"No memory at location {address}") { }
 }

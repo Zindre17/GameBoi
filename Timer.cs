@@ -1,6 +1,6 @@
 using static ByteOperations;
 
-class Timer : Hardware<MainBus>
+class Timer : Hardware
 {
     private const ushort DIV_address = 0xFF04; // Divider register
     // DIV is incremented at 16384Hz = 0x4000Hz

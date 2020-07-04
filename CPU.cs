@@ -10,7 +10,7 @@ public enum InterruptType
     Joypad
 }
 
-class CPU : Hardware<MainBus>
+class CPU : Hardware
 {
     private bool IME = true; // Interrupt Master Enable
 
@@ -228,17 +228,17 @@ class CPU : Hardware<MainBus>
 
 
     #region Helpers
-    protected override void Write(Address address, Byte value)
-    {
-        if (address == 0xFF04 || address == 0xFF44)
-            base.Write(address, 0);
-        if (address == 0xFF40)
-        {
-            return;
-        }
-        base.Write(address, value);
-    }
-    public override void Connect(MainBus bus)
+    // protected override void Write(Address address, Byte value)
+    // {
+    //     if (address == 0xFF04 || address == 0xFF44)
+    //         base.Write(address, 0);
+    //     if (address == 0xFF40)
+    //     {
+    //         return;
+    //     }
+    //     base.Write(address, value);
+    // }
+    public override void Connect(Bus bus)
     {
         bus.ConnectCPU(this);
         base.Connect(bus);

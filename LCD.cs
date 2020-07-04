@@ -3,7 +3,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ByteOperations;
 
-class LCD : Hardware<MainBus>
+class LCD : Hardware
 
 {
     private const ushort LCDC_address = 0xFF40;

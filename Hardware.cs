@@ -1,24 +1,12 @@
-abstract class Hardware<T> where T : IBus
+abstract class Hardware
 {
-    protected T bus;
+    protected Bus bus;
 
     public bool IsConnected => bus != null;
 
-    virtual public void Connect(T bus)
-    {
-        this.bus = bus;
-    }
+    public virtual void Connect(Bus bus) => this.bus = bus;
 
-    virtual protected Byte Read(Address address)
-    {
-        if (!bus.Read(address, out Byte value))
-            throw new MemoryReadException(address);
-        return value;
-    }
+    public Byte Read(Address address) => bus.Read(address);
+    public void Write(Address address, Byte value) => bus.Write(address, value);
 
-    virtual protected void Write(Address address, Byte value)
-    {
-        if (!bus.Write(address, value))
-            throw new MemoryWriteException(address);
-    }
 }

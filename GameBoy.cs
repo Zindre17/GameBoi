@@ -7,40 +7,86 @@ class GameBoy
     public LCD lcd;
     private Controller controller;
     private Cartridge game;
-    private MainBus bus;
-    private Speaker speaker;
+    private Bus bus;
 
-    private bool isPowered = false;
     public GameBoy()
     {
         // Create hardware
-        bus = new MainBus();
+        bus = new Bus();
         cpu = new CPU();
         timer = new Timer();
         lcd = new LCD();
         controller = new Controller();
-        // game = new Cartridge("roms/01-special.gb", true);
-        // game = new Cartridge("roms/02-interrupts.gb", true);
-        // game = new Cartridge("roms/03-op sp,hl.gb", true);
-        // game = new Cartridge("roms/04-op r,imm.gb", true);
-        // game = new Cartridge("roms/05-op rp.gb", true);
-        // game = new Cartridge("roms/06-ld r,r.gb", true);
-        // game = new Cartridge("roms/07-jr,jp,call,ret,rst.gb", true);
-        // game = new Cartridge("roms/08-misc instrs.gb", true);
-        // game = new Cartridge("roms/09-op r,r.gb", true);
-        // game = new Cartridge("roms/10-bit ops.gb", true);
-        // game = new Cartridge("roms/11-op a,(hl).gb", true);
-        game = new Cartridge("roms/cpu_instrs.gb", true);
-        // game = new Cartridge("roms/cgb_sound.gb", true);
-        // game = new Cartridge("roms/Pokemon Red.gb", true);
-        // game = new Cartridge("roms/Tetris (JUE) (V1.1) [!].gb", true);
-        // game = new Cartridge("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb", true);
+        // game = Cartridge.LoadGame("roms/blargg/01-special.gb");
+        // game = Cartridge.LoadGame("roms/blargg/02-interrupts.gb");
+        // game = Cartridge.LoadGame("roms/blargg/03-op sp,hl.gb");
+        // game = Cartridge.LoadGame("roms/blargg/04-op r,imm.gb");
+        // game = Cartridge.LoadGame("roms/blargg/05-op rp.gb");
+        // game = Cartridge.LoadGame("roms/blargg/06-ld r,r.gb");
+        // game = Cartridge.LoadGame("roms/blargg/07-jr,jp,call,ret,rst.gb");
+        // game = Cartridge.LoadGame("roms/blargg/08-misc instrs.gb");
+        // game = Cartridge.LoadGame("roms/blargg/09-op r,r.gb");
+        // game = Cartridge.LoadGame("roms/blargg/10-bit ops.gb");
+        // game = Cartridge.LoadGame("roms/blargg/11-op a,(hl).gb");
+        game = Cartridge.LoadGame("roms/blargg/cpu_instrs.gb");
+        // game = Cartridge.LoadGame("roms/blargg/instr_timing.gb");
+        // game = Cartridge.LoadGame("roms/blargg/mem_timing1.gb");
+        // game = Cartridge.LoadGame("roms/blargg/mem_timing2.gb");
+
+        // game = Cartridge.LoadGame("roms/acceptance/bits/mem_oam.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/bits/reg_f.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/bits/unused_hwio-GS.gb"); // Fails on unused bits in IO registers not being 1
+
+        // game = Cartridge.LoadGame("roms/acceptance/instr/daa.gb"); //OK
+
+        // game = Cartridge.LoadGame("roms/acceptance/interrupts/ie_push.gb"); // R1: not cancelled
+
+        // game = Cartridge.LoadGame("roms/acceptance/oam_dma/basic.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/oam_dma/reg_read.gb"); // Fail: r1
+        // game = Cartridge.LoadGame("roms/acceptance/oam_dma/sources-GS.gb"); // crash, cart type not implemented
+
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/hblank_ly_scx_timing-GS.gb"); // blank screen
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_1_2_timing-GS.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_0_timing.gb"); 
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_mode0_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_mode0_timing_sprites.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_mode3_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_oam_ok_timing.gb");
+
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/lcdon_timing-GS.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/lcdon_write_timing-GS.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/stat_irq_blocking.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/stat_lyc_onoff.gb");
+
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/vblank_stat_intr-GS.gb");
+
+        // game = Cartridge.LoadGame("roms/acceptance/timer/div_write.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/rapid_toggle.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim00.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim00_div_trigger.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim01.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim01_div_trigger.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim10.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim10_div_trigger.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim11.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tim11_div_trigger.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tima_reload.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tima_write_reloading.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/timer/tma_write_reloading.gb");
+
+        // game = Cartridge.LoadGame("roms/acceptance/add_sp_e_timing.gb");
+
+        // game = Cartridge.LoadGame("roms/cgb_sound.gb");
+        // game = Cartridge.LoadGame("roms/Pokemon Red.gb");
+        // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
+        // game = Cartridge.LoadGame("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb");
 
         //Connect it all to the bus
         cpu.Connect(bus);
         controller.Connect(bus);
         timer.Connect(bus);
         lcd.Connect(bus);
+
         bus.ConnectCartridge(game);
     }
 
@@ -56,62 +102,4 @@ class GameBoy
         }
     }
 
-    private void Freeze()
-    {
-        while (isPowered)
-        {
-            //Check for poweroff
-        }
-    }
-    public void TurnOn()
-    {
-        isPowered = true;
-        //start internal program at 0x0
-
-        //if check ok => run program at 0x100 on cartridge
-        //with following vaules in registers : 
-        // AF=0x01-GB/SGB, 0xFF-GBP, 0x11-GBC   
-        // F =0xB0
-        // C=$0013   
-        // DE=$00D8   
-        // HL=$014D   
-        // Stack Pointer=$FFFE
-        // [$FF05] = $00   ; TIMA   
-        // [$FF06] = $00   ; TMA   
-        // [$FF07] = $00   ; TAC   
-        // [$FF10] = $80   ; NR10   
-        // [$FF11] = $BF   ; NR11   
-        // [$FF12] = $F3   ; NR12   
-        // [$FF14] = $BF   ; NR14   
-        // [$FF16] = $3F   ; NR21   
-        // [$FF17] = $00   ; NR22   
-        // [$FF19] = $BF   ; NR24   
-        // [$FF1A] = $7F   ; NR30   
-        // [$FF1B] = $FF   ; NR31   
-        // [$FF1C] = $9F   ; NR32   
-        // [$FF1E] = $BF   ; NR33   
-        // [$FF20] = $FF   ; NR41   
-        // [$FF21] = $00   ; NR42   
-        // [$FF22] = $00   ; NR43   
-        // [$FF23] = $BF   ; NR30   
-        // [$FF24] = $77   ; NR50   
-        // [$FF25] = $F3   ; NR51   
-        // [$FF26] = $F1-GB, $F0-SGB ; NR52   
-        // [$FF40] = $91   ; LCDC   
-        // [$FF42] = $00   ; SCY   
-        // [$FF43] = $00   ; SCX   
-        // [$FF45] = $00   ; LYC   
-        // [$FF47] = $FC   ; BGP   
-        // [$FF48] = $FF   ; OBP0   
-        // [$FF49] = $FF   ; OBP1   
-        // [$FF4A] = $00   ; WY   
-        // [$FF4B] = $00   ; WX   
-        // [$FFFF] = $00   ; IE
-        if (true/* replace with cartridge header check passing*/)
-            Play();
-        else
-            Freeze();
-    }
-
-    public void TurnOff() { }
 }
