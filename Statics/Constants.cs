@@ -46,6 +46,18 @@ public static class TimerAddresses
     public const ushort TAC_address = 0xFF07; // Timer control
 }
 
+public static class InterruptAddresses
+{
+    public const ushort IE_address = 0xFFFF;
+    public const ushort IF_address = 0xFF0F;
+
+    public const ushort VblankVector = 0x0040;
+    public const ushort LcdStatVector = 0x0048;
+    public const ushort TimerVector = 0x0050;
+    public const ushort SerialVector = 0x0058;
+    public const ushort JoypadVector = 0x0060;
+}
+
 public static class Frequencies
 {
     // TAC speeds

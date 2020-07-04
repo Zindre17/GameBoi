@@ -1,4 +1,5 @@
 using static ByteOperations;
+using static InterruptAddresses;
 using System;
 
 public enum InterruptType
@@ -17,8 +18,8 @@ class CPU : Hardware
     private bool shouldUpdateIME = false;
     private bool nextIMEValue = false;
 
-    private const ushort IE_address = 0xFFFF;
-    private const ushort IF_address = 0xFF0F;
+    private InterruptRegister IE = new InterruptRegister();
+    private InterruptRegister IF = new InterruptRegister();
 
     private bool isHalted = false;
     private bool isStopped = false;
@@ -136,15 +137,14 @@ class CPU : Hardware
 
 
         // if IF is 0 there are no interrupt requests => exit
-        byte IF = Read(IF_address);
-        if (IF == 0) return;
+        if (!IF.Any()) return;
 
+        // any interrupt request should remove halt-state (even if events are not enabled)
         isHalted = false;
 
         if (!IME) return;
 
-        byte IE = Read(IE_address);
-        if (IE == 0) return;
+        if (!IE.Any()) return;
 
         // type             :   prio    : address   : bit
         //---------------------------------------------------
@@ -153,39 +153,38 @@ class CPU : Hardware
         // Timer Overflow   :     3     : 0x0050    : 2
         // Serial Transfer  :     4     : 0x0058    : 3
         // Hi-Lo of P10-P13 :     5     : 0x0060    : 4
-        if (ShouldInterrupt(IE, IF, V_Blank_bit))
+        if (IE.Vblank && IF.Vblank)
         {
-            Interrupt(0x0040, V_Blank_bit, IF);
+            IF.Vblank = false;
+            Interrupt(VblankVector, V_Blank_bit);
         }
-        else if (ShouldInterrupt(IE, IF, LCDC_bit))
+        else if (IE.LcdStat && IF.LcdStat)
         {
-            Interrupt(0x0048, LCDC_bit, IF);
+            IF.LcdStat = false;
+            Interrupt(LcdStatVector, LCDC_bit);
         }
-        else if (ShouldInterrupt(IE, IF, Timer_bit))
+        else if (IE.Timer && IF.Timer)
         {
-            Interrupt(0x0050, Timer_bit, IF);
+            IF.Timer = false;
+            Interrupt(TimerVector, Timer_bit);
         }
-        else if (ShouldInterrupt(IE, IF, Link_bit))
+        else if (IE.Serial && IF.Serial)
         {
-            Interrupt(0x0058, Link_bit, IF);
+            IF.Serial = false;
+            Interrupt(SerialVector, Link_bit);
         }
-        else if (ShouldInterrupt(IE, IF, Joypad_bit))
+        else if (IE.Joypad && IF.Joypad)
         {
-            Interrupt(0x0060, Joypad_bit, IF);
+            IF.Serial = false;
+            Interrupt(JoypadVector, Joypad_bit);
         }
     }
 
-    private void Interrupt(ushort startingAddress, byte bit, byte IF)
+    private void Interrupt(ushort interruptVector, byte bit)
     {
         IME = false;
-        Write(IF_address, ResetBit(bit, IF)); // remove the interrupt request that is granted 
-        Push(PC_P, PC_C);
-        JumpTo(startingAddress);
-    }
-
-    private bool ShouldInterrupt(byte IE, byte IF, byte bit)
-    {
-        return TestBit(bit, IE) && TestBit(bit, IF);
+        Call(interruptVector);
+        cycles += 24;
     }
 
     public void RequestInterrupt(InterruptType type)
@@ -194,36 +193,32 @@ class CPU : Hardware
         {
             case InterruptType.VBlank:
                 {
-                    SetInterruptRequest(V_Blank_bit);
+                    IF.Vblank = true;
                     break;
                 }
             case InterruptType.LCDC:
                 {
-                    SetInterruptRequest(LCDC_bit);
+                    IF.LcdStat = true;
                     break;
                 }
             case InterruptType.Timer:
                 {
-                    SetInterruptRequest(Timer_bit);
+                    IF.Timer = true;
                     break;
                 }
             case InterruptType.Link:
                 {
-                    SetInterruptRequest(Link_bit);
+                    IF.Serial = true;
                     break;
                 }
             case InterruptType.Joypad:
                 {
-                    SetInterruptRequest(Joypad_bit);
+                    IF.Joypad = true;
                     break;
                 }
         }
     }
 
-    private void SetInterruptRequest(int bit)
-    {
-        Write(IF_address, SetBit(bit, Read(IF_address)));
-    }
     #endregion
 
 
@@ -242,7 +237,10 @@ class CPU : Hardware
     {
         bus.ConnectCPU(this);
         base.Connect(bus);
+        bus.ReplaceMemory(IE_address, IE);
+        bus.ReplaceMemory(IF_address, IF);
     }
+
     private byte Fetch()
     {
         //Fetch instruction and increment PC after
