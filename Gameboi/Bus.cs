@@ -53,16 +53,21 @@ class Bus
     }
     private Random random = new Random();
 
-    public void RouteMemory(Address startAddress, IMemoryRange memory)
+    public void ReplaceMemory(Address address, IMemory memory)
     {
-        var routedMemory = new RoutedMemory(startAddress, memory);
-        Address end = startAddress + memory.Size;
-        for (int current = startAddress; current < end; current++)
-            this.memory[current] = routedMemory;
+        this.memory[address][address] = memory;
     }
+
+    public void RouteMemory(Address startAddress, IMemoryRange memory) => RouteMemory(startAddress, memory, startAddress + memory.Size);
 
     public void RouteMemory(Address address, IMemory memory) => this.memory[address] = new RoutedMemory(address, memory);
 
+    public void RouteMemory(Address startAddress, IMemoryRange memory, Address endAddress)
+    {
+        var routedMemory = new RoutedMemory(startAddress, memory);
+        for (int current = startAddress; current < endAddress; current++)
+            this.memory[current] = routedMemory;
+    }
     public void Scramble(IMemoryRange range)
     {
         for (ushort i = 0; i < range.Size; i++)
@@ -74,7 +79,7 @@ class Bus
         game = cartridge;
         RouteMemory(ROM_bank_0_StartAddress, cartridge.RomBank0);
         RouteMemory(ROM_bank_n_StartAddress, cartridge.RomBankN);
-        RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN);
+        RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, VRAM_StartAddress);
     }
 
 
