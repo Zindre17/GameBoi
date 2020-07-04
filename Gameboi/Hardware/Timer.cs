@@ -1,36 +1,15 @@
-using static ByteOperations;
+using static TimerAddresses;
+using static Frequencies;
 
 class Timer : Hardware
 {
-    private const ushort DIV_address = 0xFF04; // Divider register
-    // DIV is incremented at 16384Hz = 0x4000Hz
-    private const ushort TIMA_address = 0xFF05; // Timer counter
-    private const ushort TMA_address = 0xFF06; // Timer modulo
-    private const ushort TAC_address = 0xFF07; // Timer control
-    // TAC speeds
-    // bit 2 : 0 = Stop, 1 = Start
-    // bit 1 - 0: 
-    //      00 = 4096Hz = 0x1000Hz,
-    //      01 = 262144Hz = 0x40000Hz, 
-    //      10 = 65536Hz = 0x10000Hz, 
-    //      11 = 16384Hz = 0x4000Hz  
-    private static readonly uint[] speeds = new uint[4]{
-        0x1000,
-        0x40000,
-        0x10000,
-        0x4000
-    };
 
-    private static readonly uint cpuSpeed = 0x400000;
+    private TAC tac = new TAC();
+    private DIV div = new DIV();
+    private Register tma = new Register();
+    private TIMA tima;
 
-    private static readonly uint[] ratios = new uint[4]{
-        cpuSpeed / speeds[0],
-        cpuSpeed / speeds[1],
-        cpuSpeed / speeds[2],
-        cpuSpeed / speeds[3]
-    };
-
-    private static readonly uint divRatio = ratios[3];
+    public Timer() => tima = new TIMA(TimaOverflow);
 
     private ulong prevCpuCycle = 0;
     private ulong cyclesSinceLastDivTick = 0;
@@ -39,45 +18,38 @@ class Timer : Hardware
     {
         ulong elapsedCycles = cpuCycle - prevCpuCycle;
         cyclesSinceLastDivTick += elapsedCycles;
-        cyclesSinceLastTimerTick += elapsedCycles;
-        while (cyclesSinceLastDivTick >= divRatio)
+
+        while (cyclesSinceLastDivTick >= cpuToDivRatio)
         {
-            TickDIV();
-            cyclesSinceLastDivTick -= divRatio;
+            div.Tick();
+            cyclesSinceLastDivTick -= cpuToDivRatio;
         }
-        bool enabled = ReadTAC(out int mode);
-        uint ratio = ratios[mode];
-        while (enabled && cyclesSinceLastTimerTick >= ratio)
+
+        if (tac.IsStarted)
         {
-            TickTIMA();
-            cyclesSinceLastTimerTick -= ratio;
+            uint ratio = cpuToTimerRatio[tac.TimerSpeed];
+            cyclesSinceLastTimerTick += elapsedCycles;
+            while (cyclesSinceLastTimerTick >= ratio)
+            {
+                tima.Tick();
+                cyclesSinceLastTimerTick -= ratio;
+            }
         }
         prevCpuCycle = cpuCycle;
     }
 
-    private bool ReadTAC(out int mode)
+    private void TimaOverflow()
     {
-        byte tac = Read(TAC_address);
-        mode = tac & 3; // get first two bits
-        return TestBit(2, tac);
+        bus.RequestInterrrupt(InterruptType.Timer);
+        tima.Write(tma.Read());
     }
 
-    private void TickDIV()
+    public override void Connect(Bus bus)
     {
-        byte value = Read(DIV_address);
-        value++;
-        Write(DIV_address, value);
-    }
-
-    private void TickTIMA()
-    {
-        byte tima = Read(TIMA_address);
-        if (tima == 0xFF)
-        {
-            bus.RequestInterrrupt(InterruptType.Timer);
-            tima = Read(TMA_address);
-        }
-        else tima++;
-        Write(TIMA_address, tima);
+        base.Connect(bus);
+        bus.ReplaceMemory(TAC_address, tac);
+        bus.ReplaceMemory(DIV_address, div);
+        bus.ReplaceMemory(TMA_address, tma);
+        bus.ReplaceMemory(TIMA_address, tima);
     }
 }

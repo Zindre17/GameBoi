@@ -36,3 +36,41 @@ public static class MemoryAddresses
     //   FFFF        Interrupt Enable Register
     public const ushort IE_address = 0xFFFF;
 }
+
+public static class TimerAddresses
+{
+
+    public const ushort DIV_address = 0xFF04; // Divider register
+    public const ushort TIMA_address = 0xFF05; // Timer counter
+    public const ushort TMA_address = 0xFF06; // Timer modulo
+    public const ushort TAC_address = 0xFF07; // Timer control
+}
+
+public static class Frequencies
+{
+    // TAC speeds
+    // bit 2 : 0 = Stop, 1 = Start
+    // bit 1 - 0: 
+    //      00 = 4096Hz = 0x1000Hz,
+    //      01 = 262144Hz = 0x40000Hz, 
+    //      10 = 65536Hz = 0x10000Hz, 
+    //      11 = 16384Hz = 0x4000Hz  
+    public static readonly uint[] timerSpeeds = new uint[4]{
+        0x1000,
+        0x40000,
+        0x10000,
+        0x4000
+    };
+
+    public static readonly uint cpuSpeed = 0x400000;
+
+    public static readonly uint[] cpuToTimerRatio = new uint[4]{
+        cpuSpeed / timerSpeeds[0],
+        cpuSpeed / timerSpeeds[1],
+        cpuSpeed / timerSpeeds[2],
+        cpuSpeed / timerSpeeds[3]
+    };
+
+    // DIV is incremented at 16384Hz = 0x4000Hz
+    public static readonly uint cpuToDivRatio = cpuToTimerRatio[3];
+}

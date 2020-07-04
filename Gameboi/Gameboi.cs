@@ -28,7 +28,7 @@ class GameBoy
         // game = Cartridge.LoadGame("roms/blargg/09-op r,r.gb");
         // game = Cartridge.LoadGame("roms/blargg/10-bit ops.gb");
         // game = Cartridge.LoadGame("roms/blargg/11-op a,(hl).gb");
-        game = Cartridge.LoadGame("roms/blargg/cpu_instrs.gb");
+        // game = Cartridge.LoadGame("roms/blargg/cpu_instrs.gb");
         // game = Cartridge.LoadGame("roms/blargg/instr_timing.gb");
         // game = Cartridge.LoadGame("roms/blargg/mem_timing1.gb");
         // game = Cartridge.LoadGame("roms/blargg/mem_timing2.gb");
