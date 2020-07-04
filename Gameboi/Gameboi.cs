@@ -80,6 +80,7 @@ class GameBoy
         // game = Cartridge.LoadGame("roms/Pokemon Red.gb");
         // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
         // game = Cartridge.LoadGame("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb");
+        game = Cartridge.LoadGame("roms/bgbtest.gb");
 
         //Connect it all to the bus
         cpu.Connect(bus);
