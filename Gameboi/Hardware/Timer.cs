@@ -11,13 +11,11 @@ class Timer : Hardware
 
     public Timer() => tima = new TIMA(TimaOverflow);
 
-    private ulong prevCpuCycle = 0;
     private ulong cyclesSinceLastDivTick = 0;
     private ulong cyclesSinceLastTimerTick = 0;
-    public void Tick(ulong cpuCycle)
+    public void Tick(ulong elapsedCpuCycles)
     {
-        ulong elapsedCycles = cpuCycle - prevCpuCycle;
-        cyclesSinceLastDivTick += elapsedCycles;
+        cyclesSinceLastDivTick += elapsedCpuCycles;
 
         while (cyclesSinceLastDivTick >= cpuToDivRatio)
         {
@@ -28,14 +26,13 @@ class Timer : Hardware
         if (tac.IsStarted)
         {
             uint ratio = cpuToTimerRatio[tac.TimerSpeed];
-            cyclesSinceLastTimerTick += elapsedCycles;
+            cyclesSinceLastTimerTick += elapsedCpuCycles;
             while (cyclesSinceLastTimerTick >= ratio)
             {
                 tima.Tick();
                 cyclesSinceLastTimerTick -= ratio;
             }
         }
-        prevCpuCycle = cpuCycle;
     }
 
     private void TimaOverflow()

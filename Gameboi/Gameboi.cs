@@ -1,4 +1,3 @@
-using System;
 
 class GameBoy
 {
@@ -8,6 +7,7 @@ class GameBoy
     private Controller controller;
     private Cartridge game;
     private Bus bus;
+    private DMA dma;
 
     public GameBoy()
     {
@@ -17,6 +17,8 @@ class GameBoy
         timer = new Timer();
         lcd = new LCD();
         controller = new Controller();
+        dma = new DMA();
+
         // game = Cartridge.LoadGame("roms/blargg/01-special.gb");
         // game = Cartridge.LoadGame("roms/blargg/02-interrupts.gb");
         // game = Cartridge.LoadGame("roms/blargg/03-op sp,hl.gb");
@@ -42,7 +44,7 @@ class GameBoy
         // game = Cartridge.LoadGame("roms/acceptance/interrupts/ie_push.gb"); // R1: not cancelled
 
         // game = Cartridge.LoadGame("roms/acceptance/oam_dma/basic.gb"); // OK
-        // game = Cartridge.LoadGame("roms/acceptance/oam_dma/reg_read.gb"); // Fail: r1
+        // game = Cartridge.LoadGame("roms/acceptance/oam_dma/reg_read.gb"); // Fail: r1 || OK after rework
         // game = Cartridge.LoadGame("roms/acceptance/oam_dma/sources-GS.gb"); // crash, cart type not implemented
 
         // game = Cartridge.LoadGame("roms/acceptance/ppu/hblank_ly_scx_timing-GS.gb"); // blank screen
@@ -87,6 +89,7 @@ class GameBoy
         controller.Connect(bus);
         timer.Connect(bus);
         lcd.Connect(bus);
+        dma.Connect(bus);
 
         bus.ConnectCartridge(game);
     }
@@ -97,9 +100,10 @@ class GameBoy
         controller.CheckInputs();
         while (!frameDrawn)
         {
-            ulong cpuCycles = cpu.Tick();
+            Byte cpuCycles = cpu.Tick();
             timer.Tick(cpuCycles);
-            frameDrawn = lcd.Tick(cpuCycles);
+            dma.Tick(cpuCycles);
+            frameDrawn = lcd.Tick(cpu.cycles); //TODO convert lcd to use elapsed instead
         }
     }
 

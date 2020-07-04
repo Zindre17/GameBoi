@@ -1,5 +1,5 @@
 using System;
-using static MemoryAddresses;
+using static GeneralMemoryMap;
 
 class Bus
 {
@@ -79,7 +79,7 @@ class Bus
         game = cartridge;
         RouteMemory(ROM_bank_0_StartAddress, cartridge.RomBank0);
         RouteMemory(ROM_bank_n_StartAddress, cartridge.RomBankN);
-        RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, WRAM_0_StartAddress);
+        RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, ExtRAM_EndAddress);
     }
 
 

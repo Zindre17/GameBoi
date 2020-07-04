@@ -86,11 +86,13 @@ class CPU : Hardware
     #endregion
 
 
-    ulong cycles = 0;
+    public ulong cycles = 0;
+    ulong prevCycles = 0;
     long instructionsPerformed = 0;
 
-    public ulong Tick()
+    public Byte Tick()
     {
+        prevCycles = cycles;
         instructionsPerformed++;
 
         HandleInterrupts();
@@ -109,7 +111,7 @@ class CPU : Hardware
             instructions[opCode]();
             cycles += durations[opCode];
         }
-        return cycles;
+        return cycles - prevCycles;
     }
 
     private void PrintState()
