@@ -6,6 +6,8 @@ class Controller : Hardware
 
     const ushort P1_address = 0xFF00;
 
+    private P1 p1 = new P1();
+
     const Key A = Key.K;
     const Key B = Key.J;
     const Key Start = Key.Enter;
@@ -17,45 +19,32 @@ class Controller : Hardware
 
     public void CheckInputs()
     {
-        byte state = ReadP1();
-        Byte newState = 0;
-        if (ReadP15(state))
+        Byte newState = 0x0F;
+        if (p1.P15)
         {
-            if (Keyboard.IsKeyDown(A)) newState |= (1 << 0);
-            if (Keyboard.IsKeyDown(B)) newState |= (1 << 1);
-            if (Keyboard.IsKeyDown(Select)) newState |= (1 << 2);
-            if (Keyboard.IsKeyDown(Start)) newState |= (1 << 3);
+            if (Keyboard.IsKeyDown(A)) newState ^= (1 << 0);
+            if (Keyboard.IsKeyDown(B)) newState ^= (1 << 1);
+            if (Keyboard.IsKeyDown(Select)) newState ^= (1 << 2);
+            if (Keyboard.IsKeyDown(Start)) newState ^= (1 << 3);
         }
-        else if (ReadP14(state))
+        else if (p1.P14)
         {
-            if (Keyboard.IsKeyDown(Right)) newState |= (1 << 0);
-            if (Keyboard.IsKeyDown(Left)) newState |= (1 << 1);
-            if (Keyboard.IsKeyDown(Up)) newState |= (1 << 2);
-            if (Keyboard.IsKeyDown(Down)) newState |= (1 << 3);
+            if (Keyboard.IsKeyDown(Right)) newState ^= (1 << 0);
+            if (Keyboard.IsKeyDown(Left)) newState ^= (1 << 1);
+            if (Keyboard.IsKeyDown(Up)) newState ^= (1 << 2);
+            if (Keyboard.IsKeyDown(Down)) newState ^= (1 << 3);
         }
-        newState = (~newState & 0x0F) | (state & 0xF0);
-        Write(P1_address, newState);
-        if (state != newState)
+        newState |= (p1.Read() & 0xF0);
+        p1.Write(newState);
+        if (p1.Read() != newState)
         {
             bus.RequestInterrrupt(InterruptType.Joypad);
         }
     }
 
-    private byte ReadP1()
+    public override void Connect(Bus bus)
     {
-        if (bus == null) throw new Exception("Controller not connected");
-
-        return Read(P1_address);
-    }
-
-    private bool ReadP14(byte p1_state)
-    {
-        //invert since 0 is active/pressed 
-        return ((~p1_state) & (1 << 4)) != 0;
-    }
-
-    private bool ReadP15(byte p1_state)
-    {
-        return ((~p1_state) & (1 << 5)) != 0;
+        base.Connect(bus);
+        bus.ReplaceMemory(P1_address, p1);
     }
 }
