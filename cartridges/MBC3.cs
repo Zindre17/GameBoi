@@ -65,7 +65,7 @@ class MBC3 : Cartridge
     }
     private void SetROMBankNr(Byte value)
     {
-        byte bankNr = value & 0x7F;
+        Byte bankNr = value & 0x7F;
         if (bankNr > 0)
             bankNr--;
         ((Bank)RomBankN).Switch(bankNr);

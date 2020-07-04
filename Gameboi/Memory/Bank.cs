@@ -24,7 +24,7 @@ class Bank : IMemoryRange
 
     public Bank(IMemoryRange[] banks) { this.banks = banks; }
 
-    public void Switch(byte to)
+    public void Switch(Byte to)
     {
         if (to < banks.Length)
             pointer = to;
