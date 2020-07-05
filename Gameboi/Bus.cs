@@ -24,11 +24,12 @@ class Bus
 
         WRAM_0 = new MemoryRange(0x1000);
         RouteMemory(WRAM_0_StartAddress, WRAM_0);
-        RouteMemory(WRAM_ECHO_StartAddress, WRAM_0);
 
         WRAM_1 = new MemoryRange(0x1000);
         RouteMemory(WRAM_1_StartAddress, WRAM_1);
-        RouteMemory(WRAM_ECHO_StartAddress + WRAM_0.Size, WRAM_1);
+
+        RouteMemory(WRAM_ECHO_StartAddress, WRAM_0);
+        RouteMemory(WRAM_ECHO_StartAddress + WRAM_0.Size, WRAM_1, OAM_StartAddress);
 
         OAM = new MemoryRange(0xA0);
         RouteMemory(OAM_StartAddress, OAM);
@@ -41,14 +42,6 @@ class Bus
 
         IE = new InterruptRegister();
         RouteMemory(IE_address, IE);
-
-        Scramble(VRAM);
-
-        Write(0xFF40, 0x91);// LCDC        
-        Write(0xFF41, 0x85); // STAT
-        Write(0xFF47, 0xFC); // BGP
-        Write(0xFF48, 0xFF); //OBP0
-        Write(0xFF49, 0xFF); //OBP1
 
     }
     private Random random = new Random();

@@ -1,24 +1,20 @@
 using System;
-using static ByteOperations;
-class Palette
-{
-    private Byte c0, c1, c2, c3;
-    public Palette(byte data)
-    {
-        Byte colors = ~data;
-        c3 = colors >> 6;
-        c2 = (colors >> 4) & 3;
-        c1 = (colors >> 2) & 3;
-        c0 = colors & 3;
-    }
 
-    public byte DecodeColorNumber(byte colorCode)
+class Palette : MaskedRegister
+{
+    public Palette(Byte initialValue, byte mask = 0) : base(mask) { data = initialValue; }
+
+    public Byte DecodeColorNumber(byte colorCode)
     {
+        colorCode ^= 3;
         colorCode &= 3;
-        if (colorCode == 3) return c3;
-        if (colorCode == 2) return c2;
-        if (colorCode == 1) return c1;
-        if (colorCode == 0) return c0;
-        throw new Exception("Not possible");
+        return colorCode switch
+        {
+            3 => data >> 6,
+            2 => (data >> 4) & 3,
+            1 => (data >> 2) & 3,
+            0 => data & 3,
+            _ => throw new Exception("Not possible"),
+        };
     }
 }

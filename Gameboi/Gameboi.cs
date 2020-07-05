@@ -49,7 +49,7 @@ class GameBoy
 
         // game = Cartridge.LoadGame("roms/acceptance/ppu/hblank_ly_scx_timing-GS.gb"); // blank screen
         // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_1_2_timing-GS.gb");
-        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_0_timing.gb"); 
+        // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_0_timing.gb");
         // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_mode0_timing.gb");
         // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_mode0_timing_sprites.gb");
         // game = Cartridge.LoadGame("roms/acceptance/ppu/intr_2_mode3_timing.gb");
@@ -97,13 +97,18 @@ class GameBoy
     public void Play()
     {
         bool frameDrawn = false;
+
         controller.CheckInputs();
+
         while (!frameDrawn)
         {
             Byte cpuCycles = cpu.Tick();
+
             timer.Tick(cpuCycles);
+
             dma.Tick(cpuCycles);
-            frameDrawn = lcd.Tick(cpu.cycles); //TODO convert lcd to use elapsed instead
+
+            frameDrawn = lcd.Tick(cpuCycles);
         }
     }
 

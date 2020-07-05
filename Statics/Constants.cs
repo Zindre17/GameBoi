@@ -62,6 +62,35 @@ public static class MiscSpecialAddresses
     public const ushort DMA_address = 0xFF46;
 }
 
+public static class ScreenRelatedAddresses
+{
+    public const ushort LCDC_address = 0xFF40;
+    public const ushort STAT_address = 0xFF41;
+    public const ushort SCY_address = 0xFF42;
+    public const ushort SCX_address = 0xFF43;
+    public const ushort LY_address = 0xFF44;
+    public const ushort LYC_address = 0xFF45;
+    public const ushort BGP_address = 0xFF47;
+    public const ushort OBP0_address = 0xFF48;
+    public const ushort OBP1_address = 0xFF49;
+    public const ushort WY_address = 0xFF4A;
+    public const ushort WX_address = 0xFF4B;
+
+    public const ushort TileData1 = 0x8000;
+    public const ushort TileData0 = 0x8800;
+    public const ushort TileMap0Address = 0x9800;
+    public const ushort TileMap1Address = 0x9C00;
+}
+
+public static class ScreenTimings
+{
+    public const uint clocksPerDraw = 70224;
+    public const ushort vblankClocks = 4560;
+    public const byte mode2End = 80;
+    public const byte mode3End = 172;
+    public const ushort hblankEnd = 204;
+}
+
 public static class InterruptAddresses
 {
     public const ushort IE_address = 0xFFFF;
