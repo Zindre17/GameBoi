@@ -77,6 +77,46 @@ class GameBoy
         // game = Cartridge.LoadGame("roms/acceptance/timer/tma_write_reloading.gb");
 
         // game = Cartridge.LoadGame("roms/acceptance/add_sp_e_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/call_cc_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/call_cc_timing2.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/call_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/call_timing2.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/di_timing-GS.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/div_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ei_sequence.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ei_timing.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/halt_ime0_ei.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/halt_ime0_nointr_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/halt_ime1_timing.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/halt_ime1_timing2-GS.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/if_ie_registers.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/intr_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/jp_cc_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/jp_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ld_hl_sp_e_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/oam_dma_restart.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/oam_dma_start.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/oam_dma_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/pop_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/push_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/rapid_di_ei.gb"); // OK
+        // game = Cartridge.LoadGame("roms/acceptance/ret_cc_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/ret_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/reti_intr_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/reti_timing.gb");
+        // game = Cartridge.LoadGame("roms/acceptance/rst_timing.gb");
+
+
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/bits_bank1.gb");
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/bits_bank2.gb");
+
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/bits_mode.gb");
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/bits_ramg.gb");
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/multicart_rom_8Mb.gb");
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/ram_64kb.gb");
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/ram_256kb.gb");
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/rom_1Mb.gb");
+        // game = Cartridge.LoadGame("roms/emulator-only/mbc1/rom_2Mb.gb");
 
         // game = Cartridge.LoadGame("roms/cgb_sound.gb");
         // game = Cartridge.LoadGame("roms/Pokemon Red.gb");
