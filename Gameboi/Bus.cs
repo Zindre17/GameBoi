@@ -16,6 +16,8 @@ class Bus
     private IMemoryRange HRAM;
     private IMemory IE;
 
+    private IMemoryRange unusable = new DummyRange();
+
 
     public Bus()
     {
@@ -36,6 +38,8 @@ class Bus
 
         IO = new MemoryRange(0xA0);
         RouteMemory(IO_StartAddress, IO);
+
+        RouteMemory(Unusable_StartAddress, unusable, Unusable_EndAddress);
 
         HRAM = new MemoryRange(0x7F);
         RouteMemory(HRAM_StartAddress, HRAM);
