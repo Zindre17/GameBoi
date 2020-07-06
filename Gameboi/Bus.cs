@@ -33,7 +33,8 @@ class Bus
         RouteMemory(WRAM_ECHO_StartAddress, WRAM_0);
         RouteMemory(WRAM_ECHO_StartAddress + WRAM_0.Size, WRAM_1, OAM_StartAddress);
 
-        OAM = new MemoryRange(0xA0);
+        // OAM = new MemoryRange(0xA0);
+        OAM = new OAM();
         RouteMemory(OAM_StartAddress, OAM);
 
         IO = new MemoryRange(0xA0);
