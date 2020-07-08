@@ -8,45 +8,41 @@ class Bus
 
     private IMemoryRange[] memory = new IMemoryRange[0x10000];
 
-    private IMemoryRange VRAM;
-    private IMemoryRange WRAM_0;
-    private IMemoryRange WRAM_1;
-    private IMemoryRange OAM;
-    private IMemoryRange IO;
-    private IMemoryRange HRAM;
-    private IMemory IE;
+    private IMemoryRange vram;
+    public void SetVram(IMemoryRange vram) => this.vram = vram;
+    private IMemoryRange wram_0;
+    private IMemoryRange wram_1;
+    private IMemoryRange oam;
+    public void SetOam(IMemoryRange oam) => this.oam = oam;
+    private IMemoryRange io;
+    private IMemoryRange hram;
+    private IMemory ie;
 
     private IMemoryRange unusable = new DummyRange();
 
 
     public Bus()
     {
-        VRAM = new MemoryRange(0x2000);
-        RouteMemory(VRAM_StartAddress, VRAM);
 
-        WRAM_0 = new MemoryRange(0x1000);
-        RouteMemory(WRAM_0_StartAddress, WRAM_0);
+        wram_0 = new MemoryRange(0x1000);
+        RouteMemory(WRAM_0_StartAddress, wram_0);
 
-        WRAM_1 = new MemoryRange(0x1000);
-        RouteMemory(WRAM_1_StartAddress, WRAM_1);
+        wram_1 = new MemoryRange(0x1000);
+        RouteMemory(WRAM_1_StartAddress, wram_1);
 
-        RouteMemory(WRAM_ECHO_StartAddress, WRAM_0);
-        RouteMemory(WRAM_ECHO_StartAddress + WRAM_0.Size, WRAM_1, OAM_StartAddress);
+        RouteMemory(WRAM_ECHO_StartAddress, wram_0);
+        RouteMemory(WRAM_ECHO_StartAddress + wram_0.Size, wram_1, OAM_StartAddress);
 
-        // OAM = new MemoryRange(0xA0);
-        OAM = new OAM();
-        RouteMemory(OAM_StartAddress, OAM);
-
-        IO = new MemoryRange(0xA0);
-        RouteMemory(IO_StartAddress, IO);
+        io = new MemoryRange(0xA0);
+        RouteMemory(IO_StartAddress, io);
 
         RouteMemory(Unusable_StartAddress, unusable, Unusable_EndAddress);
 
-        HRAM = new MemoryRange(0x7F);
-        RouteMemory(HRAM_StartAddress, HRAM);
+        hram = new MemoryRange(0x7F);
+        RouteMemory(HRAM_StartAddress, hram);
 
-        IE = new InterruptRegister();
-        RouteMemory(IE_address, IE);
+        ie = new InterruptRegister();
+        RouteMemory(IE_address, ie);
 
     }
     private Random random = new Random();
@@ -80,6 +76,15 @@ class Bus
         RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, ExtRAM_EndAddress);
     }
 
+    public void ToggleVRAM(bool on)
+    {
+        RouteMemory(VRAM_StartAddress, on ? vram : unusable, VRAM_EndAddress);
+    }
+
+    public void ToggleOAM(bool on)
+    {
+        RouteMemory(OAM_StartAddress, on ? oam : unusable, OAM_EndAddress);
+    }
 
     public void ConnectCPU(CPU cpu)
     {
