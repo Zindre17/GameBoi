@@ -7,8 +7,6 @@ class Tile : IMemoryRange
 
     public Address Size => bytesPerTile;
 
-    public IMemory this[Address address] { get => data[address]; set { } }
-
     public Tile()
     {
         for (int i = 0; i < bytesPerTile; i++)
@@ -29,8 +27,10 @@ class Tile : IMemoryRange
         return result;
     }
 
-    public Byte Read(Address address) => this[address].Read();
+    public Byte Read(Address address, bool isCpu = false) => data[address].Read();
 
-    public void Write(Address address, Byte value) => this[address].Write(value);
+    public void Write(Address address, Byte value, bool isCpu = false) => data[address].Write(value);
+
+    public void Set(Address address, IMemory replacement) => data[address] = replacement;
 
 }

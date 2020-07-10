@@ -75,8 +75,8 @@ class LCD : Hardware
             {
                 elapsedCpuCycles = ExecuteMode(
                     mode2End,
-                    stat.IsOAMInterruptEnabled
-                // LoadSprites
+                    stat.IsOAMInterruptEnabled,
+                    () => ppu.SetOamLock(true)
                 );
             }
             // Transfer data to LCD driver
@@ -84,8 +84,8 @@ class LCD : Hardware
             {
                 elapsedCpuCycles = ExecuteMode(
                     mode3End,
-                    false
-                // LoadTileMaps
+                    false,
+                    () => ppu.SetVramLock(true)
                 );
             }
             // H-Blank
@@ -94,7 +94,12 @@ class LCD : Hardware
                 elapsedCpuCycles = ExecuteMode(
                     hblankEnd,
                     stat.IsHblankInterruptEnabled,
-                    LoadLine,// PrepareLine,
+                    () =>
+                    {
+                        ppu.SetOamLock(false);
+                        ppu.SetVramLock(false);
+                        LoadLine();
+                    },
                     ly.Increment
                 );
             }

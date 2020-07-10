@@ -2,20 +2,12 @@ using static ScreenSizes;
 using static TileMapConstants;
 using static TileDataConstants;
 
-class VRAM : IMemoryRange
+class VRAM : IMemoryRange, ILockable
 {
+    private bool isLocked = false;
+
     private TileMap tileMap = new TileMap();
     private TileDataMap tileDataMap = new TileDataMap();
-
-    public IMemory this[Address address]
-    {
-        get
-        {
-            if (address >= tileDataSize) return tileMap[address - tileDataSize];
-            return tileDataMap[address];
-        }
-        set { }
-    }
 
     public Address Size => 0x2000;
 
@@ -49,7 +41,24 @@ class VRAM : IMemoryRange
         return tileDataMap.LoadTilePattern(patternIndex, dataSelect);
     }
 
-    public Byte Read(Address address) => this[address].Read();
+    private IMemoryRange GetMemoryArea(Address address, out Address relativeAddress)
+    {
 
-    public void Write(Address address, Byte value) => this[address].Write(value);
+        if (address >= tileDataSize)
+        {
+            relativeAddress = address - tileDataSize;
+            return tileMap;
+        }
+        relativeAddress = address;
+        return tileDataMap;
+    }
+
+    public Byte Read(Address address, bool isCpu = false) => GetMemoryArea(address, out Address relAdr).Read(relAdr, isCpu);
+
+    public void Write(Address address, Byte value, bool isCpu = false) => GetMemoryArea(address, out Address relAdr).Write(relAdr, value, isCpu);
+
+    public void Set(Address address, IMemory replacement) => GetMemoryArea(address, out Address relAdr).Set(relAdr, replacement);
+
+    public void SetLock(bool on) => isLocked = on;
+
 }

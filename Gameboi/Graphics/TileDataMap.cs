@@ -6,10 +6,6 @@ class TileDataMap : IMemoryRange
 
     private Tile[] tiles = new Tile[tileCount];
 
-    public IMemory this[Address address] { get => data(address); set { } }
-    private Tile tile(Address address) => tiles[address / bytesPerTile];
-    private IMemory data(Address address) => tile(address)[address % bytesPerTile];
-
     public Address Size => tileCount * bytesPerTile;
 
     public TileDataMap()
@@ -18,9 +14,9 @@ class TileDataMap : IMemoryRange
             tiles[i] = new Tile();
     }
 
-    public Byte Read(Address address) => this[address].Read();
+    public Byte Read(Address address, bool isCpu = false) => tiles[address / bytesPerTile].Read(address % bytesPerTile, isCpu);
 
-    public void Write(Address address, Byte value) => this[address].Write(value);
+    public void Write(Address address, Byte value, bool isCpu = false) => tiles[address / bytesPerTile].Write(address % bytesPerTile, value, isCpu);
 
     //dataSelect => false: 0x8800 - 0x97FF | true: 0x8000 - 0x8FFF
     public Tile LoadTilePattern(Byte patternIndex, bool dataSelect)
@@ -32,5 +28,7 @@ class TileDataMap : IMemoryRange
 
         return tiles[index];
     }
+
+    public void Set(Address address, IMemory replacement) => tiles[address / bytesPerTile].Set(address % bytesPerTile, replacement);
 
 }

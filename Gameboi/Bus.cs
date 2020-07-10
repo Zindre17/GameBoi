@@ -9,11 +9,19 @@ class Bus
     private IMemoryRange[] memory = new IMemoryRange[0x10000];
 
     private IMemoryRange vram;
-    public void SetVram(IMemoryRange vram) => this.vram = vram;
+    public void SetVram(IMemoryRange vram)
+    {
+        this.vram = vram;
+        RouteMemory(VRAM_StartAddress, this.vram, VRAM_EndAddress);
+    }
     private IMemoryRange wram_0;
     private IMemoryRange wram_1;
     private IMemoryRange oam;
-    public void SetOam(IMemoryRange oam) => this.oam = oam;
+    public void SetOam(IMemoryRange oam)
+    {
+        this.oam = oam;
+        RouteMemory(OAM_StartAddress, this.oam, OAM_EndAddress);
+    }
     private IMemoryRange io;
     private IMemoryRange hram;
     private IMemory ie;
@@ -49,7 +57,7 @@ class Bus
 
     public void ReplaceMemory(Address address, IMemory memory)
     {
-        this.memory[address][address] = memory;
+        this.memory[address].Set(address, memory);
     }
 
     public void RouteMemory(Address startAddress, IMemoryRange memory) => RouteMemory(startAddress, memory, startAddress + memory.Size);
@@ -65,7 +73,7 @@ class Bus
     public void Scramble(IMemoryRange range)
     {
         for (ushort i = 0; i < range.Size; i++)
-            range[i].Write((byte)random.Next());
+            range.Write(i, (byte)random.Next());
     }
 
     public void ConnectCartridge(Cartridge cartridge)
@@ -74,16 +82,6 @@ class Bus
         RouteMemory(ROM_bank_0_StartAddress, cartridge.RomBank0);
         RouteMemory(ROM_bank_n_StartAddress, cartridge.RomBankN);
         RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, ExtRAM_EndAddress);
-    }
-
-    public void ToggleVRAM(bool on)
-    {
-        RouteMemory(VRAM_StartAddress, on ? vram : unusable, VRAM_EndAddress);
-    }
-
-    public void ToggleOAM(bool on)
-    {
-        RouteMemory(OAM_StartAddress, on ? oam : unusable, OAM_EndAddress);
     }
 
     public void ConnectCPU(CPU cpu)
@@ -97,8 +95,8 @@ class Bus
             cpu.RequestInterrupt(type);
     }
 
-    public Byte Read(Address address) => memory[address].Read(address);
+    public Byte Read(Address address, bool isCpu = false) => memory[address].Read(address, isCpu);
 
-    public void Write(Address address, Byte value) => memory[address].Write(address, value);
+    public void Write(Address address, Byte value, bool isCpu = false) => memory[address].Write(address, value, isCpu);
 
 }

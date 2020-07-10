@@ -45,13 +45,14 @@ class PPU
         return pixelLine;
     }
 
+    public void SetVramLock(bool on) => vram.SetLock(on);
+    public void SetOamLock(bool on) => oam.SetLock(on);
+
     public void Connect(Bus bus)
     {
         bus.SetOam(oam);
-        bus.RouteMemory(OAM_StartAddress, oam, OAM_EndAddress);
 
         bus.SetVram(vram);
-        bus.RouteMemory(VRAM_StartAddress, vram, VRAM_EndAddress);
 
         bus.ReplaceMemory(OBP0_address, obp0);
         bus.ReplaceMemory(OBP1_address, obp1);

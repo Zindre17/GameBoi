@@ -52,7 +52,7 @@ class Mbc2Rom : MemoryRange
     public WriteTriggerFirst OnFirstHalf;
     public WriteTriggerSecond OnSecondHalf;
 
-    public override void Write(Address address, Byte value)
+    public override void Write(Address address, Byte value, bool isCpu = false)
     {
         if (address < 0x2000)
         {

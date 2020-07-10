@@ -4,8 +4,6 @@ class TileMap : IMemoryRange
 {
     private IMemory[] tilemaps = new IMemory[tileMapTotalSize];
 
-    public IMemory this[Address address] { get => tilemaps[address]; set { } }
-
     public Address Size => tilemaps.Length;
 
     public TileMap()
@@ -25,8 +23,10 @@ class TileMap : IMemoryRange
         return tilemaps[index].Read();
     }
 
-    public Byte Read(Address address) => this[address].Read();
+    public Byte Read(Address address, bool isCpu = false) => tilemaps[address].Read();
 
-    public void Write(Address address, Byte value) => this[address].Write(value);
+    public void Write(Address address, Byte value, bool isCpu = false) => tilemaps[address].Write(value);
+
+    public void Set(Address address, IMemory replacement) => tilemaps[address] = replacement;
 
 }

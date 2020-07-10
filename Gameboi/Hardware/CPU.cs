@@ -85,6 +85,8 @@ class CPU : Hardware
     }
     #endregion
 
+    public override Byte Read(Address address) => bus.Read(address, true);
+    public override void Write(Address address, Byte value) => bus.Write(address, value, true);
 
     public ulong cycles = 0;
     ulong prevCycles = 0;

@@ -1,9 +1,8 @@
-using System;
 
 class Bank : IMemoryRange
 {
     protected IMemoryRange[] banks;
-    protected byte pointer = 0;
+    protected Byte pointer = 0;
 
     public Address Size => banks[pointer].Size;
 
@@ -29,16 +28,12 @@ class Bank : IMemoryRange
         if (to < banks.Length)
             pointer = to;
         else
-            throw new ArgumentOutOfRangeException();
+            pointer = banks.Length - 1;
     }
 
-    public IMemory this[Address address]
-    {
-        get => banks[pointer][address];
-        set => banks[pointer][address] = value;
-    }
+    public virtual Byte Read(Address address, bool isCpu = false) => banks[pointer].Read(address, isCpu);
+    public virtual void Write(Address address, Byte value, bool isCpu = false) => banks[pointer].Write(address, value, isCpu);
 
-    public virtual Byte Read(Address address) => banks[pointer].Read(address);
-    public virtual void Write(Address address, Byte value) => banks[pointer].Write(address, value);
+    public void Set(Address address, IMemory replacement) => banks[pointer].Set(address, replacement);
 
 }

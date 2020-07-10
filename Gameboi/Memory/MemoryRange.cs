@@ -1,10 +1,10 @@
 
 interface IMemoryRange
 {
-    IMemory this[Address address] { get; set; }
     Address Size { get; }
-    Byte Read(Address address);
-    void Write(Address address, Byte value);
+    Byte Read(Address address, bool isCpu = false);
+    void Write(Address address, Byte value, bool isCpu = false);
+    void Set(Address address, IMemory replacement);
 }
 
 class MemoryRange : IMemoryRange
@@ -22,14 +22,10 @@ class MemoryRange : IMemoryRange
     public MemoryRange(IMemory memory) => this.memory = new IMemory[] { memory };
     public MemoryRange(Address size, bool isReadOnly = false) => memory = Register.CreateMany(size, isReadOnly);
 
-    public IMemory this[Address address]
-    {
-        get => memory[address];
-        set => memory[address] = value;
-    }
+    public void Set(Address address, IMemory replacement) => memory[address] = replacement;
 
-    public virtual Byte Read(Address address) => memory[address].Read();
+    public virtual Byte Read(Address address, bool isCpu = false) => memory[address].Read();
 
-    public virtual void Write(Address address, Byte value) => memory[address].Write(value);
+    public virtual void Write(Address address, Byte value, bool isCpu = false) => memory[address].Write(value);
 
 }

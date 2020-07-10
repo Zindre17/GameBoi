@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using static GeneralMemoryMap;
-using static ScreenSizes;
 
-class OAM : IMemoryRange
+class OAM : IMemoryRange, ILockable
 {
+    private bool isLocked = false;
+
     private Sprite[] sprites = new Sprite[40];
 
     public OAM()
@@ -28,15 +28,22 @@ class OAM : IMemoryRange
         return result;
     }
 
-    private Sprite sprite(Address address) => sprites[address / 4];
-    private IMemory property(Address address) => sprite(address)[address % 4];
-
-    public IMemory this[Address address] { get => property(address); set { } }
+    public void Set(Address address, IMemory replacement) => sprites[address / 4].Set(address % 4, replacement);
 
     public Address Size => 40 * 4;
 
-    public Byte Read(Address address) => property(address).Read();
+    public Byte Read(Address address, bool isCpu = false)
+    {
+        if (isCpu && isLocked) return 0xFF;
+        return sprites[address / 4].Read(address % 4, isCpu);
+    }
 
-    public void Write(Address address, Byte value) => property(address).Write(value);
+    public void Write(Address address, Byte value, bool isCpu = false)
+    {
+        if (isCpu && isLocked) return;
+        sprites[address / 4].Write(address % 4, value, isCpu);
+    }
+
+    public void SetLock(bool on) => isLocked = on;
 
 }

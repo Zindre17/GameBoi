@@ -5,7 +5,7 @@ class MBC1 : Cartridge
     private Byte ROMBankNumber;
     private Byte RAMBankNumber;
 
-    public MBC1(bool hasRAM, ushort ROMbanks, ushort RAMSize, byte[] cartridgeData)
+    public MBC1(bool hasRAM, Byte ROMbanks, ushort RAMSize, byte[] cartridgeData)
     {
         mode = 0;
 
@@ -72,17 +72,23 @@ class MBC1 : Cartridge
 
     private void UpdateBanks()
     {
-        if (mode == 1)
+        ((Bank)ramBankN).Switch(mode * RAMBankNumber);
+        ((Bank)romBankN).Switch(GetRomBankPointer());
+    }
+
+    private Byte GetRomBankPointer()
+    {
+        Byte nr;
+        if (mode == 0)
         {
-            ((Bank)romBankN).Switch(CorrectedROMBankNumber(ROMBankNumber));
-            ((Bank)ramBankN).Switch(RAMBankNumber);
+            nr = (RAMBankNumber << 5) | ROMBankNumber;
+            nr = CorrectedROMBankNumber(nr);
         }
         else
         {
-            ((Bank)ramBankN).Switch(0);
-            Byte concattedNr = (RAMBankNumber << 5) | ROMBankNumber;
-            ((Bank)romBankN).Switch(CorrectedROMBankNumber(concattedNr));
+            nr = CorrectedROMBankNumber(ROMBankNumber);
         }
+        return nr;
     }
 
     private Byte CorrectedROMBankNumber(Byte value)
@@ -103,9 +109,14 @@ class MbcRam : Bank
     public MbcRam() : base(0, 0) { }
     public MbcRam(IMemoryRange[] banks) : base(banks) { }
 
-    public override void Write(Address address, Byte value)
+    public override Byte Read(Address address, bool isCpu = false)
     {
-        if (isEnabled) base.Write(address, value);
+        if (isEnabled) return base.Read(address, isCpu);
+        return 0xFF;
+    }
+    public override void Write(Address address, Byte value, bool isCpu = false)
+    {
+        if (isEnabled) base.Write(address, value, isCpu);
     }
 }
 
@@ -118,7 +129,7 @@ class Mbc1Rom : MemoryRange
     public WriteTrigger OnFirstHalf;
     public WriteTrigger OnSecondHalf;
 
-    public override void Write(Address address, Byte value)
+    public override void Write(Address address, Byte value, bool isCpu = false)
     {
         if (address < 0x2000)
         {
