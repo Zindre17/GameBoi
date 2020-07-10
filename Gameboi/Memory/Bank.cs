@@ -12,7 +12,7 @@ class Bank : IMemoryRange
     {
         if (amount == 0)
         {
-            banks = new IMemoryRange[] { new UnusedRange() };
+            banks = new IMemoryRange[] { new DummyRange() };
         }
         else
         {
