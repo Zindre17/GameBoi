@@ -95,9 +95,9 @@ public static class ScreenTimings
 {
     public const uint clocksPerDraw = 70224;
     public const ushort vblankClocks = 4560;
-    public const byte mode2End = 80;
-    public const byte mode3End = 172;
-    public const ushort hblankEnd = 204;
+    public const byte mode2Clocks = 80;
+    public const byte mode3Clocks = 172;
+    public const ushort hblankClocks = 204;
 }
 
 public static class ScreenSizes

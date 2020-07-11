@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static ScreenRelatedAddresses;
-using static GeneralMemoryMap;
 using static ScreenSizes;
 using static ScreenTimings;
 using System;
@@ -74,7 +73,7 @@ class LCD : Hardware
             if (stat.Mode == 2)
             {
                 elapsedCpuCycles = ExecuteMode(
-                    mode2End,
+                    mode2Clocks,
                     stat.IsOAMInterruptEnabled,
                     () => ppu.SetOamLock(true)
                 );
@@ -83,7 +82,7 @@ class LCD : Hardware
             else if (stat.Mode == 3)
             {
                 elapsedCpuCycles = ExecuteMode(
-                    mode3End,
+                    mode3Clocks,
                     false,
                     () => ppu.SetVramLock(true)
                 );
@@ -92,7 +91,7 @@ class LCD : Hardware
             else if (stat.Mode == 0)
             {
                 elapsedCpuCycles = ExecuteMode(
-                    hblankEnd,
+                    hblankClocks,
                     stat.IsHblankInterruptEnabled,
                     () =>
                     {
