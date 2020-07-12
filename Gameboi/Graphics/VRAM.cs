@@ -11,23 +11,30 @@ class VRAM : IMemoryRange, ILockable
 
     public Address Size => 0x2000;
 
-    public byte[] GetLine(Byte line, Byte scrollX, Byte scrollY, bool mapSelect, bool dataSelect)
+    private IMemory scx, scy;
+    private LCDC lcdc;
+
+    public VRAM(IMemory scx, IMemory scy, LCDC lcdc) => (this.scx, this.scy, this.lcdc) = (scx, scy, lcdc);
+
+    public Byte[] GetBackgroundLine(Byte line)
     {
-        byte[] pixelLine = new byte[pixelsPerLine];
+        Byte[] pixelLine = new Byte[pixelsPerLine];
+        Byte scrollY = scy.Read();
 
         Byte screenY = scrollY + line;
 
         Byte mapY = screenY / 8;
         Byte tileY = screenY % 8;
 
+        Byte scrollX = scx.Read();
         for (int i = 0; i < pixelsPerLine; i++)
         {
             Byte screenX = scrollX + i;
 
             Byte mapX = screenX / 8;
-            Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, mapSelect);
+            Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.BgMapSelect);
 
-            Tile tile = tileDataMap.LoadTilePattern(patternIndex, dataSelect);
+            Tile tile = tileDataMap.LoadTilePattern(patternIndex, lcdc.BgWdDataSelect);
 
             Byte tileX = screenX % 8;
             pixelLine[i] = tile.GetColorCode(tileX, tileY);

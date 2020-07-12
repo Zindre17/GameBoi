@@ -28,7 +28,7 @@ class Bank : IMemoryRange
         if (to < banks.Length)
             pointer = to;
         else
-            pointer = banks.Length - 1;
+            pointer = 0;
     }
 
     public virtual Byte Read(Address address, bool isCpu = false) => banks[pointer].Read(address, isCpu);

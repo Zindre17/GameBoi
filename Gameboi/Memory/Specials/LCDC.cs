@@ -2,7 +2,19 @@ using static ByteOperations;
 
 class LCDC : Register
 {
-    public LCDC() : base(0x91) { }
+    private STAT stat;
+
+    public LCDC(STAT stat, Func onToggled) : base(0x91) => (this.stat, OnScreenToggled) = (stat, onToggled);
+
+    public override void Write(Byte value)
+    {
+        if (value[7] != data[7]) OnScreenToggled(value[7]);
+
+        base.Write(value);
+    }
+
+    public delegate void Func(bool on);
+    public Func OnScreenToggled;
 
     public bool IsEnabled { get => data[7]; set => Write(value ? SetBit(7, data) : ResetBit(7, data)); }
     public bool WdMapSelect { get => data[6]; set => Write(value ? SetBit(6, data) : ResetBit(6, data)); }

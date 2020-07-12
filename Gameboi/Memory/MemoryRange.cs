@@ -19,6 +19,7 @@ class MemoryRange : IMemoryRange
         for (int i = 0; i < memory.Length; i++)
             this.memory[i] = new Register(memory[i], isReadOnly);
     }
+    public MemoryRange(IMemory[] memory) => this.memory = memory;
     public MemoryRange(IMemory memory) => this.memory = new IMemory[] { memory };
     public MemoryRange(Address size, bool isReadOnly = false) => memory = Register.CreateMany(size, isReadOnly);
 

@@ -15,13 +15,14 @@ class LCD : Hardware
     public ImageSource Screen => screen;
 
     private STAT stat = new STAT();
-    private LCDC lcdc = new LCDC();
+    private LCDC lcdc;
 
     private LY ly;
     private Register lyc = new Register();
 
     public LCD()
     {
+        lcdc = new LCDC(stat, OnScreenToggled);
         ly = new LY(CheckCoincidence);
         ppu = new PPU(lcdc);
 
@@ -32,7 +33,45 @@ class LCD : Hardware
             1,
             PixelFormats.Gray2,
             null);
+
+        modeEnters[0] = LoadLine;
+        modeEnters[1] = DrawFrame;
+        modeEnters[2] = () => ppu.SetOamLock(true);
+        modeEnters[3] = () => ppu.SetVramLock(true);
+
+        modeExits[0] = ly.Increment;
+        modeExits[1] = () =>
+        {
+            ly.Reset();
+            isFrameDone = true;
+            currentFrame++;
+        };
+
+        modeTicks[1] = () => ly.Set(pixelLines + (cyclesInMode / 456));
     }
+
+    private void OnScreenToggled(bool on)
+    {
+        cyclesInMode = 0;
+        if (on)
+        {
+            ly.Reset();
+            stat.Mode = 2;
+            modeDurations[1] = vblankClocks;
+        }
+        else
+        {
+            stat.Mode = 1;
+            modeDurations[1] = clocksPerDraw;
+            ppu.SetOamLock(false);
+            ppu.SetVramLock(false);
+        }
+    }
+
+    private uint[] modeDurations = new uint[4] { hblankClocks, vblankClocks, mode2Clocks, mode3Clocks };
+    private Func[] modeEnters = new Func[4];
+    private Func[] modeExits = new Func[4];
+    private Func[] modeTicks = new Func[4];
 
     private void CheckCoincidence(Byte newLY)
     {
@@ -60,78 +99,35 @@ class LCD : Hardware
     private ulong cyclesInMode = 0;
 
     private byte prevMode;
+    bool isFrameDone;
 
     public bool Tick(Byte elapsedCpuCycles)
     {
-        bool isFrameDone = false;
+        isFrameDone = false;
 
         cyclesInMode += elapsedCpuCycles;
 
         while (elapsedCpuCycles != 0)
         {
-            // search OAM
-            if (stat.Mode == 2)
-            {
-                elapsedCpuCycles = ExecuteMode(
-                    mode2Clocks,
-                    stat.IsOAMInterruptEnabled,
-                    () => ppu.SetOamLock(true)
-                );
-            }
-            // Transfer data to LCD driver
-            else if (stat.Mode == 3)
-            {
-                elapsedCpuCycles = ExecuteMode(
-                    mode3Clocks,
-                    false,
-                    () => ppu.SetVramLock(true)
-                );
-            }
-            // H-Blank
-            else if (stat.Mode == 0)
-            {
-                elapsedCpuCycles = ExecuteMode(
-                    hblankClocks,
-                    stat.IsHblankInterruptEnabled,
-                    () =>
-                    {
-                        ppu.SetOamLock(false);
-                        ppu.SetVramLock(false);
-                        LoadLine();
-                    },
-                    ly.Increment
-                );
-            }
-            // V-Blank
-            else if (stat.Mode == 1)
-            {
-                elapsedCpuCycles = ExecuteMode(
-                    vblankClocks,
-                    stat.IsVblankInterruptEnabled,
-                    DrawFrame,
-                    () =>
-                    {
-                        ly.Reset();
-                        isFrameDone = true;
-                        currentFrame++;
-                    },
-                    () => { ly.Set(pixelLines + (cyclesInMode / 456)); }
-                );
-            }
+            Byte mode = stat.Mode;
+            elapsedCpuCycles = ExecuteMode(modeEnters[mode], modeExits[mode], modeTicks[mode]);
         }
 
         return isFrameDone;
     }
 
-    private ulong ExecuteMode(ulong endCycles, bool canInterrupt, Func onEnter = null, Func onExit = null, Func onTick = null)
+    private ulong ExecuteMode(Func onEnter = null, Func onExit = null, Func onTick = null)
     {
-        if (prevMode != stat.Mode)
+        Byte mode = stat.Mode;
+        if (prevMode != mode)
         {
             if (onEnter != null) onEnter();
-            if (canInterrupt)
-                bus.RequestInterrrupt(InterruptType.LCDC);
+
+            if (mode == 1) bus.RequestInterrrupt(InterruptType.VBlank);
+            else if (mode == 2 || mode == 0) bus.RequestInterrrupt(InterruptType.LCDC);
         }
 
+        uint endCycles = modeDurations[mode];
         if (cyclesInMode >= endCycles)
         {
             cyclesInMode -= endCycles;
@@ -142,22 +138,18 @@ class LCD : Hardware
         else
         {
             if (onTick != null) onTick();
-            prevMode = stat.Mode;
+            prevMode = mode;
             return 0;
         }
     }
 
     private void SetNextMode()
     {
+        if (!lcdc.IsEnabled) return;
+
         byte mode = stat.Mode;
-        SetMode(mode switch
-        {
-            0 => ly.Y == pixelLines ? 1 : 2,
-            1 => 2,
-            2 => 3,
-            3 => 0,
-            _ => throw new Exception("Impossible")
-        });
+        if (mode == 0 && ly.Y != pixelLines) SetMode(2);
+        else SetMode((mode + 1) % 4);
     }
 
     private void SetMode(Byte mode)
@@ -168,8 +160,12 @@ class LCD : Hardware
 
     private void LoadLine()
     {
+        // hblank => open vram and oam
+        ppu.SetOamLock(false);
+        ppu.SetVramLock(false);
+
         int firstPixelIndex = ly.Y * pixelsPerLine;
-        byte[] line = ppu.GetLine(ly.Y);
+        Byte[] line = ppu.GetLine(ly.Y);
         for (int i = 0; i < pixelsPerLine; i++)
         {
             pixels[firstPixelIndex + i] = line[i];

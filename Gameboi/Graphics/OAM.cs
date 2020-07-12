@@ -9,7 +9,7 @@ class OAM : IMemoryRange, ILockable
     public OAM()
     {
         for (int i = 0; i < 40; i++)
-            sprites[i] = new Sprite();
+            sprites[i] = new Sprite(i);
     }
 
     public List<Sprite> GetSpritesOnLine(Byte ly, bool isDoubleHeight)
@@ -25,6 +25,8 @@ class OAM : IMemoryRange, ILockable
             if (sprite.IsIntersectWithLine(ly, isDoubleHeight))
                 result.Add(sprite);
         }
+        result.Sort((a, b) => b.X - a.X);
+        result.Sort((a, b) => b.Nr - a.Nr);
         return result;
     }
 
