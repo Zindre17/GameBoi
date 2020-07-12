@@ -18,25 +18,27 @@ class Controller : Hardware
 
     public void CheckInputs()
     {
-        Byte newState = 0x0F;
+        if (p1.P14 == p1.P15) return;
+
+        Byte newActive = 0x0F;
         if (p1.P15)
         {
-            if (Keyboard.IsKeyDown(A)) newState ^= (1 << 0);
-            if (Keyboard.IsKeyDown(B)) newState ^= (1 << 1);
-            if (Keyboard.IsKeyDown(Select)) newState ^= (1 << 2);
-            if (Keyboard.IsKeyDown(Start)) newState ^= (1 << 3);
+            if (Keyboard.IsKeyDown(A)) newActive ^= (1 << 0);
+            if (Keyboard.IsKeyDown(B)) newActive ^= (1 << 1);
+            if (Keyboard.IsKeyDown(Select)) newActive ^= (1 << 2);
+            if (Keyboard.IsKeyDown(Start)) newActive ^= (1 << 3);
         }
         else if (p1.P14)
         {
-            if (Keyboard.IsKeyDown(Right)) newState ^= (1 << 0);
-            if (Keyboard.IsKeyDown(Left)) newState ^= (1 << 1);
-            if (Keyboard.IsKeyDown(Up)) newState ^= (1 << 2);
-            if (Keyboard.IsKeyDown(Down)) newState ^= (1 << 3);
+            if (Keyboard.IsKeyDown(Right)) newActive ^= (1 << 0);
+            if (Keyboard.IsKeyDown(Left)) newActive ^= (1 << 1);
+            if (Keyboard.IsKeyDown(Up)) newActive ^= (1 << 2);
+            if (Keyboard.IsKeyDown(Down)) newActive ^= (1 << 3);
         }
-        newState |= (p1.Read() & 0xF0);
-        p1.Write(newState);
-        if (p1.Read() != newState)
+
+        if (p1.Active != newActive)
         {
+            p1.SetActive(newActive);
             bus.RequestInterrrupt(InterruptType.Joypad);
         }
     }
