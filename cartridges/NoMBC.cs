@@ -26,5 +26,9 @@ class NoMBC : Cartridge
                 ramBankN = new MemoryRange(0x2000);
             }
         }
+        else
+        {
+            ramBankN = new DummyRange();
+        }
     }
 }
