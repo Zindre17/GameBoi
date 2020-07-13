@@ -16,25 +16,34 @@ class Controller : Hardware
     const Key Down = Key.S;
     const Key Right = Key.D;
 
+    Byte pad;
+    Byte buttons;
+
+    public void RegisterInputs()
+    {
+        buttons = 0xF;
+        if (Keyboard.IsKeyDown(A)) buttons ^= (1 << 0);
+        if (Keyboard.IsKeyDown(B)) buttons ^= (1 << 1);
+        if (Keyboard.IsKeyDown(Select)) buttons ^= (1 << 2);
+        if (Keyboard.IsKeyDown(Start)) buttons ^= (1 << 3);
+
+        pad = 0xF;
+        if (Keyboard.IsKeyDown(Right)) pad ^= (1 << 0);
+        if (Keyboard.IsKeyDown(Left)) pad ^= (1 << 1);
+        if (Keyboard.IsKeyDown(Up)) pad ^= (1 << 2);
+        if (Keyboard.IsKeyDown(Down)) pad ^= (1 << 3);
+    }
+
+
     public void CheckInputs()
     {
         if (p1.P14 == p1.P15) return;
 
         Byte newActive = 0x0F;
         if (p1.P15)
-        {
-            if (Keyboard.IsKeyDown(A)) newActive ^= (1 << 0);
-            if (Keyboard.IsKeyDown(B)) newActive ^= (1 << 1);
-            if (Keyboard.IsKeyDown(Select)) newActive ^= (1 << 2);
-            if (Keyboard.IsKeyDown(Start)) newActive ^= (1 << 3);
-        }
+            newActive = buttons;
         else if (p1.P14)
-        {
-            if (Keyboard.IsKeyDown(Right)) newActive ^= (1 << 0);
-            if (Keyboard.IsKeyDown(Left)) newActive ^= (1 << 1);
-            if (Keyboard.IsKeyDown(Up)) newActive ^= (1 << 2);
-            if (Keyboard.IsKeyDown(Down)) newActive ^= (1 << 3);
-        }
+            newActive = pad;
 
         if (p1.Active != newActive)
         {

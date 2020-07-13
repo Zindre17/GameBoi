@@ -4,7 +4,6 @@ using System.Windows.Media.Imaging;
 using static ScreenRelatedAddresses;
 using static ScreenSizes;
 using static ScreenTimings;
-using System;
 
 class LCD : Hardware
 
@@ -35,7 +34,6 @@ class LCD : Hardware
             null);
 
         modeEnters[0] = LoadLine;
-        modeEnters[1] = DrawFrame;
         modeEnters[2] = () => ppu.SetOamLock(true);
         modeEnters[3] = () => ppu.SetVramLock(true);
 
@@ -175,7 +173,7 @@ class LCD : Hardware
     private byte[] pixels = new byte[pixelsPerLine * pixelLines];
 
     private static readonly Int32Rect rect = new Int32Rect(0, 0, pixelsPerLine, pixelLines);
-    private void DrawFrame()
+    public void DrawFrame()
     {
         byte[] formattedPixels = new byte[pixels.Length / 4];
         int index = 0;

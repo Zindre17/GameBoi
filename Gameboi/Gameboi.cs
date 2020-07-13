@@ -1,5 +1,5 @@
 
-class GameBoy
+class Gameboi
 {
     private CPU cpu;
     private Timer timer;
@@ -9,7 +9,7 @@ class GameBoy
     private Bus bus;
     private DMA dma;
 
-    public GameBoy()
+    public Gameboi()
     {
         // Create hardware
         bus = new Bus();
@@ -129,8 +129,8 @@ class GameBoy
 
         // game = Cartridge.LoadGame("roms/cgb_sound.gb");
         // game = Cartridge.LoadGame("roms/Pokemon Red.gb");
-        game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
-        // game = Cartridge.LoadGame("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb");
+        // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
+        game = Cartridge.LoadGame("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb");
         // game = Cartridge.LoadGame("roms/bgbtest.gb");
         // game = Cartridge.LoadGame("roms/naughtyemu.gb");
 
@@ -146,10 +146,7 @@ class GameBoy
 
     public void Play()
     {
-        bool frameDrawn = false;
-
-
-        while (!frameDrawn)
+        while (isOn)
         {
             controller.CheckInputs();
 
@@ -159,8 +156,15 @@ class GameBoy
 
             dma.Tick(cpuCycles);
 
-            frameDrawn = lcd.Tick(cpuCycles);
+            lcd.Tick(cpuCycles);
         }
     }
+
+    public void CheckController() => controller.RegisterInputs();
+    public void Render() => lcd.DrawFrame();
+
+    private bool isOn = false;
+    public void TurnOn() => isOn = true;
+    public void TurnOff() => isOn = false;
 
 }
