@@ -1,43 +1,36 @@
 using System;
-using static ByteOperations;
+using static TileDataConstants;
 
-class Tile
+class Tile : IMemoryRange
 {
-    private byte[] data = new byte[16];
+    private IMemory[] data = new IMemory[bytesPerTile];
 
-    public Tile() { }
+    public Address Size => bytesPerTile;
 
-    public Tile(byte[] data)
+    public Tile()
     {
-        if (data.Length != 16)
-            throw new ArgumentOutOfRangeException("Data must be 16 bytes long");
-
-        data.CopyTo(this.data, 0);
+        for (int i = 0; i < bytesPerTile; i++)
+            data[i] = new Register();
     }
 
     public Byte GetColorCode(Byte x, Byte y)
     {
         if (x > 7 || y > 7)
             throw new ArgumentOutOfRangeException("x and y must be lower than 8");
-        byte high = GetHighBit(x, y);
-        byte low = GetLowBit(x, y);
-        return high | low;
+
+        Byte result = 0;
+
+        Byte rowIndex = y * 2;
+        if (data[rowIndex + 1].Read()[7 - x]) result |= 2;
+        if (data[rowIndex].Read()[7 - x]) result |= 1;
+
+        return result;
     }
 
-    private Byte GetHighBit(byte x, byte y)
-    {
-        byte row = data[(y * 2) + 1];
-        return GetBitAt(x, row) << 1;
-    }
+    public Byte Read(Address address, bool isCpu = false) => data[address].Read();
 
-    private byte GetLowBit(byte x, byte y)
-    {
-        byte row = data[y * 2];
-        return GetBitAt(x, row);
-    }
+    public void Write(Address address, Byte value, bool isCpu = false) => data[address].Write(value);
 
-    private byte GetBitAt(byte x, byte row)
-    {
-        return (byte)(TestBit(7 - x, row) ? 1 : 0);
-    }
+    public void Set(Address address, IMemory replacement) => data[address] = replacement;
+
 }

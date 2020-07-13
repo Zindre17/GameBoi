@@ -15,4 +15,6 @@ public struct Byte
 
     public override string ToString() => value.ToString("X2");
 
+    public bool this[int bit] => (value & (1 << bit)) != 0;
+
 }

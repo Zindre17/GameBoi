@@ -85,6 +85,8 @@ class CPU : Hardware
     }
     #endregion
 
+    public override Byte Read(Address address) => bus.Read(address, true);
+    public override void Write(Address address, Byte value) => bus.Write(address, value, true);
 
     public ulong cycles = 0;
     ulong prevCycles = 0;
@@ -158,31 +160,31 @@ class CPU : Hardware
         if (IE.Vblank && IF.Vblank)
         {
             IF.Vblank = false;
-            Interrupt(VblankVector, V_Blank_bit);
+            Interrupt(VblankVector);
         }
         else if (IE.LcdStat && IF.LcdStat)
         {
             IF.LcdStat = false;
-            Interrupt(LcdStatVector, LCDC_bit);
+            Interrupt(LcdStatVector);
         }
         else if (IE.Timer && IF.Timer)
         {
             IF.Timer = false;
-            Interrupt(TimerVector, Timer_bit);
+            Interrupt(TimerVector);
         }
         else if (IE.Serial && IF.Serial)
         {
             IF.Serial = false;
-            Interrupt(SerialVector, Link_bit);
+            Interrupt(SerialVector);
         }
         else if (IE.Joypad && IF.Joypad)
         {
-            IF.Serial = false;
-            Interrupt(JoypadVector, Joypad_bit);
+            IF.Joypad = false;
+            Interrupt(JoypadVector);
         }
     }
 
-    private void Interrupt(ushort interruptVector, byte bit)
+    private void Interrupt(ushort interruptVector)
     {
         IME = false;
         Call(interruptVector);

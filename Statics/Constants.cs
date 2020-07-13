@@ -76,19 +76,51 @@ public static class ScreenRelatedAddresses
     public const ushort WY_address = 0xFF4A;
     public const ushort WX_address = 0xFF4B;
 
-    public const ushort TileData1 = 0x8000;
-    public const ushort TileData0 = 0x8800;
-    public const ushort TileMap0Address = 0x9800;
-    public const ushort TileMap1Address = 0x9C00;
+    public const ushort TileDataStart = GeneralMemoryMap.VRAM_StartAddress;
+    public const ushort TileDataEnd = 0x9800;
+    public const ushort TileData1Start = TileDataStart;
+    public const ushort TileData1End = 0x9000;
+    public const ushort TileData0Start = 0x8800;
+    public const ushort TileData0End = TileDataEnd;
+
+    public const ushort TileMapStart = TileData0End;
+    public const ushort TileMapEnd = GeneralMemoryMap.VRAM_EndAddress;
+    public const ushort TileMap0Start = TileMapStart;
+    public const ushort TileMap0End = 0x9C00;
+    public const ushort TileMap1Start = TileMap0End;
+    public const ushort TileMap1End = TileMapEnd;
 }
 
 public static class ScreenTimings
 {
     public const uint clocksPerDraw = 70224;
     public const ushort vblankClocks = 4560;
-    public const byte mode2End = 80;
-    public const byte mode3End = 172;
-    public const ushort hblankEnd = 204;
+    public const byte mode2Clocks = 80;
+    public const byte mode3Clocks = 172;
+    public const ushort hblankClocks = 204;
+}
+
+public static class ScreenSizes
+{
+    public const int pixelsPerLine = 160;
+    public const int pixelLines = 144;
+}
+
+public static class TileDataConstants
+{
+    public const int tileCount = 0x180;
+    public const int startIndexOfSecondTable = 0x100;
+    public const int bytesPerTile = 0x10;
+    public const int tileDataSize = 0x1800;
+}
+
+public static class TileMapConstants
+{
+    public const int tileMapTotalSize = 0x800;
+    public const int tileMapWidth = 32;
+    public const int tileMapHeight = 32;
+    public const int tileMapSize = 0x400;
+
 }
 
 public static class InterruptAddresses

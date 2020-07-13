@@ -5,13 +5,14 @@ class DummyRange : IMemoryRange
 
     public Address Size => throw new System.NotImplementedException();
 
-    public Byte Read(Address address) => 0;
+    public Byte Read(Address address, bool isCpu = false) => 0xFF;
+    public void Write(Address address, Byte value, bool isCpu = false) { }
 
-    public void Write(Address address, Byte value) { }
+    public void Set(Address address, IMemory replacement) { }
 }
 
 class Dummy : IMemory
 {
-    public Byte Read() => 0;
+    public Byte Read() => 0xFF;
     public void Write(Byte value) { }
 }
