@@ -1,6 +1,7 @@
 using static ScreenSizes;
 using static TileMapConstants;
 using static TileDataConstants;
+using System;
 
 class VRAM : IMemoryRange, ILockable
 {
@@ -11,13 +12,23 @@ class VRAM : IMemoryRange, ILockable
 
     public Address Size => 0x2000;
 
-    private IMemory scx, scy;
+    private IMemory scx, scy, wx, wy;
     private LCDC lcdc;
 
-    public VRAM(IMemory scx, IMemory scy, LCDC lcdc) => (this.scx, this.scy, this.lcdc) = (scx, scy, lcdc);
-
-    public Byte[] GetBackgroundLine(Byte line)
+    public VRAM(LCDC lcdc, IMemory scx, IMemory scy, IMemory wx, IMemory wy)
     {
+        this.lcdc = lcdc;
+        this.scx = scx;
+        this.scy = scy;
+        this.wx = wx;
+        this.wy = wy;
+    }
+
+    private Byte linesOfWindowDrawn = 0;
+    public Byte[] GetBackgroundAndWindowLine(Byte line)
+    {
+        if (line == 0) linesOfWindowDrawn = 0;
+
         Byte[] pixelLine = new Byte[pixelsPerLine];
         Byte scrollY = scy.Read();
 
@@ -27,17 +38,72 @@ class VRAM : IMemoryRange, ILockable
         Byte tileY = screenY % 8;
 
         Byte scrollX = scx.Read();
-        for (int i = 0; i < pixelsPerLine; i++)
-        {
-            Byte screenX = scrollX + i;
 
-            Byte mapX = screenX / 8;
-            Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.BgMapSelect);
+        if (lcdc.IsBackgroundEnabled)
+        {
+            for (int i = 0; i < pixelsPerLine; i++)
+            {
+                Byte screenX = scrollX + i;
+
+                Byte mapX = screenX / 8;
+                Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.BgMapSelect);
+
+                Tile tile = tileDataMap.LoadTilePattern(patternIndex, lcdc.BgWdDataSelect);
+
+                Byte tileX = screenX % 8;
+                pixelLine[i] = tile.GetColorCode(tileX, tileY);
+            }
+        }
+        if (lcdc.IsWindowEnabled)
+        {
+            Byte[] windowLine = GetWindowLine(line);
+            for (int i = 0; i < pixelsPerLine; i++)
+                if (windowLine[i] != 0) pixelLine[i] = windowLine[i] - 1;
+            linesOfWindowDrawn++;
+        }
+
+        return pixelLine;
+    }
+
+    public Byte[] GetWindowLine(Byte line)
+    {
+        Byte[] pixelLine = new Byte[pixelsPerLine];
+
+
+        Byte windowY = wy.Read();
+        if (windowY > line) return pixelLine;
+
+        windowY = line - wy.Read();
+        if (windowY > 143) return pixelLine;
+        Byte lag = windowY - linesOfWindowDrawn;
+        windowY -= lag;
+
+        Byte windowXstart = wx.Read();
+        if (windowXstart > 166) return pixelLine;
+
+        windowXstart -= 7;
+
+        Byte windowXend;
+
+        if (windowXstart[7])
+        {
+            windowXend = windowXstart + pixelsPerLine;
+            windowXstart = 0;
+        }
+        else windowXend = pixelsPerLine;
+
+        Byte mapY = windowY / 8;
+        Byte tileY = windowY % 8;
+
+        for (int i = windowXstart; i < windowXend; i++)
+        {
+            Byte mapX = (i - windowXstart) / 8;
+            Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.WdMapSelect);
 
             Tile tile = tileDataMap.LoadTilePattern(patternIndex, lcdc.BgWdDataSelect);
 
-            Byte tileX = screenX % 8;
-            pixelLine[i] = tile.GetColorCode(tileX, tileY);
+            Byte tileX = (i - windowXstart) % 8;
+            pixelLine[i] = tile.GetColorCode(tileX, tileY) + 1;
         }
 
         return pixelLine;

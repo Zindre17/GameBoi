@@ -7,7 +7,6 @@
         Title="GameBoi" Height="450" Width="800">
     
     <Grid Background="LightGreen">
-        
-        <Image Grid.Row="0" Grid.Column="0" Source="{Binding Path=Screen}" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+        <Image Grid.Row="0" Grid.Column="0" Source="{Binding }" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
     </Grid>
 </Window>

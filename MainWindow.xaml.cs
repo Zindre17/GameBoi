@@ -16,7 +16,7 @@ namespace GB_Emulator
         {
             InitializeComponent();
             gameboi = new Gameboi();
-            this.DataContext = gameboi.lcd;
+            this.DataContext = gameboi.GetScreen();
 
             CompositionTarget.Rendering += Startup;
         }

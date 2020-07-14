@@ -24,13 +24,13 @@ class PPU
         this.lcdc = lcdc;
 
         oam = new OAM();
-        vram = new VRAM(scx, scy, lcdc);
+        vram = new VRAM(lcdc, scx, scy, wx, wy);
     }
 
     public Byte[] GetLine(Byte line)
     {
 
-        Byte[] pixelLine = vram.GetBackgroundLine(line);
+        Byte[] pixelLine = vram.GetBackgroundAndWindowLine(line);
 
         var sprites = oam.GetSpritesOnLine(line, lcdc.IsDoubleSpriteSize);
         Byte[] spriteLayer = new Byte[pixelsPerLine];
