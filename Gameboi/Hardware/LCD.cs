@@ -176,19 +176,22 @@ class LCD : Hardware
     public void DrawFrame()
     {
         byte[] formattedPixels = new byte[pixels.Length / 4];
-        int index = 0;
-        for (int i = 0; i < pixels.Length; i += 4)
+        if (lcdc.IsEnabled)
         {
-            Byte value = pixels[i] << 6 | pixels[i + 1] << 4 | pixels[i + 2] << 2 | pixels[i + 3];
-            formattedPixels[index++] = value;
+            int index = 0;
+            for (int i = 0; i < pixels.Length; i += 4)
+            {
+                Byte value = pixels[i] << 6 | pixels[i + 1] << 4 | pixels[i + 2] << 2 | pixels[i + 3];
+                formattedPixels[index++] = value;
+            }
+        }
+        else
+        {
+            for (int i = 0; i < formattedPixels.Length; i++)
+            {
+                formattedPixels[i] = 0xFF;
+            }
         }
         screen.WritePixels(rect, formattedPixels, formattedPixels.Length / rect.Height, 0);
-    }
-
-    private void DrawDisabledFrame()
-    {
-        for (int i = 0; i < pixels.Length; i++)
-            pixels[i] = 3;
-        DrawFrame();
     }
 }
