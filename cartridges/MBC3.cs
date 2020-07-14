@@ -21,7 +21,7 @@ class MBC3 : Cartridge
 
         byte count;
         ushort size;
-        if (hasRAM)
+        if (!hasRAM)
         {
             count = 0;
             size = 0;
