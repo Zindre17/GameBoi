@@ -5,7 +5,7 @@ class NoMBC : Cartridge
     private bool hasRAM = false;
     private bool hasBattery = false;
 
-    public NoMBC(bool hasRAM, byte[] cartridgeData, byte[] batteryStoredRAM = null)
+    public NoMBC(string romPath, bool hasRAM, byte[] cartridgeData, byte[] batteryStoredRAM = null) : base(romPath)
     {
         this.hasRAM = hasRAM;
 

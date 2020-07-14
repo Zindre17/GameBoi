@@ -1,3 +1,5 @@
+using System.IO;
+
 class MBC1 : Cartridge
 {
     private Byte mode;
@@ -5,7 +7,7 @@ class MBC1 : Cartridge
     private Byte ROMBankNumber;
     private Byte RAMBankNumber;
 
-    public MBC1(bool hasRAM, Byte ROMbanks, ushort RAMSize, byte[] cartridgeData)
+    public MBC1(string romPath, bool hasRAM, Byte ROMbanks, ushort RAMSize, byte[] cartridgeData) : base(romPath)
     {
         mode = 0;
 
@@ -45,9 +47,9 @@ class MBC1 : Cartridge
                 count = 1;
                 size = RAMSize;
             }
-            ramBankN = new MbcRam(count, size);
+            ramBankN = new MbcRam(count, size, GetSaveFilePath());
         }
-        else ramBankN = new MbcRam();
+        else ramBankN = new DummyRange();
     }
 
     private void ToggleRAM(Byte value) => ((MbcRam)ramBankN).isEnabled = value == 0x0A;
@@ -105,9 +107,37 @@ class MbcRam : Bank
 {
     public bool isEnabled = false;
 
-    public MbcRam(byte count, ushort size) : base(count, size) { }
-    public MbcRam() : base(0, 0) { }
-    public MbcRam(IMemoryRange[] banks) : base(banks) { }
+    public MbcRam(byte count, ushort size, string saveFileName = null) : base(count, size) => PrepareSaveFile(saveFileName);
+    public MbcRam(IMemoryRange[] banks, string saveFileName = null) : base(banks) => PrepareSaveFile(saveFileName);
+
+    private FileStream file;
+
+    private void PrepareSaveFile(string saveFileName)
+    {
+        if (string.IsNullOrEmpty(saveFileName)) return;
+
+        if (File.Exists(saveFileName))
+        {
+            byte[] allBytes = File.ReadAllBytes(saveFileName);
+            pointer = 0;
+            bool first = true;
+            for (int i = 0; i < allBytes.Length; i++)
+            {
+                Address relAdr = i % Size;
+                if (relAdr == 0 && !first) pointer++;
+                else first = false;
+                base.Write(relAdr, allBytes[i]);
+            }
+        }
+        else
+        {
+            byte[] bytes = new byte[GetTotalSize()];
+            File.WriteAllBytes(saveFileName, bytes);
+        }
+
+        file = File.OpenWrite(saveFileName);
+    }
+    public void CloseFileStream() => file.Close();
 
     public override Byte Read(Address address, bool isCpu = false)
     {
@@ -116,7 +146,15 @@ class MbcRam : Bank
     }
     public override void Write(Address address, Byte value, bool isCpu = false)
     {
-        if (isEnabled) base.Write(address, value, isCpu);
+        if (isEnabled)
+        {
+            base.Write(address, value, isCpu);
+            int offset = 0;
+            for (int i = 0; i < pointer; i++)
+                offset += banks[i].Size;
+            file.Position = offset + address;
+            file.WriteByte(value);
+        }
     }
 }
 

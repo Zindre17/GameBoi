@@ -35,5 +35,9 @@ namespace GB_Emulator
             gameboi.Render();
         }
 
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            gameboi.TurnOff();
+        }
     }
 }

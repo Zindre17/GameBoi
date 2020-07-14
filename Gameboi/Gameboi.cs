@@ -131,6 +131,7 @@ class Gameboi
 
         // game = Cartridge.LoadGame("roms/cgb_sound.gb");
         game = Cartridge.LoadGame("roms/Pokemon Red.gb");
+        // game = Cartridge.LoadGame("roms/Pokemon - Yellow Version (UE) [C][!].gbc");
         // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
         // game = Cartridge.LoadGame("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb");
         // game = Cartridge.LoadGame("roms/bgbtest.gb");
@@ -169,6 +170,10 @@ class Gameboi
 
     private bool isOn = false;
     public void TurnOn() => isOn = game != null;
-    public void TurnOff() => isOn = false;
+    public void TurnOff()
+    {
+        isOn = false;
+        game.CloseFileStream();
+    }
 
 }

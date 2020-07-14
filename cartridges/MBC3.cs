@@ -4,7 +4,7 @@ class MBC3 : Cartridge
 {
     //TODO: implement internal RTC-clock
 
-    public MBC3(bool hasRAM, byte ROMBanks, ushort RAMSize, byte[] cartridgeData)
+    public MBC3(string romPath, bool hasRAM, byte ROMBanks, ushort RAMSize, byte[] cartridgeData) : base(romPath)
     {
         Byte[] bankData = GetCartridgeChunk(0, ROMSizePerBank, cartridgeData);
         romBank0 = new Mbc1Rom(bankData, ToggleRAM, SetROMBankNr);
@@ -55,7 +55,7 @@ class MBC3 : Cartridge
                     ramAndClock[i] = null;
             }
         }
-        ramBankN = new MbcRam(ramAndClock);
+        ramBankN = new MbcRam(ramAndClock, GetSaveFilePath());
 
     }
 

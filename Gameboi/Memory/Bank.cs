@@ -31,6 +31,14 @@ class Bank : IMemoryRange
             pointer = 0;
     }
 
+    public long GetTotalSize()
+    {
+        long result = 0;
+        foreach (var bank in banks)
+            result += bank.Size;
+        return result;
+    }
+
     public virtual Byte Read(Address address, bool isCpu = false) => banks[pointer].Read(address, isCpu);
     public virtual void Write(Address address, Byte value, bool isCpu = false) => banks[pointer].Write(address, value, isCpu);
 

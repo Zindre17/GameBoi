@@ -17,18 +17,36 @@ abstract class Cartridge
     private string title;
     private const ushort cartridgeTypeAddress = 0x147;
 
+    protected string romPath;
+
+    protected Cartridge(string romPath) => this.romPath = romPath;
+
     public static Cartridge LoadGame(string pathToROM)
     {
         //read rom file
         byte[] allBytes = File.ReadAllBytes(pathToROM);
 
         //get info from header
-        Cartridge game = SetupCartridge(allBytes);
+        Cartridge game = SetupCartridge(pathToROM, allBytes);
 
         game.isJapanese = allBytes[isJapaneseAddress] == 0;
         game.title = ReadTitle(allBytes);
 
         return game;
+    }
+
+    public void CloseFileStream()
+    {
+        var ram = RamBankN as MbcRam;
+        if (ram == null) return;
+
+        ram.CloseFileStream();
+    }
+
+    public string GetSaveFilePath()
+    {
+        int indexOfLastDot = romPath.LastIndexOf('.');
+        return romPath.Substring(0, indexOfLastDot) + ".sav";
     }
 
     private const ushort ROMSizeAddress = 0x148;
@@ -52,7 +70,7 @@ abstract class Cartridge
         return Encoding.ASCII.GetString(titleBytes, 0, titleLength);
     }
 
-    private static Cartridge SetupCartridge(byte[] allBytes)
+    private static Cartridge SetupCartridge(string romPath, byte[] allBytes)
     {
         Byte type = allBytes[cartridgeTypeAddress];
         byte ROMSizeType = allBytes[ROMSizeAddress];
@@ -78,19 +96,19 @@ abstract class Cartridge
         */
         if (type == 0 || type == 8 || type == 9)
         {
-            return new NoMBC(type != 0, allBytes);
+            return new NoMBC(romPath, type != 0, allBytes);
         }
         else if (type > 0 && type < 4)
         {
-            return new MBC1(type > 1, ROMBanks, RAMSize, allBytes);
+            return new MBC1(romPath, type > 1, ROMBanks, RAMSize, allBytes);
         }
         else if (type == 5 || type == 6)
         {
-            return new MBC2(ROMBanks, allBytes);
+            return new MBC2(romPath, ROMBanks, allBytes);
         }
         else if (type > 0xF && type < 0x14)
         {
-            return new MBC3(type == 0x12 || type == 0x13, ROMBanks, RAMSize, allBytes);
+            return new MBC3(romPath, type == 0x12 || type == 0x13, ROMBanks, RAMSize, allBytes);
         }
         else throw new ArgumentException($"Could not setup cartridge type: {type}");
     }

@@ -5,7 +5,7 @@ class MBC2 : Cartridge
 {
 
 
-    public MBC2(byte ROMBanks, byte[] cartridgeData)
+    public MBC2(string romPath, byte ROMBanks, byte[] cartridgeData) : base(romPath)
     {
         if (ROMBanks > 15) throw new ArgumentException();
 
@@ -21,7 +21,7 @@ class MBC2 : Cartridge
         }
         romBankN = new Bank(switchableBanks);
 
-        ramBankN = new Mbc2Ram();
+        ramBankN = new Mbc2Ram(GetSaveFilePath());
     }
 
 
@@ -44,7 +44,7 @@ class MBC2 : Cartridge
 class Mbc2Ram : MbcRam
 {
     private const ushort RAMSize = 0x200;
-    public Mbc2Ram()
+    public Mbc2Ram(string saveFileName) : base(null, saveFileName)
     {
         banks = new IMemoryRange[1];
 
