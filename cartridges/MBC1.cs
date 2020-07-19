@@ -49,7 +49,7 @@ class MBC1 : Cartridge
             }
             ramBankN = new MbcRam(count, size, GetSaveFilePath());
         }
-        else ramBankN = new DummyRange();
+        else ramBankN = new Bank(0, 0);
     }
 
     private void ToggleRAM(Byte value) => ((MbcRam)ramBankN).isEnabled = value == 0x0A;
