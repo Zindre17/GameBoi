@@ -1,5 +1,8 @@
 
+using System.Diagnostics;
+using System.Threading;
 using System.Windows.Media;
+using static Frequencies;
 
 class Gameboi
 {
@@ -10,6 +13,7 @@ class Gameboi
     private Cartridge game;
     private Bus bus;
     private DMA dma;
+    private SPU spu;
 
     public Gameboi()
     {
@@ -20,6 +24,7 @@ class Gameboi
         lcd = new LCD();
         controller = new Controller();
         dma = new DMA();
+        spu = new SPU();
 
         // game = Cartridge.LoadGame("roms/blargg/01-special.gb");
         // game = Cartridge.LoadGame("roms/blargg/02-interrupts.gb");
@@ -129,7 +134,7 @@ class Gameboi
         // game = Cartridge.LoadGame("roms/emulator-only/mbc2/rom_2Mb.gb");
         // game = Cartridge.LoadGame("roms/emulator-only/mbc2/rom_512kb.gb");
 
-        // game = Cartridge.LoadGame("roms/cgb_sound.gb");
+        // game = Cartridge.LoadGame("roms/blargg/cgb_sound.gb");
         game = Cartridge.LoadGame("roms/Pokemon Red.gb");
         // game = Cartridge.LoadGame("roms/Pokemon - Yellow Version (UE) [C][!].gbc");
         // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
@@ -139,27 +144,50 @@ class Gameboi
 
         //Connect it all to the bus
         bus.ConnectCartridge(game);
+
         cpu.Connect(bus);
         timer.Connect(bus);
         lcd.Connect(bus);
         dma.Connect(bus);
+        spu.Connect(bus);
         controller.Connect(bus);
 
     }
 
+    private static readonly int syncInterval = (int)(cpuSpeed / 10);
+    private const int syncMs = 100;
+
+    private int accumulatedTicks = 0;
     public void Play()
     {
+        Stopwatch s = new Stopwatch();
+        if (isOn) s.Start();
+
         while (isOn)
         {
             controller.CheckInputs();
 
             Byte cpuCycles = cpu.Tick();
+            accumulatedTicks += cpuCycles;
 
             timer.Tick(cpuCycles);
 
             dma.Tick(cpuCycles);
 
             lcd.Tick(cpuCycles);
+
+            spu.Tick(cpuCycles);
+
+            if (accumulatedTicks >= syncInterval)
+            {
+                accumulatedTicks -= syncInterval;
+                s.Stop();
+                int timeLeft = (int)(syncMs - s.ElapsedMilliseconds);
+                if (timeLeft > 0)
+                    Thread.Sleep(timeLeft);
+                s.Reset();
+                s.Start();
+            }
         }
     }
 
