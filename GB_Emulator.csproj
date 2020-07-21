@@ -9,4 +9,8 @@
   <PropertyGroup>
     <LangVersion>8</LangVersion>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="naudio" Version="1.10.0" />
+  </ItemGroup>
 </Project>
