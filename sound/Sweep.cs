@@ -9,21 +9,26 @@ class Sweep : MaskedRegister
     public delegate void OnSweepOverflow();
     public OnSweepOverflow OverflowListeners;
 
-    public ushort GetFrequencyDataChange(ushort frequencyData)
+    public ushort GetFrequencyDataChange(Address frequencyData, int times)
     {
         if (NrSweepShift == 0) return frequencyData;
 
         Address result = frequencyData;
-        Address shift = result / (1 << NrSweepShift);
-
-
 
         if (IsSubtraction)
         {
-            result -= shift;
+            for (int i = 0; i < times; i++)
+            {
+                Address shift = result / (1 << NrSweepShift);
+                result -= shift;
+            }
         }
         else
-            result += shift;
+            for (int i = 0; i < times; i++)
+            {
+                Address shift = result / (1 << NrSweepShift);
+                result += shift;
+            }
 
         if (result >= 0x7FF)
         {

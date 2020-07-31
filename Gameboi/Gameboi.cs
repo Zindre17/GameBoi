@@ -1,4 +1,5 @@
 
+using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows.Media;
@@ -183,10 +184,8 @@ class Gameboi
                 accumulatedTicks -= syncInterval;
                 s.Stop();
                 int timeLeft = (int)(syncMs - s.ElapsedMilliseconds);
-                if (timeLeft > 0)
-                    Thread.Sleep(timeLeft);
-                s.Reset();
-                s.Start();
+                Thread.Sleep(Math.Max(timeLeft, 0));
+                s.Restart();
             }
         }
     }
