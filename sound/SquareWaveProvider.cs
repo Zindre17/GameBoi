@@ -1,5 +1,4 @@
 using static WavSettings;
-using static Frequencies;
 
 class SquareWaveProvider
 {
