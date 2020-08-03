@@ -1,3 +1,5 @@
+using static WavSettings;
+
 class WaveDuty : Register
 {
     public Byte Duty => (data & 0xC0) >> 6;
@@ -6,7 +8,8 @@ class WaveDuty : Register
     public override Byte Read() => data | 0x3F;
 
     private const double soundLengthDenominator = 1 / 256d;
-    public double GetSoundLengthInMs() => (64 - SoundLength) * soundLengthDenominator * 1000;
+    private double GetSoundLengthInSec() => (64 - SoundLength) * soundLengthDenominator;
+    public int GetSoundLengthInSamples() => (int)(GetSoundLengthInSec() * SAMPLE_RATE);
 
     public double GetDuty()
     {

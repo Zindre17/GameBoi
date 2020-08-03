@@ -1,7 +1,8 @@
 using NAudio.Wave;
 using static SoundRegisters;
+using static Frequencies;
 
-class SPU : Hardware, IWaveProvider
+class SPU : Hardware
 {
     private NR52 nr52 = new NR52();
 
@@ -9,18 +10,34 @@ class SPU : Hardware, IWaveProvider
     private Channel2 channel2;
     private readonly WaveOut waveEmitter = new WaveOut();
 
-    public WaveFormat WaveFormat => new WaveFormat();
+    private BufferedWaveProvider waveProvider;
+    private static int samplesPerBatch;
 
     public SPU()
     {
+        var waveFormat = new WaveFormat();
+        waveProvider = new BufferedWaveProvider(waveFormat);
+        waveProvider.BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate;
+        waveProvider.DiscardOnBufferOverflow = true;
+
+        samplesPerBatch = (int)(System.Math.Ceiling(waveProvider.BufferLength / 4000d));
+
         channel1 = new Channel1(nr52);
         channel2 = new Channel2(nr52);
     }
 
-    public void Tick(Byte cpuTick)
+    private static readonly ulong cyclesPerMs = (ulong)(cpuSpeed / 1000d);
+    private ulong lastClock;
+
+    public override void Tick()
     {
-        channel1.Tick(cpuTick);
-        channel2.Tick(cpuTick);
+        var clockNow = Cycles;
+        var cycles = clockNow - lastClock;
+        if (cycles >= cyclesPerMs)
+        {
+            AddNextSamples();
+            lastClock = clockNow;
+        }
     }
 
     public override void Connect(Bus bus)
@@ -32,30 +49,38 @@ class SPU : Hardware, IWaveProvider
         channel1.Connect(bus);
         channel2.Connect(bus);
 
-        waveEmitter.Init(this);
+        channel1.Run();
+        channel2.Run();
+
+        waveEmitter.Init(waveProvider);
         waveEmitter.Play();
     }
 
-    public int Read(byte[] buffer, int offset, int count)
+    public void AddNextSamples()
     {
         int bytesRead = 0;
-        while (bytesRead < count)
+
+        var channel2Samples = channel2.GetNextSampleBatch(samplesPerBatch);
+        var channel1Samples = channel1.GetNextSampleBatch(samplesPerBatch);
+        var samples = new byte[samplesPerBatch * 4];
+
+        for (int i = 0; i < channel2Samples.Length; i++)
         {
             short sample = 0;
-            sample += channel1.GetNextSample();
-            sample += channel2.GetNextSample();
+            sample += (short)(channel1Samples[i] / 2);
+            sample += (short)(channel2Samples[i] / 2);
 
-            Byte high = sample >> 8;
-            Byte low = sample;
+            byte high = (byte)(sample >> 8);
+            byte low = (byte)sample;
 
             //channel1
-            buffer[bytesRead++] = high;
-            buffer[bytesRead++] = low;
+            samples[bytesRead++] = high;
+            samples[bytesRead++] = low;
             //channel2
-            buffer[bytesRead++] = high;
-            buffer[bytesRead++] = low;
+            samples[bytesRead++] = high;
+            samples[bytesRead++] = low;
         }
 
-        return bytesRead;
+        waveProvider.AddSamples(samples, 0, samples.Length);
     }
 }

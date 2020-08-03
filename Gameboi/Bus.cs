@@ -4,6 +4,17 @@ using static GeneralMemoryMap;
 class Bus
 {
     private CPU cpu;
+    private Timer timer = new Timer();
+
+    private ulong cycles = 0;
+    public ulong Cycles => cycles;
+
+    public void TickTimer()
+    {
+        timer.Tick();
+    }
+    public void UpdateCycles(Byte cyclesToAdd) => cycles += cyclesToAdd;
+
     private Cartridge game;
 
     private IMemoryRange[] memory = new IMemoryRange[0x10000];
@@ -52,6 +63,7 @@ class Bus
         ie = new InterruptRegister();
         RouteMemory(IE_address, ie);
 
+        timer.Connect(this);
     }
     private Random random = new Random();
 

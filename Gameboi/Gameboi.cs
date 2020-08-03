@@ -8,7 +8,6 @@ using static Frequencies;
 class Gameboi
 {
     private CPU cpu;
-    private Timer timer;
     private LCD lcd;
     private Controller controller;
     private Cartridge game;
@@ -21,7 +20,6 @@ class Gameboi
         // Create hardware
         bus = new Bus();
         cpu = new CPU();
-        timer = new Timer();
         lcd = new LCD();
         controller = new Controller();
         dma = new DMA();
@@ -147,7 +145,6 @@ class Gameboi
         bus.ConnectCartridge(game);
 
         cpu.Connect(bus);
-        timer.Connect(bus);
         lcd.Connect(bus);
         dma.Connect(bus);
         spu.Connect(bus);
@@ -155,39 +152,44 @@ class Gameboi
 
     }
 
-    private static readonly int syncInterval = (int)(cpuSpeed / 10);
+    private static readonly ulong syncInterval = (ulong)(cpuSpeed / 10);
     private const int syncMs = 100;
 
-    private int accumulatedTicks = 0;
+    private ulong accumulatedTicks = 0;
     public void Play()
     {
-        Stopwatch s = new Stopwatch();
-        if (isOn) s.Start();
+        // Stopwatch s = new Stopwatch();
+        // if (isOn) s.Start();
+        controller.Run();
+        dma.Run();
+        lcd.Run();
+        spu.Run();
+        cpu.Run();
+        // while (isOn)
+        // {
+        //     controller.CheckInputs();
 
-        while (isOn)
-        {
-            controller.CheckInputs();
+        //     Byte cpuCycles = cpu.Tick();
+        //     accumulatedTicks += cpuCycles;
 
-            Byte cpuCycles = cpu.Tick();
-            accumulatedTicks += cpuCycles;
+        //     timer.Tick(cpuCycles);
 
-            timer.Tick(cpuCycles);
+        //     dma.Tick(cpuCycles);
 
-            dma.Tick(cpuCycles);
+        //     lcd.Tick(cpuCycles);
 
-            lcd.Tick(cpuCycles);
+        //     spu.Tick(cpuCycles);
 
-            spu.Tick(cpuCycles);
-
-            if (accumulatedTicks >= syncInterval)
-            {
-                accumulatedTicks -= syncInterval;
-                s.Stop();
-                int timeLeft = (int)(syncMs - s.ElapsedMilliseconds);
-                Thread.Sleep(Math.Max(timeLeft, 0));
-                s.Restart();
-            }
-        }
+        //     if (accumulatedTicks >= syncInterval)
+        //     {
+        //         accumulatedTicks -= syncInterval;
+        //         s.Stop();
+        //         int timeLeft = (int)(syncMs - s.ElapsedMilliseconds);
+        //         Thread.Sleep(Math.Max(timeLeft, 0));
+        //         s.Restart();
+        //         // spu.Sync();
+        //     }
+        // }
     }
 
     public ImageSource GetScreen() => lcd.Screen;

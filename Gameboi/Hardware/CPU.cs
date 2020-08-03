@@ -1,6 +1,9 @@
 using static ByteOperations;
 using static InterruptAddresses;
+using static Frequencies;
 using System;
+using System.Diagnostics;
+using System.Threading;
 
 public enum InterruptType
 {
@@ -88,39 +91,39 @@ class CPU : Hardware
     public override Byte Read(Address address) => bus.Read(address, true);
     public override void Write(Address address, Byte value) => bus.Write(address, value, true);
 
-    public ulong cycles = 0;
-    ulong prevCycles = 0;
-    long instructionsPerformed = 0;
-
-    public Byte Tick()
+    private static double ratio = Stopwatch.Frequency / (double)cpuSpeed;
+    private long leftovers = 0;
+    public override void Loop()
     {
-        prevCycles = cycles;
-        instructionsPerformed++;
+        long tsStart = Stopwatch.GetTimestamp();
+        ulong start = Cycles;
+        Tick();
+        bus.TickTimer();
+        ulong diff = Cycles - start;
+        var tsTarget = tsStart - leftovers + (ratio * diff);
+        while (Stopwatch.GetTimestamp() < tsTarget)
+        {
+            Thread.SpinWait(10);
+        }
+        leftovers = Stopwatch.GetTimestamp() - (long)tsTarget;
+    }
 
+    public override void Tick()
+    {
         HandleInterrupts();
 
         if (isHalted)
         {
             NoOperation();
-            cycles += 4;
+            bus.UpdateCycles(4);
         }
         else
         {
             // Fetch, Decode, Execute
-
-            // PrintState();
             byte opCode = Fetch();
             instructions[opCode]();
-            cycles += durations[opCode];
+            bus.UpdateCycles(durations[opCode]);
         }
-        return cycles - prevCycles;
-    }
-
-    private void PrintState()
-    {
-        Console.WriteLine(
-            $"{instructionsPerformed.ToString("D4")}: PC: {ProgramCounter}, SP: {StackPointer}, AF: {AF}, BC: {BC}, DE: {DE}, HL: {HL}, LCDC: {Read(0xFF40)}, STAT: {Read(0xFF41)}"
-        );
     }
 
     #region Interrupts
@@ -188,7 +191,7 @@ class CPU : Hardware
     {
         IME = false;
         Call(interruptVector);
-        cycles += 24;
+        bus.UpdateCycles(24);
     }
 
     public void RequestInterrupt(InterruptType type)
@@ -283,7 +286,7 @@ class CPU : Hardware
         cbInstructions[opCode]();
         byte modded = (byte)(opCode % 8);
         byte duration = (byte)(modded == 6 ? 16 : 8);
-        cycles += duration;
+        bus.UpdateCycles(duration);
     }
 
     private void SetCarryFlagInstruction()
@@ -590,7 +593,7 @@ class CPU : Hardware
     {
         if (condition)
         {
-            cycles += 4;
+            bus.UpdateCycles(4);
             JumpBy(increment);
         }
     }
@@ -603,7 +606,7 @@ class CPU : Hardware
     {
         if (condition)
         {
-            cycles += 4;
+            bus.UpdateCycles(4);
             JumpTo(address);
         }
     }
@@ -615,7 +618,7 @@ class CPU : Hardware
     {
         if (condition)
         {
-            cycles += 12;
+            bus.UpdateCycles(12);
             Return();
         }
     }
@@ -634,7 +637,7 @@ class CPU : Hardware
     {
         if (condition)
         {
-            cycles += 12;
+            bus.UpdateCycles(12);
             Call(address);
         }
     }

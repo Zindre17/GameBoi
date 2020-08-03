@@ -21,7 +21,7 @@ class Channel3 : SoundChannel
         bus.ReplaceMemory(NR34_address, frequencyHigh);
     }
 
-    public override void Tick(Byte cpuCycles)
+    public override void Tick()
     {
         throw new System.NotImplementedException();
     }

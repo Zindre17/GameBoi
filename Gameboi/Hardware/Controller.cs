@@ -57,4 +57,9 @@ class Controller : Hardware
         base.Connect(bus);
         bus.ReplaceMemory(P1_address, p1);
     }
+
+    public override void Tick()
+    {
+        CheckInputs();
+    }
 }

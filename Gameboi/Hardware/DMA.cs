@@ -21,13 +21,20 @@ class DMA : Hardware
         inProgress = true;
         target = OAM_StartAddress;
         source = value * 0x100;
+        lastClock = Cycles;
     }
 
     private Address target;
     private Address source;
 
-    public void Tick(byte elapsedCpuClocks)
+    private ulong lastClock = 0;
+
+    public override void Tick()
     {
+        ulong newClock = Cycles;
+        ulong elapsedCpuClocks = newClock - lastClock;
+        lastClock = newClock;
+
         if (inProgress)
         {
             while (elapsedCpuClocks >= clocksPerByte)

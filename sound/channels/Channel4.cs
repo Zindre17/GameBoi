@@ -7,7 +7,7 @@ class Channel4 : SoundChannel
 
     // public Channel4() : base(null) { }
 
-    public override void Tick(Byte cpuCycles)
+    public override void Tick()
     {
         throw new System.NotImplementedException();
     }

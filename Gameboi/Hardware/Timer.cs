@@ -1,5 +1,6 @@
 using static TimerAddresses;
 using static Frequencies;
+using System.Threading;
 
 class Timer : Hardware
 {
@@ -13,8 +14,14 @@ class Timer : Hardware
 
     private ulong cyclesSinceLastDivTick = 0;
     private ulong cyclesSinceLastTimerTick = 0;
-    public void Tick(ulong elapsedCpuCycles)
+    private ulong lastClock;
+
+    public override void Tick()
     {
+        ulong newClock = Cycles;
+        ulong elapsedCpuCycles = newClock - lastClock;
+        lastClock = newClock;
+
         cyclesSinceLastDivTick += elapsedCpuCycles;
 
         while (cyclesSinceLastDivTick >= cpuToDivRatio)

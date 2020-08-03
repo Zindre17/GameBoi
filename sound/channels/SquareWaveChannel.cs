@@ -1,6 +1,7 @@
+using System;
 using static Frequencies;
 
-abstract class SquareWaveChannel : SoundChannel, ISampleProvider
+abstract class SquareWaveChannel : SoundChannel
 {
     protected Sweep sweep;
     protected WaveDuty waveDuty = new WaveDuty();
@@ -23,93 +24,98 @@ abstract class SquareWaveChannel : SoundChannel, ISampleProvider
         lastFrequencyData = GetFrequencyData();
     }
 
-    public short GetNextSample() => waveProvider.GetNextSample();
+    public short[] GetNextSampleBatch(int count) => waveProvider.GetNextSampleBatch(count);
 
     public abstract override void Connect(Bus bus);
-
-    private int elapsedSinceLastEnvelope = 0;
-    private int elapsedSinceLastSweep = 0;
 
     private uint lastFrequencyData;
     private byte lastVolume;
     private byte lastDuty;
 
-    private int elapsedDurationInCycles = 0;
-    private int sweepSteps = 0;
-    public override void Tick(Byte cycles)
+    private ulong lastClock;
+    private ulong lastInitial;
+
+    public override void Tick()
     {
+        ulong newClock = Cycles;
+        int cycles = (int)(newClock - lastClock);
+        lastClock = newClock;
+
+        ushort frequencyData = GetFrequencyData();
+
         if (frequencyHigh.IsInitial)
         {
             frequencyHigh.IsInitial = false;
-            elapsedDurationInCycles = 0;
-            sweepSteps = 0;
-            double newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInMs() : 0;
-            waveProvider.UpdateDuration(newDuration);
-            waveProvider.Start();
-        }
+            lastInitial = newClock;
+            int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : 0;
+            waveProvider.UpdateSound(
+                Cycles,
+                GetFrequency(frequencyData),
+                waveDuty.GetDuty(),
+                envelope.GetVolume(),
+                true,
+                newDuration
+            );
 
-        if (IsEnvelopeActive())
+            lastVolume = envelope.InitialVolume;
+        }
+        else
         {
-            elapsedSinceLastEnvelope += cycles;
-            if (ShouldTriggerEnvelope())
+            Byte volume = envelope.InitialVolume;
+            Byte stepLengh = envelope.LengthOfStep;
+            bool isIncrease = envelope.IsIncrease;
+
+            if (stepLengh != 0)
             {
-                envelope.InitialVolume += (envelope.IsIncrease ? 1 : -1);
-                elapsedSinceLastEnvelope = 0;
-            }
-        }
+                double triggerFrequency = 64d / stepLengh;
+                int cyclesPerStep = (int)(cpuSpeed / triggerFrequency);
 
-        ushort frequencyData = GetFrequencyData();
-        if (IsSweepActive())
-        {
-            elapsedSinceLastSweep += cycles;
-            if (ShouldTriggerSweep())
+                long duration = (long)(newClock - lastInitial);
+                int steps = (int)(duration / cyclesPerStep);
+                if (steps > 0)
+                    if (isIncrease)
+                    {
+                        volume = Math.Min(Envelope.MaxVolume, volume + steps);
+                    }
+                    else
+                    {
+                        volume = Math.Max(0, volume - steps);
+                    }
+            }
+
+            if (sweep != null)
             {
-                frequencyData = sweep.GetFrequencyDataChange(frequencyData, ++sweepSteps);
-                elapsedSinceLastSweep = 0;
+
+                var sweepShifts = sweep.NrSweepShift;
+                var sweepTime = sweep.SweepTime;
+                var isSubtraction = sweep.IsSubtraction;
+                if (sweepTime != 0 && sweepShifts != 0)
+                {
+                    int triggerFrequency = 128 / sweepTime;
+                    int cyclesPerSweep = (int)(cpuSpeed / triggerFrequency);
+
+                    long duration = (long)(newClock - lastInitial);
+                    int steps = (int)(duration / cyclesPerSweep);
+
+                    if (steps > 0)
+                        frequencyData = sweep.GetFrequencyDataChange(frequencyData, steps, sweepShifts, isSubtraction);
+                }
             }
+
+            if (frequencyData != lastFrequencyData || waveDuty.Duty != lastDuty || envelope.InitialVolume != lastVolume)
+                waveProvider.UpdateSound(
+                    Cycles,
+                    GetFrequency(frequencyData),
+                    waveDuty.GetDuty(),
+                    envelope.GetVolume(volume),
+                    false
+                );
+
+            lastVolume = volume;
         }
-
-        if (frequencyData != lastFrequencyData)
-            waveProvider.UpdateFrequency(GetFrequency(frequencyData));
-
-        if (waveDuty.Duty != lastDuty)
-            waveProvider.UpdateDuty(waveDuty.GetDuty());
-
-        if (envelope.InitialVolume != lastVolume)
-            waveProvider.UpdateVolume(envelope.InitialVolume);
 
         lastFrequencyData = frequencyData;
-        lastVolume = envelope.InitialVolume;
         lastDuty = waveDuty.Duty;
-    }
-
-    private bool IsEnvelopeActive()
-    {
-        if (envelope.LengthOfStep == 0) return false;
-        if (envelope.InitialVolume == 0 && !envelope.IsIncrease) return false;
-        return !(envelope.InitialVolume == 0x0F && envelope.IsIncrease);
-    }
-
-    private bool IsSweepActive()
-    {
-        if (sweep == null || sweep.SweepTime == 0) return false;
-        return sweep.NrSweepShift != 0;
-    }
-
-    private bool ShouldTriggerEnvelope()
-    {
-        int triggerFrequency = 64 / envelope.LengthOfStep;
-        int cyclesPerStep = (int)(cpuSpeed / triggerFrequency);
-
-        return cyclesPerStep <= elapsedSinceLastEnvelope;
-    }
-
-    private bool ShouldTriggerSweep()
-    {
-        int triggerFrequency = 128 / sweep.SweepTime;
-        int cyclesPerSweep = (int)(cpuSpeed / triggerFrequency);
-
-        return cyclesPerSweep <= elapsedSinceLastSweep;
     }
 
     private ushort GetFrequencyData()
@@ -117,18 +123,10 @@ abstract class SquareWaveChannel : SoundChannel, ISampleProvider
         return (ushort)((frequencyHigh.HighBits << 8) | frequencyLow.LowBits);
     }
 
-    private void SetFrequencyData(ushort newFrequencyData)
-    {
-        frequencyLow.Write((byte)newFrequencyData);
-        frequencyHigh.HighBits = (newFrequencyData >> 8) & 7;
-    }
-
     private ushort GetFrequencyData(uint frequency)
     {
         return (ushort)(0x800 - (0x20000 / frequency));
     }
-
-    public uint GetFrequency() => GetFrequency(GetFrequencyData());
 
     private uint GetFrequency(ushort frequencyData)
     {

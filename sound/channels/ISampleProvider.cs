@@ -1,4 +1,0 @@
-interface ISampleProvider
-{
-    short GetNextSample();
-}

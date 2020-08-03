@@ -1,3 +1,5 @@
+using System;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -67,9 +69,9 @@ class LCD : Hardware
     }
 
     private uint[] modeDurations = new uint[4] { hblankClocks, vblankClocks, mode2Clocks, mode3Clocks };
-    private Func[] modeEnters = new Func[4];
-    private Func[] modeExits = new Func[4];
-    private Func[] modeTicks = new Func[4];
+    private Action[] modeEnters = new Action[4];
+    private Action[] modeExits = new Action[4];
+    private Action[] modeTicks = new Action[4];
 
     private void CheckCoincidence(Byte newLY)
     {
@@ -92,16 +94,26 @@ class LCD : Hardware
 
     }
 
-    private delegate void Func();
     private ulong currentFrame = 0;
     private ulong cyclesInMode = 0;
 
     private byte prevMode;
     bool isFrameDone;
+    private ulong lastClock;
 
-    public bool Tick(Byte elapsedCpuCycles)
+    public override void Loop()
+    {
+        Tick();
+        Thread.Sleep(1);
+    }
+
+    public override void Tick()
     {
         isFrameDone = false;
+
+        ulong newClock = Cycles;
+        ulong elapsedCpuCycles = newClock - lastClock;
+        lastClock = newClock;
 
         cyclesInMode += elapsedCpuCycles;
 
@@ -110,11 +122,9 @@ class LCD : Hardware
             Byte mode = stat.Mode;
             elapsedCpuCycles = ExecuteMode(modeEnters[mode], modeExits[mode], modeTicks[mode]);
         }
-
-        return isFrameDone;
     }
 
-    private ulong ExecuteMode(Func onEnter = null, Func onExit = null, Func onTick = null)
+    private ulong ExecuteMode(Action onEnter = null, Action onExit = null, Action onTick = null)
     {
         Byte mode = stat.Mode;
         if (prevMode != mode)
