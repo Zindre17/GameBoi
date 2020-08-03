@@ -8,7 +8,7 @@ class Channel3 : SoundChannel
     private FrequencyLow frequencyLow = new FrequencyLow();
     private FrequencyHigh frequencyHigh = new FrequencyHigh();
 
-    // public Channel3() : base(null) { }
+    private WaveRam waveRam = new WaveRam();
 
     public override void Connect(Bus bus)
     {
@@ -21,8 +21,27 @@ class Channel3 : SoundChannel
         bus.ReplaceMemory(NR34_address, frequencyHigh);
     }
 
+    private int currentFrequency;
+
     public override void Tick()
     {
-        throw new System.NotImplementedException();
+        var newFrequency = GetFrequency();
+        if (currentFrequency == newFrequency) return;
+
+    }
+
+    private int GetFrequency()
+    {
+        var low = frequencyLow.Read();
+        var high = frequencyHigh.HighBits;
+        var fdata = high << 8 | low;
+        return 0x10000 / (0x800 - fdata);
+    }
+
+    public short[] GetNextSampleBatch(int count)
+    {
+        short[] samples = new short[count];
+
+        return samples;
     }
 }

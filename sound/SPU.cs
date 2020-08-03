@@ -8,6 +8,8 @@ class SPU : Hardware
 
     private Channel1 channel1;
     private Channel2 channel2;
+    private Channel4 channel4;
+
     private readonly WaveOut waveEmitter = new WaveOut();
 
     private BufferedWaveProvider waveProvider;
@@ -24,9 +26,10 @@ class SPU : Hardware
 
         channel1 = new Channel1(nr52);
         channel2 = new Channel2(nr52);
+        channel4 = new Channel4();
     }
 
-    private static readonly ulong cyclesPerMs = (ulong)(cpuSpeed / 1000d);
+    private static readonly ulong cyclesPerMs = (ulong)(System.Math.Ceiling(cpuSpeed / 1000d));
     private ulong lastClock;
 
     public override void Tick()
@@ -51,6 +54,7 @@ class SPU : Hardware
 
         channel1.Run();
         channel2.Run();
+        channel4.Run();
 
         waveEmitter.Init(waveProvider);
         waveEmitter.Play();
@@ -60,15 +64,19 @@ class SPU : Hardware
     {
         int bytesRead = 0;
 
-        var channel2Samples = channel2.GetNextSampleBatch(samplesPerBatch);
         var channel1Samples = channel1.GetNextSampleBatch(samplesPerBatch);
+        var channel2Samples = channel2.GetNextSampleBatch(samplesPerBatch);
+        // var channel3Samples = channel3.GetNextSampleBatch(samplesPerBatch);
+        var channel4Samples = channel4.GetNextSampleBatch(samplesPerBatch);
         var samples = new byte[samplesPerBatch * 4];
 
         for (int i = 0; i < channel2Samples.Length; i++)
         {
             short sample = 0;
-            sample += (short)(channel1Samples[i] / 2);
-            sample += (short)(channel2Samples[i] / 2);
+            sample += (short)(channel1Samples[i] / 4);
+            sample += (short)(channel2Samples[i] / 4);
+            // sample += (short)(channel3Samples[i] / 4);
+            sample += (short)(channel4Samples[i] / 4);
 
             byte high = (byte)(sample >> 8);
             byte low = (byte)sample;
