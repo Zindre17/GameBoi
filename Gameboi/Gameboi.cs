@@ -1,7 +1,4 @@
 
-using System;
-using System.Diagnostics;
-using System.Threading;
 using System.Windows.Media;
 using static Frequencies;
 
@@ -158,38 +155,11 @@ class Gameboi
     private ulong accumulatedTicks = 0;
     public void Play()
     {
-        // Stopwatch s = new Stopwatch();
-        // if (isOn) s.Start();
         controller.Run();
         dma.Run();
         lcd.Run();
         spu.Run();
         cpu.Run();
-        // while (isOn)
-        // {
-        //     controller.CheckInputs();
-
-        //     Byte cpuCycles = cpu.Tick();
-        //     accumulatedTicks += cpuCycles;
-
-        //     timer.Tick(cpuCycles);
-
-        //     dma.Tick(cpuCycles);
-
-        //     lcd.Tick(cpuCycles);
-
-        //     spu.Tick(cpuCycles);
-
-        //     if (accumulatedTicks >= syncInterval)
-        //     {
-        //         accumulatedTicks -= syncInterval;
-        //         s.Stop();
-        //         int timeLeft = (int)(syncMs - s.ElapsedMilliseconds);
-        //         Thread.Sleep(Math.Max(timeLeft, 0));
-        //         s.Restart();
-        //         // spu.Sync();
-        //     }
-        // }
     }
 
     public ImageSource GetScreen() => lcd.Screen;
