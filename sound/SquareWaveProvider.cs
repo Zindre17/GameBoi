@@ -27,7 +27,7 @@ class SquareWaveProvider
         }
     }
 
-    public void UpdateSound(ulong atCpuCycle, uint frequency, double duty, Address volume, bool isInitial, int duration = 0)
+    public void UpdateSound(uint frequency, double duty, Address volume, bool isInitial, int duration = 0)
     {
         settings = new SquareWaveSettings(
                 frequency,

@@ -1,7 +1,7 @@
 using static GeneralMemoryMap;
 using static MiscSpecialAddresses;
 
-class DMA : Hardware
+class DMA : Hardware, IUpdateable
 {
     private Register dma;
 
@@ -29,7 +29,7 @@ class DMA : Hardware
 
     private ulong lastClock = 0;
 
-    public override void Tick()
+    public void Update(byte cycles)
     {
         ulong newClock = Cycles;
         ulong elapsedCpuClocks = newClock - lastClock;

@@ -4,6 +4,7 @@ using static Frequencies;
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 
 public enum InterruptType
 {
@@ -93,22 +94,36 @@ class CPU : Hardware
 
     private static double ratio = Stopwatch.Frequency / (double)cpuSpeed;
     private long leftovers = 0;
-    public override void Loop()
+
+    private Task runner;
+    public void Run()
     {
-        long tsStart = Stopwatch.GetTimestamp();
-        ulong start = Cycles;
-        Tick();
-        bus.TickTimer();
-        ulong diff = Cycles - start;
-        var tsTarget = tsStart - leftovers + (ratio * diff);
-        while (Stopwatch.GetTimestamp() < tsTarget)
+        if (runner == null)
         {
-            Thread.SpinWait(10);
+            runner = new Task(Loop);
+            runner.Start();
         }
-        leftovers = Stopwatch.GetTimestamp() - (long)tsTarget;
     }
 
-    public override void Tick()
+    public void Loop()
+    {
+        while (true)
+        {
+            long tsStart = Stopwatch.GetTimestamp();
+            ulong start = Cycles;
+            DoNextInstruction();
+            // bus.UpdateAll();
+            ulong diff = Cycles - start;
+            var tsTarget = tsStart - leftovers + (ratio * diff);
+            while (Stopwatch.GetTimestamp() < tsTarget)
+            {
+                Thread.SpinWait(1);
+            }
+            leftovers = Stopwatch.GetTimestamp() - (long)tsTarget;
+        }
+    }
+
+    public void DoNextInstruction()
     {
         HandleInterrupts();
 
@@ -233,7 +248,6 @@ class CPU : Hardware
 
     public override void Connect(Bus bus)
     {
-        bus.ConnectCPU(this);
         base.Connect(bus);
         bus.ReplaceMemory(IE_address, IE);
         bus.ReplaceMemory(IF_address, IF);

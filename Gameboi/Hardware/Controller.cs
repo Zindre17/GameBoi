@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-class Controller : Hardware
+class Controller : Hardware, IUpdateable
 {
 
     const ushort P1_address = 0xFF00;
@@ -58,7 +58,7 @@ class Controller : Hardware
         bus.ReplaceMemory(P1_address, p1);
     }
 
-    public override void Tick()
+    public void Update(byte cycles)
     {
         CheckInputs();
     }

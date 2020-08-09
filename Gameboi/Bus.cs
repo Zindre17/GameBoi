@@ -1,19 +1,30 @@
 using System;
+using System.Collections.Generic;
 using static GeneralMemoryMap;
 
 class Bus
 {
+
     private CPU cpu;
-    private Timer timer = new Timer();
 
     private ulong cycles = 0;
+    private byte cyclesSinceLast = 0;
     public ulong Cycles => cycles;
 
-    public void TickTimer()
+    private List<IUpdateable> updateables = new List<IUpdateable>();
+
+    public void UpdateAll()
     {
-        timer.Tick();
+        foreach (var component in updateables)
+            component.Update(cyclesSinceLast);
     }
-    public void UpdateCycles(Byte cyclesToAdd) => cycles += cyclesToAdd;
+
+    public void UpdateCycles(Byte cyclesToAdd)
+    {
+        cyclesSinceLast = cyclesToAdd;
+        UpdateAll();
+        cycles += cyclesToAdd;
+    }
 
     private Cartridge game;
 
@@ -62,8 +73,6 @@ class Bus
 
         ie = new InterruptRegister();
         RouteMemory(IE_address, ie);
-
-        timer.Connect(this);
     }
     private Random random = new Random();
 
@@ -96,11 +105,6 @@ class Bus
         RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, ExtRAM_EndAddress);
     }
 
-    public void ConnectCPU(CPU cpu)
-    {
-        this.cpu = cpu;
-    }
-
     public void RequestInterrrupt(InterruptType type)
     {
         if (cpu != null)
@@ -110,5 +114,18 @@ class Bus
     public Byte Read(Address address, bool isCpu = false) => memory[address].Read(address, isCpu);
 
     public void Write(Address address, Byte value, bool isCpu = false) => memory[address].Write(address, value, isCpu);
+
+    public void Connect(Hardware component)
+    {
+        if (component is CPU)
+        {
+            cpu = (CPU)component;
+        }
+        else if (component is IUpdateable)
+        {
+            updateables.Add((IUpdateable)component);
+        }
+        component.Connect(this);
+    }
 
 }

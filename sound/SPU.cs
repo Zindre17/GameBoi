@@ -1,8 +1,10 @@
 using NAudio.Wave;
 using static SoundRegisters;
 using static Frequencies;
+using System.Threading.Tasks;
+using System.Threading;
 
-class SPU : Hardware
+class SPU : Hardware, IUpdateable
 {
     private NR52 nr52 = new NR52();
 
@@ -27,20 +29,20 @@ class SPU : Hardware
         channel1 = new Channel1(nr52);
         channel2 = new Channel2(nr52);
         channel4 = new Channel4();
+
     }
 
     private static readonly ulong cyclesPerMs = (ulong)(System.Math.Ceiling(cpuSpeed / 1000d));
-    private ulong lastClock;
-
-    public override void Tick()
+    private ulong elapsed;
+    private Thread channelUpdater;
+    public void Update(byte cycles)
     {
-        var clockNow = Cycles;
-        var cycles = clockNow - lastClock;
-        if (cycles >= cyclesPerMs)
-        {
-            AddNextSamples();
-            lastClock = clockNow;
-        }
+        elapsed += cycles;
+
+        if (elapsed < cyclesPerMs) return;
+
+        AddNextSamples();
+        elapsed -= cyclesPerMs;
     }
 
     public override void Connect(Bus bus)
@@ -51,10 +53,6 @@ class SPU : Hardware
 
         channel1.Connect(bus);
         channel2.Connect(bus);
-
-        channel1.Run();
-        channel2.Run();
-        channel4.Run();
 
         waveEmitter.Init(waveProvider);
         waveEmitter.Play();
@@ -67,7 +65,7 @@ class SPU : Hardware
         var channel1Samples = channel1.GetNextSampleBatch(samplesPerBatch);
         var channel2Samples = channel2.GetNextSampleBatch(samplesPerBatch);
         // var channel3Samples = channel3.GetNextSampleBatch(samplesPerBatch);
-        var channel4Samples = channel4.GetNextSampleBatch(samplesPerBatch);
+        // var channel4Samples = channel4.GetNextSampleBatch(samplesPerBatch);
         var samples = new byte[samplesPerBatch * 4];
 
         for (int i = 0; i < channel2Samples.Length; i++)
@@ -76,7 +74,7 @@ class SPU : Hardware
             sample += (short)(channel1Samples[i] / 4);
             sample += (short)(channel2Samples[i] / 4);
             // sample += (short)(channel3Samples[i] / 4);
-            sample += (short)(channel4Samples[i] / 4);
+            // sample += (short)(channel4Samples[i] / 4);
 
             byte high = (byte)(sample >> 8);
             byte low = (byte)sample;

@@ -1,8 +1,7 @@
 using static TimerAddresses;
 using static Frequencies;
-using System.Threading;
 
-class Timer : Hardware
+class Timer : Hardware, IUpdateable
 {
 
     private TAC tac = new TAC();
@@ -16,13 +15,9 @@ class Timer : Hardware
     private ulong cyclesSinceLastTimerTick = 0;
     private ulong lastClock;
 
-    public override void Tick()
+    public void Update(byte cycles)
     {
-        ulong newClock = Cycles;
-        ulong elapsedCpuCycles = newClock - lastClock;
-        lastClock = newClock;
-
-        cyclesSinceLastDivTick += elapsedCpuCycles;
+        cyclesSinceLastDivTick += cycles;
 
         while (cyclesSinceLastDivTick >= cpuToDivRatio)
         {
@@ -33,7 +28,7 @@ class Timer : Hardware
         if (tac.IsStarted)
         {
             uint ratio = cpuToTimerRatio[tac.TimerSpeed];
-            cyclesSinceLastTimerTick += elapsedCpuCycles;
+            cyclesSinceLastTimerTick += cycles;
             while (cyclesSinceLastTimerTick >= ratio)
             {
                 tima.Tick();

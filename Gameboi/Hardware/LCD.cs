@@ -7,7 +7,7 @@ using static ScreenRelatedAddresses;
 using static ScreenSizes;
 using static ScreenTimings;
 
-class LCD : Hardware
+class LCD : Hardware, IUpdateable
 
 {
     private PPU ppu;
@@ -101,30 +101,20 @@ class LCD : Hardware
     bool isFrameDone;
     private ulong lastClock;
 
-    public override void Loop()
-    {
-        Tick();
-        Thread.Sleep(1);
-    }
-
-    public override void Tick()
+    public void Update(byte cycles)
     {
         isFrameDone = false;
 
-        ulong newClock = Cycles;
-        ulong elapsedCpuCycles = newClock - lastClock;
-        lastClock = newClock;
+        cyclesInMode += cycles;
 
-        cyclesInMode += elapsedCpuCycles;
-
-        while (elapsedCpuCycles != 0)
+        while (cycles != 0)
         {
             Byte mode = stat.Mode;
-            elapsedCpuCycles = ExecuteMode(modeEnters[mode], modeExits[mode], modeTicks[mode]);
+            cycles = ExecuteMode(modeEnters[mode], modeExits[mode], modeTicks[mode]);
         }
     }
 
-    private ulong ExecuteMode(Action onEnter = null, Action onExit = null, Action onTick = null)
+    private byte ExecuteMode(Action onEnter = null, Action onExit = null, Action onTick = null)
     {
         Byte mode = stat.Mode;
         if (prevMode != mode)
@@ -141,7 +131,7 @@ class LCD : Hardware
             cyclesInMode -= endCycles;
             if (onExit != null) onExit();
             SetNextMode();
-            return cyclesInMode;
+            return (byte)cyclesInMode;
         }
         else
         {

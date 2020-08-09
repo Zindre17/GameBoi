@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using static Frequencies;
 
 abstract class SquareWaveChannel : SoundChannel
@@ -24,7 +25,16 @@ abstract class SquareWaveChannel : SoundChannel
         lastFrequencyData = GetFrequencyData();
     }
 
-    public short[] GetNextSampleBatch(int count) => waveProvider.GetNextSampleBatch(count);
+    Task updater = null;
+    public short[] GetNextSampleBatch(int count)
+    {
+        if (updater == null || updater.Status == TaskStatus.RanToCompletion)
+        {
+            updater = new Task(() => Update(0));
+            updater.Start();
+        }
+        return waveProvider.GetNextSampleBatch(count);
+    }
 
     public abstract override void Connect(Bus bus);
 
@@ -35,11 +45,9 @@ abstract class SquareWaveChannel : SoundChannel
     private ulong lastClock;
     private ulong lastInitial;
 
-    public override void Tick()
+    public void Update(byte _)
     {
         ulong newClock = Cycles;
-        int cycles = (int)(newClock - lastClock);
-        lastClock = newClock;
 
         ushort frequencyData = GetFrequencyData();
 
@@ -49,7 +57,6 @@ abstract class SquareWaveChannel : SoundChannel
             lastInitial = newClock;
             int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : 0;
             waveProvider.UpdateSound(
-                Cycles,
                 GetFrequency(frequencyData),
                 waveDuty.GetDuty(),
                 envelope.GetVolume(),
@@ -104,7 +111,6 @@ abstract class SquareWaveChannel : SoundChannel
 
             if (frequencyData != lastFrequencyData || waveDuty.Duty != lastDuty || envelope.InitialVolume != lastVolume)
                 waveProvider.UpdateSound(
-                    Cycles,
                     GetFrequency(frequencyData),
                     waveDuty.GetDuty(),
                     envelope.GetVolume(volume),

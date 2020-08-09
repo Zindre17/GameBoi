@@ -1,4 +1,5 @@
 using static SoundRegisters;
+using static WavSettings;
 
 class Channel3 : SoundChannel
 {
@@ -23,7 +24,7 @@ class Channel3 : SoundChannel
 
     private int currentFrequency;
 
-    public override void Tick()
+    public void Update(byte cycles)
     {
         var newFrequency = GetFrequency();
         if (currentFrequency == newFrequency) return;
@@ -41,7 +42,19 @@ class Channel3 : SoundChannel
     public short[] GetNextSampleBatch(int count)
     {
         short[] samples = new short[count];
+        byte[] wavePattern = waveRam.GetSamples();
+        var samplesPerStep = SAMPLE_RATE / currentFrequency / wavePattern.Length;
+        int step = 0;
+        for (int i = 0; i < count; i++)
+        {
+            step = (int)(i / samplesPerStep);
+            var weight = (i % samplesPerStep) / samplesPerStep;
+            var floor = wavePattern[step];
+            var ceiling = wavePattern[step + 1];
+            var sample = ((1 - weight) * floor) + (weight * ceiling);
 
+            samples[i] = (short)sample;
+        }
         return samples;
     }
 }

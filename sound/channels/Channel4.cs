@@ -31,6 +31,7 @@ class Channel4 : SoundChannel
     }
 
     private long samplesThisDuration;
+    private ulong sampleNr;
     private Random random = new Random();
     public short[] GetNextSampleBatch(int count)
     {
@@ -64,7 +65,7 @@ class Channel4 : SoundChannel
         return result;
     }
 
-    public override void Tick()
+    public void Update(byte cycles)
     {
         var polyReg = polynomial.Read();
         Byte r = polyReg & 7;

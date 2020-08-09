@@ -4,24 +4,20 @@ using static Frequencies;
 
 class Gameboi
 {
-    private CPU cpu;
-    private LCD lcd;
-    private Controller controller;
+    private CPU cpu = new CPU();
+    private LCD lcd = new LCD();
+    private Controller controller = new Controller();
+    private DMA dma = new DMA();
+    private SPU spu = new SPU();
+    private Bus bus = new Bus();
+    private Timer timer = new Timer();
+
+
     private Cartridge game;
-    private Bus bus;
-    private DMA dma;
-    private SPU spu;
+
 
     public Gameboi()
     {
-        // Create hardware
-        bus = new Bus();
-        cpu = new CPU();
-        lcd = new LCD();
-        controller = new Controller();
-        dma = new DMA();
-        spu = new SPU();
-
         // game = Cartridge.LoadGame("roms/blargg/01-special.gb");
         // game = Cartridge.LoadGame("roms/blargg/02-interrupts.gb");
         // game = Cartridge.LoadGame("roms/blargg/03-op sp,hl.gb");
@@ -131,22 +127,21 @@ class Gameboi
         // game = Cartridge.LoadGame("roms/emulator-only/mbc2/rom_512kb.gb");
 
         // game = Cartridge.LoadGame("roms/blargg/cgb_sound.gb");
-        // game = Cartridge.LoadGame("roms/Pokemon Red.gb");
+        game = Cartridge.LoadGame("roms/Pokemon Red.gb");
         // game = Cartridge.LoadGame("roms/Pokemon - Yellow Version (UE) [C][!].gbc");
-        game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
+        // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
         // game = Cartridge.LoadGame("roms/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb");
         // game = Cartridge.LoadGame("roms/bgbtest.gb");
         // game = Cartridge.LoadGame("roms/naughtyemu.gb");
 
         //Connect it all to the bus
+        bus.Connect(cpu);
+        bus.Connect(spu);
+        bus.Connect(timer);
+        bus.Connect(controller);
+        bus.Connect(dma);
+        bus.Connect(lcd);
         bus.ConnectCartridge(game);
-
-        cpu.Connect(bus);
-        lcd.Connect(bus);
-        dma.Connect(bus);
-        spu.Connect(bus);
-        controller.Connect(bus);
-
     }
 
     private static readonly ulong syncInterval = (ulong)(cpuSpeed / 10);
@@ -155,10 +150,10 @@ class Gameboi
     private ulong accumulatedTicks = 0;
     public void Play()
     {
-        controller.Run();
-        dma.Run();
-        lcd.Run();
-        spu.Run();
+        // controller.Run();
+        // dma.Run();
+        // lcd.Run();
+        // spu.Run();
         cpu.Run();
     }
 
