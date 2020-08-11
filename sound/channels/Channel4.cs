@@ -9,9 +9,7 @@ class Channel4 : SoundChannel
     private Register polynomial = new Register();
     private Register mode = new MaskedRegister(0x3F);
 
-    public Channel4()
-    {
-    }
+    public Channel4(NR52 nr52) : base(nr52) { }
 
     private long GetLengthInSamples()
     {

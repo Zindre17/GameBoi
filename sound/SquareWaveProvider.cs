@@ -1,3 +1,4 @@
+using System;
 using static WavSettings;
 
 class SquareWaveProvider
@@ -49,18 +50,25 @@ class SquareWaveProvider
     public void Start() => isStopped = false;
     public void Stop() => isStopped = true;
 
-    private bool HasDuration => settings.DurationInSamples != 0;
+    private bool HasDuration => settings.DurationInSamples != -1;
 
     private ulong sampleNr = 0;
     private int samplePoint = 0;
     private long samplesThisDuration = 0;
+
+    public delegate void DurationCompleteAction();
+    public DurationCompleteAction OnDurationCompleted;
+
 
     public short[] GetNextSampleBatch(int count)
     {
         short[] result = new short[count];
 
         if (HasDuration && samplesThisDuration >= settings.DurationInSamples)
+        {
             Stop();
+            OnDurationCompleted?.Invoke();
+        }
 
         for (int i = 0; i < result.Length; i++)
             result[i] = GetNextSample();

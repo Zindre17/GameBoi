@@ -10,30 +10,33 @@ abstract class SquareWaveChannel : SoundChannel
     protected FrequencyLow frequencyLow = new FrequencyLow();
     protected FrequencyHigh frequencyHigh = new FrequencyHigh();
 
-    protected NR52 nr52;
-    private byte channelBit;
+    protected byte channelBit;
 
     private SquareWaveProvider waveProvider = new SquareWaveProvider();
 
-    public SquareWaveChannel(NR52 nr52, byte channelBit, bool hasSweep)
+    public SquareWaveChannel(NR52 nr52, byte channelBit, bool hasSweep) : base(nr52)
     {
-        this.nr52 = nr52;
         this.channelBit = channelBit;
 
         if (hasSweep) sweep = new Sweep();
 
         lastFrequencyData = GetFrequencyData();
+        waveProvider.OnDurationCompleted += () => nr52.TurnOff(channelBit);
     }
 
     Task updater = null;
     public short[] GetNextSampleBatch(int count)
     {
-        if (updater == null || updater.Status == TaskStatus.RanToCompletion)
-        {
-            updater = new Task(() => Update(0));
-            updater.Start();
-        }
-        return waveProvider.GetNextSampleBatch(count);
+        // if (updater == null || updater.Status == TaskStatus.RanToCompletion)
+        // {
+        //     updater = new Task(() => Update(0));
+        //     updater.Start();
+        // }
+        Update(0);
+        if (nr52.IsAllOn)
+            return waveProvider.GetNextSampleBatch(count);
+
+        return new short[count];
     }
 
     public abstract override void Connect(Bus bus);
@@ -42,7 +45,6 @@ abstract class SquareWaveChannel : SoundChannel
     private byte lastVolume;
     private byte lastDuty;
 
-    private ulong lastClock;
     private ulong lastInitial;
 
     public void Update(byte _)
@@ -53,9 +55,10 @@ abstract class SquareWaveChannel : SoundChannel
 
         if (frequencyHigh.IsInitial)
         {
+            nr52.TurnOn(channelBit);
             frequencyHigh.IsInitial = false;
             lastInitial = newClock;
-            int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : 0;
+            int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : -1;
             waveProvider.UpdateSound(
                 GetFrequency(frequencyData),
                 waveDuty.GetDuty(),

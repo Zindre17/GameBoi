@@ -127,6 +127,18 @@ class Gameboi
         // game = Cartridge.LoadGame("roms/emulator-only/mbc2/rom_512kb.gb");
 
         // game = Cartridge.LoadGame("roms/blargg/cgb_sound.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/01-registers.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/02-len ctr.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/03-trigger.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/04-sweep.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/05-sweep details.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/06-overflow on trigger.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/07-len sweep period sync.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/08-len ctr during power.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/09-wave read while on.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/10-wave trigger while on.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/11-regs after power.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/12-wave.gb");
         game = Cartridge.LoadGame("roms/Pokemon Red.gb");
         // game = Cartridge.LoadGame("roms/Pokemon - Yellow Version (UE) [C][!].gbc");
         // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
@@ -144,17 +156,10 @@ class Gameboi
         bus.ConnectCartridge(game);
     }
 
-    private static readonly ulong syncInterval = (ulong)(cpuSpeed / 10);
-    private const int syncMs = 100;
-
-    private ulong accumulatedTicks = 0;
     public void Play()
     {
-        // controller.Run();
-        // dma.Run();
-        // lcd.Run();
-        // spu.Run();
-        cpu.Run();
+        if (isOn)
+            cpu.Run();
     }
 
     public ImageSource GetScreen() => lcd.Screen;

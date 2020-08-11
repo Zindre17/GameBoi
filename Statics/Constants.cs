@@ -209,4 +209,7 @@ public static class SoundRegisters
     public static readonly Address NR51_address = 0xFF25;
     public static readonly Address NR52_address = 0xFF26;
 
+    public static readonly Address WaveRam_address_start = 0xFF30;
+    public static readonly Address WaveRam_address_end = 0xFF40;
+
 }

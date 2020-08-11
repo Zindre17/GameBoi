@@ -2,7 +2,7 @@ using static SoundRegisters;
 
 class Channel1 : SquareWaveChannel
 {
-    public Channel1(NR52 nr52) : base(nr52, 0, true)
+    public Channel1(NR52 _nr52) : base(_nr52, 0, true)
     {
         sweep.Write(0x80);
         waveDuty.Write(0xBF);
@@ -14,7 +14,7 @@ class Channel1 : SquareWaveChannel
 
     private void OnSweepOverflow()
     {
-        nr52.TurnAllOff();
+        nr52.TurnOff(channelBit);
     }
 
     public override void Connect(Bus bus)
