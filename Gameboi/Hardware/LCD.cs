@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -43,7 +42,6 @@ class LCD : Hardware, IUpdateable
         modeExits[1] = () =>
         {
             ly.Reset();
-            isFrameDone = true;
             currentFrame++;
         };
 
@@ -91,20 +89,15 @@ class LCD : Hardware, IUpdateable
 
         bus.ReplaceMemory(LY_address, ly);
         bus.ReplaceMemory(LYC_address, lyc);
-
     }
 
     private ulong currentFrame = 0;
     private ulong cyclesInMode = 0;
 
     private byte prevMode;
-    bool isFrameDone;
-    private ulong lastClock;
 
     public void Update(byte cycles)
     {
-        isFrameDone = false;
-
         cyclesInMode += cycles;
 
         while (cycles != 0)

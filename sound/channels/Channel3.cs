@@ -108,14 +108,6 @@ class Channel3 : SoundChannel
                 step = (int)(sampleNr++ / samplesPerStep);
                 step %= wavePattern.Length;
                 var data = wavePattern[step];
-                // this interpolates between wavePoints
-
-                // step++;
-                // step %= wavePattern.Length;
-                // var upper = wavePattern[step];
-                // double weight = (sampleNr % samplesPerStep) / samplesPerStep;
-                // data = (byte)((data * (1 - weight)) + (upper * weight));
-
                 var normalized = (data / 7.5d) - 1;
                 samples[i] = (short)(normalized * volume);
             }

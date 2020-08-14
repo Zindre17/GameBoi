@@ -1,10 +1,10 @@
 using static ByteOperations;
 using static InterruptAddresses;
 using static Frequencies;
-using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using System;
 
 public enum InterruptType
 {
@@ -26,13 +26,10 @@ class CPU : Hardware
     private InterruptRegister IF = new InterruptRegister();
 
     private bool isHalted = false;
-    private bool isStopped = false;
 
-    private delegate void Instruction();
-
-    private Instruction[] instructions;
+    private Action[] instructions;
     private byte[] durations;
-    private Instruction[] cbInstructions;
+    private Action[] cbInstructions;
 
     #region Registers
     private byte A = 1; // accumulator
@@ -53,8 +50,7 @@ class CPU : Hardware
     private ushort SP = 0xFFFE; //stack pointer
     private byte SP_S => GetHighByte(SP);
     private byte SP_P => GetLowByte(SP);
-    public string ProgramCounter => PC.ToString("X");
-    public string StackPointer => SP.ToString("X");
+
     #endregion
 
 
@@ -274,7 +270,6 @@ class CPU : Hardware
     private void Stop(byte arg)
     {
         //TODO: display white line in center and do nothing untill any button is pressed. 
-        isStopped = true;
     }
     private void Halt()
     {
@@ -297,8 +292,8 @@ class CPU : Hardware
     {
         byte opCode = Fetch();
         cbInstructions[opCode]();
-        byte modded = (byte)(opCode % 8);
-        byte duration = (byte)(modded == 6 ? 16 : 8);
+        Byte modded = opCode % 8;
+        Byte duration = modded == 6 ? 16 : 8;
         bus.UpdateCycles(duration);
     }
 
@@ -724,7 +719,7 @@ class CPU : Hardware
     public CPU()
     {
         //setup normal instructions
-        instructions = new Instruction[0x100]
+        instructions = new Action[0x100]
         {
             // 0x0X
             NoOperation,
@@ -1068,7 +1063,7 @@ class CPU : Hardware
         };
 
         //setup cb instructions
-        cbInstructions = new Instruction[0x100]
+        cbInstructions = new Action[0x100]
         {
             // 0x0X
             () => RotateLeftWithCarry(ref B),

@@ -13,7 +13,6 @@ class Timer : Hardware, IUpdateable
 
     private ulong cyclesSinceLastDivTick = 0;
     private ulong cyclesSinceLastTimerTick = 0;
-    private ulong lastClock;
 
     public void Update(byte cycles)
     {

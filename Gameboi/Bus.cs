@@ -50,7 +50,6 @@ class Bus
 
     private IMemoryRange unusable = new DummyRange();
 
-
     public Bus()
     {
 
@@ -74,7 +73,6 @@ class Bus
         ie = new InterruptRegister();
         RouteMemory(IE_address, ie);
     }
-    private Random random = new Random();
 
     public void ReplaceMemory(Address address, IMemory memory)
     {
@@ -90,11 +88,6 @@ class Bus
         var routedMemory = new RoutedMemory(startAddress, memory);
         for (int current = startAddress; current < endAddress; current++)
             this.memory[current] = routedMemory;
-    }
-    public void Scramble(IMemoryRange range)
-    {
-        for (ushort i = 0; i < range.Size; i++)
-            range.Write(i, (byte)random.Next());
     }
 
     public void ConnectCartridge(Cartridge cartridge)
