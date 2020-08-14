@@ -1,7 +1,7 @@
 using static GeneralMemoryMap;
 using static MiscSpecialAddresses;
 
-class DMA : Hardware
+class DMA : Hardware, IUpdateable
 {
     private Register dma;
 
@@ -21,13 +21,20 @@ class DMA : Hardware
         inProgress = true;
         target = OAM_StartAddress;
         source = value * 0x100;
+        lastClock = Cycles;
     }
 
     private Address target;
     private Address source;
 
-    public void Tick(byte elapsedCpuClocks)
+    private ulong lastClock = 0;
+
+    public void Update(byte cycles)
     {
+        ulong newClock = Cycles;
+        ulong elapsedCpuClocks = newClock - lastClock;
+        lastClock = newClock;
+
         if (inProgress)
         {
             while (elapsedCpuClocks >= clocksPerByte)

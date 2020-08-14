@@ -9,6 +9,7 @@ public struct Byte
     public static implicit operator Byte(byte value) => new Byte(value);
     public static implicit operator Byte(int value) => new Byte((byte)value);
     public static implicit operator Byte(ulong value) => new Byte((byte)value);
+    public static implicit operator Byte(ushort value) => new Byte((byte)value);
 
     public static explicit operator Address(Byte b) => new Address(b.value);
     public static explicit operator sbyte(Byte b) => (sbyte)b.Value;

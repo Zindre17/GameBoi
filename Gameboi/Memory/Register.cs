@@ -13,7 +13,7 @@ class Register : IMemory
         data = value;
     }
 
-    public Byte Read() => data;
+    public virtual Byte Read() => data;
 
     public override string ToString() => data.ToString();
 

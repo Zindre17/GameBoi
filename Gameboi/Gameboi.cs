@@ -1,26 +1,23 @@
 
 using System.Windows.Media;
+using static Frequencies;
 
 class Gameboi
 {
-    private CPU cpu;
-    private Timer timer;
-    private LCD lcd;
-    private Controller controller;
+    private CPU cpu = new CPU();
+    private LCD lcd = new LCD();
+    private Controller controller = new Controller();
+    private DMA dma = new DMA();
+    private SPU spu = new SPU();
+    private Bus bus = new Bus();
+    private Timer timer = new Timer();
+
+
     private Cartridge game;
-    private Bus bus;
-    private DMA dma;
+
 
     public Gameboi()
     {
-        // Create hardware
-        bus = new Bus();
-        cpu = new CPU();
-        timer = new Timer();
-        lcd = new LCD();
-        controller = new Controller();
-        dma = new DMA();
-
         // game = Cartridge.LoadGame("roms/blargg/01-special.gb");
         // game = Cartridge.LoadGame("roms/blargg/02-interrupts.gb");
         // game = Cartridge.LoadGame("roms/blargg/03-op sp,hl.gb");
@@ -129,7 +126,19 @@ class Gameboi
         // game = Cartridge.LoadGame("roms/emulator-only/mbc2/rom_2Mb.gb");
         // game = Cartridge.LoadGame("roms/emulator-only/mbc2/rom_512kb.gb");
 
-        // game = Cartridge.LoadGame("roms/cgb_sound.gb");
+        // game = Cartridge.LoadGame("roms/blargg/cgb_sound.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/01-registers.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/02-len ctr.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/03-trigger.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/04-sweep.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/05-sweep details.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/06-overflow on trigger.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/07-len sweep period sync.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/08-len ctr during power.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/09-wave read while on.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/10-wave trigger while on.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/11-regs after power.gb");
+        // game = Cartridge.LoadGame("roms/blargg/sound/12-wave.gb");
         game = Cartridge.LoadGame("roms/Pokemon Red.gb");
         // game = Cartridge.LoadGame("roms/Pokemon - Yellow Version (UE) [C][!].gbc");
         // game = Cartridge.LoadGame("roms/Tetris (JUE) (V1.1) [!].gb");
@@ -138,29 +147,19 @@ class Gameboi
         // game = Cartridge.LoadGame("roms/naughtyemu.gb");
 
         //Connect it all to the bus
+        bus.Connect(cpu);
+        bus.Connect(spu);
+        bus.Connect(timer);
+        bus.Connect(controller);
+        bus.Connect(dma);
+        bus.Connect(lcd);
         bus.ConnectCartridge(game);
-        cpu.Connect(bus);
-        timer.Connect(bus);
-        lcd.Connect(bus);
-        dma.Connect(bus);
-        controller.Connect(bus);
-
     }
 
     public void Play()
     {
-        while (isOn)
-        {
-            controller.CheckInputs();
-
-            Byte cpuCycles = cpu.Tick();
-
-            timer.Tick(cpuCycles);
-
-            dma.Tick(cpuCycles);
-
-            lcd.Tick(cpuCycles);
-        }
+        if (isOn)
+            cpu.Run();
     }
 
     public ImageSource GetScreen() => lcd.Screen;

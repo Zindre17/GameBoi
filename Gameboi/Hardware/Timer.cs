@@ -1,7 +1,7 @@
 using static TimerAddresses;
 using static Frequencies;
 
-class Timer : Hardware
+class Timer : Hardware, IUpdateable
 {
 
     private TAC tac = new TAC();
@@ -13,9 +13,11 @@ class Timer : Hardware
 
     private ulong cyclesSinceLastDivTick = 0;
     private ulong cyclesSinceLastTimerTick = 0;
-    public void Tick(ulong elapsedCpuCycles)
+    private ulong lastClock;
+
+    public void Update(byte cycles)
     {
-        cyclesSinceLastDivTick += elapsedCpuCycles;
+        cyclesSinceLastDivTick += cycles;
 
         while (cyclesSinceLastDivTick >= cpuToDivRatio)
         {
@@ -26,7 +28,7 @@ class Timer : Hardware
         if (tac.IsStarted)
         {
             uint ratio = cpuToTimerRatio[tac.TimerSpeed];
-            cyclesSinceLastTimerTick += elapsedCpuCycles;
+            cyclesSinceLastTimerTick += cycles;
             while (cyclesSinceLastTimerTick >= ratio)
             {
                 tima.Tick();

@@ -163,3 +163,53 @@ public static class Frequencies
     // DIV is incremented at 16384Hz = 0x4000Hz
     public static readonly uint cpuToDivRatio = cpuToTimerRatio[3];
 }
+
+public static class WavSettings
+{
+    public const string FILE_TYPE_ID = "RIFF";
+    public const uint FILE_LENGTH = 4 + 8 + FORMAT_SIZE + 8 + DATA_SIZE;
+    public const string MEDIA_TYPE_ID = "WAVE";
+
+    public const string FORMAT_ID = "fmt ";
+    public const uint FORMAT_SIZE = 16;
+    public const ushort FORMAT_TAG = 1;
+    public const ushort CHANNELS = 1;
+    public const uint SAMPLE_RATE = 44100;
+    public const uint AVG_BYTES_PER_SEC = (uint)(SAMPLE_RATE * 0.05 * BLOCK_ALIGN);
+    public const ushort BLOCK_ALIGN = CHANNELS * (BITS_PER_SAMPLE / 8);
+    public const ushort BITS_PER_SAMPLE = 16;
+
+    public const string DATA_ID = "data";
+    public const uint DATA_SIZE = (uint)(SAMPLE_RATE * BLOCK_ALIGN); // 100ms
+
+    public const long DATA_SAMPLE_START_INDEX = FILE_LENGTH + 8 - DATA_SIZE;
+}
+
+public static class SoundRegisters
+{
+    public static readonly Address NR10_address = 0xFF10;
+    public static readonly Address NR11_address = 0xFF11;
+    public static readonly Address NR12_address = 0xFF12;
+    public static readonly Address NR13_address = 0xFF13;
+    public static readonly Address NR14_address = 0xFF14;
+    public static readonly Address NR21_address = 0xFF16;
+    public static readonly Address NR22_address = 0xFF17;
+    public static readonly Address NR23_address = 0xFF18;
+    public static readonly Address NR24_address = 0xFF19;
+    public static readonly Address NR30_address = 0xFF1A;
+    public static readonly Address NR31_address = 0xFF1B;
+    public static readonly Address NR32_address = 0xFF1C;
+    public static readonly Address NR33_address = 0xFF1D;
+    public static readonly Address NR34_address = 0xFF1E;
+    public static readonly Address NR41_address = 0xFF20;
+    public static readonly Address NR42_address = 0xFF21;
+    public static readonly Address NR43_address = 0xFF22;
+    public static readonly Address NR44_address = 0xFF23;
+    public static readonly Address NR50_address = 0xFF24;
+    public static readonly Address NR51_address = 0xFF25;
+    public static readonly Address NR52_address = 0xFF26;
+
+    public static readonly Address WaveRam_address_start = 0xFF30;
+    public static readonly Address WaveRam_address_end = 0xFF40;
+
+}

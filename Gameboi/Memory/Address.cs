@@ -8,6 +8,7 @@ public struct Address
     public static implicit operator Address(ushort v) => new Address(v);
     public static implicit operator Address(int v) => new Address((ushort)v);
     public static implicit operator Byte(Address a) => (byte)a.value;
+    public static implicit operator Address(double a) => new Address((ushort)a);
 
     public override string ToString() => value.ToString("X4");
 
