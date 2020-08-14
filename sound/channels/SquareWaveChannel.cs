@@ -20,112 +20,58 @@ abstract class SquareWaveChannel : SoundChannel
 
         if (hasSweep) sweep = new Sweep();
 
-        lastFrequencyData = GetFrequencyData();
         waveProvider.OnDurationCompleted += () => nr52.TurnOff(channelBit);
     }
 
-    Task updater = null;
+    private int samplesThisDuration = 0;
     public short[] GetNextSampleBatch(int count)
     {
-        // if (updater == null || updater.Status == TaskStatus.RanToCompletion)
-        // {
-        //     updater = new Task(() => Update(0));
-        //     updater.Start();
-        // }
-        Update(0);
-        if (nr52.IsAllOn)
-            return waveProvider.GetNextSampleBatch(count);
+        ushort frequencyData = GetFrequencyData();
+        if (frequencyHigh.IsInitial)
+        {
+            frequencyHigh.IsInitial = false;
+            nr52.TurnOn(channelBit);
 
-        return new short[count];
+            samplesThisDuration = 0;
+
+            envelope.Initialize();
+
+            int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : -1;
+
+            waveProvider.UpdateSound(
+                GetFrequency(frequencyData),
+                waveDuty.GetDuty(),
+                true,
+                newDuration
+            );
+        }
+        else
+        {
+            if (sweep != null)
+                frequencyData = sweep.GetFrequencyAfterSweep(frequencyData, samplesThisDuration);
+
+            waveProvider.UpdateSound(
+                GetFrequency(frequencyData),
+                waveDuty.GetDuty(),
+                false
+            );
+        }
+
+        short[] samples = new short[count];
+        if (nr52.IsAllOn)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                samples[i] = (short)(waveProvider.GetSample(samplesThisDuration) * envelope.GetVolume(samplesThisDuration));
+                samplesThisDuration++;
+            }
+        }
+
+        return samples;
     }
 
     public abstract override void Connect(Bus bus);
 
-    private uint lastFrequencyData;
-    private byte lastVolume;
-    private byte lastDuty;
-
-    private ulong lastInitial;
-
-    public void Update(byte _)
-    {
-        ulong newClock = Cycles;
-
-        ushort frequencyData = GetFrequencyData();
-
-        if (frequencyHigh.IsInitial)
-        {
-            nr52.TurnOn(channelBit);
-            frequencyHigh.IsInitial = false;
-            lastInitial = newClock;
-            int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : -1;
-            waveProvider.UpdateSound(
-                GetFrequency(frequencyData),
-                waveDuty.GetDuty(),
-                envelope.GetVolume(),
-                true,
-                newDuration
-            );
-
-            lastVolume = envelope.InitialVolume;
-        }
-        else
-        {
-            Byte volume = envelope.InitialVolume;
-            Byte stepLengh = envelope.LengthOfStep;
-            bool isIncrease = envelope.IsIncrease;
-
-            if (stepLengh != 0)
-            {
-                double triggerFrequency = 64d / stepLengh;
-                int cyclesPerStep = (int)(cpuSpeed / triggerFrequency);
-
-                long duration = (long)(newClock - lastInitial);
-                int steps = (int)(duration / cyclesPerStep);
-                if (steps > 0)
-                    if (isIncrease)
-                    {
-                        volume = Math.Min(Envelope.MaxVolume, volume + steps);
-                    }
-                    else
-                    {
-                        volume = Math.Max(0, volume - steps);
-                    }
-            }
-
-            if (sweep != null)
-            {
-
-                var sweepShifts = sweep.NrSweepShift;
-                var sweepTime = sweep.SweepTime;
-                var isSubtraction = sweep.IsSubtraction;
-                if (sweepTime != 0 && sweepShifts != 0)
-                {
-                    int triggerFrequency = 128 / sweepTime;
-                    int cyclesPerSweep = (int)(cpuSpeed / triggerFrequency);
-
-                    long duration = (long)(newClock - lastInitial);
-                    int steps = (int)(duration / cyclesPerSweep);
-
-                    if (steps > 0)
-                        frequencyData = sweep.GetFrequencyDataChange(frequencyData, steps, sweepShifts, isSubtraction);
-                }
-            }
-
-            if (frequencyData != lastFrequencyData || waveDuty.Duty != lastDuty || envelope.InitialVolume != lastVolume)
-                waveProvider.UpdateSound(
-                    GetFrequency(frequencyData),
-                    waveDuty.GetDuty(),
-                    envelope.GetVolume(volume),
-                    false
-                );
-
-            lastVolume = volume;
-        }
-
-        lastFrequencyData = frequencyData;
-        lastDuty = waveDuty.Duty;
-    }
 
     private ushort GetFrequencyData()
     {

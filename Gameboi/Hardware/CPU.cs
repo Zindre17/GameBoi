@@ -112,12 +112,11 @@ class CPU : Hardware
             long tsStart = Stopwatch.GetTimestamp();
             ulong start = Cycles;
             DoNextInstruction();
-            // bus.UpdateAll();
             ulong diff = Cycles - start;
             var tsTarget = tsStart - leftovers + (ratio * diff);
             while (Stopwatch.GetTimestamp() < tsTarget)
             {
-                Thread.SpinWait(1);
+                Thread.SpinWait(50);
             }
             leftovers = Stopwatch.GetTimestamp() - (long)tsTarget;
         }

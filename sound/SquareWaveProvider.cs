@@ -4,89 +4,43 @@ using static WavSettings;
 class SquareWaveProvider
 {
     private bool isStopped = true;
+    public int lowToHigh;
+    public int durationInSamples = -1;
+    public int samplesPerPeriod;
 
-    private SquareWaveSettings settings = new SquareWaveSettings();
-
-    public SquareWaveProvider() { }
-
-    private class SquareWaveSettings
+    public void UpdateSound(uint frequency, double duty, bool isInitial, int duration = -1)
     {
-        public int LowToHigh { get; private set; }
-        public int DurationInSamples { get; private set; }
-        public int SamplesPerPeriod { get; private set; }
-        public Address Volume { get; private set; }
-        public bool IsInitial { get; private set; }
-
-        public SquareWaveSettings(uint frequency = 400, double duty = 0.5, ushort volume = 0, int durationInCycles = 0, bool isInitial = false)
-        {
-            DurationInSamples = durationInCycles;
-            SamplesPerPeriod = System.Math.Max((int)(SAMPLE_RATE / frequency), 2);
-            LowToHigh = (int)(SamplesPerPeriod * duty);
-            Volume = volume;
-            IsInitial = isInitial;
-
-        }
-    }
-
-    public void UpdateSound(uint frequency, double duty, Address volume, bool isInitial, int duration = 0)
-    {
-        settings = new SquareWaveSettings(
-                frequency,
-                duty,
-                volume,
-                isInitial ? duration : settings.DurationInSamples,
-                isInitial
-        );
+        durationInSamples = isInitial ? duration : durationInSamples;
+        samplesPerPeriod = Math.Max((int)(SAMPLE_RATE / frequency), 2);
+        lowToHigh = (int)(samplesPerPeriod * duty);
 
         if (isInitial)
         {
-            samplePoint = 0;
-            samplesThisDuration = 0;
-            Start();
+            isStopped = false;
         }
     }
 
-
-    public void Start() => isStopped = false;
-    public void Stop() => isStopped = true;
-
-    private bool HasDuration => settings.DurationInSamples != -1;
-
-    private ulong sampleNr = 0;
-    private int samplePoint = 0;
-    private long samplesThisDuration = 0;
+    private bool HasDuration => durationInSamples != -1;
 
     public delegate void DurationCompleteAction();
     public DurationCompleteAction OnDurationCompleted;
 
-
-    public short[] GetNextSampleBatch(int count)
+    public int GetSample(int sampleNr)
     {
-        short[] result = new short[count];
-
-        if (HasDuration && samplesThisDuration >= settings.DurationInSamples)
+        if (HasDuration && sampleNr >= durationInSamples)
         {
-            Stop();
+            isStopped = true;
             OnDurationCompleted?.Invoke();
         }
 
-        for (int i = 0; i < result.Length; i++)
-            result[i] = GetNextSample();
-
-        sampleNr += (uint)count;
-        samplesThisDuration += count;
-
-        return result;
-    }
-    private short GetNextSample()
-    {
         short sample;
-        if (isStopped || samplePoint == settings.LowToHigh || samplePoint == 0)
-            sample = 0;
-        else sample = (short)(settings.Volume * (samplePoint > settings.LowToHigh ? 1 : -1));
 
-        samplePoint++;
-        samplePoint %= settings.SamplesPerPeriod;
+        var samplePoint = sampleNr % samplesPerPeriod;
+
+        if (isStopped || samplePoint == lowToHigh || samplePoint == 0)
+            sample = 0;
+        else
+            sample = (short)(samplePoint > lowToHigh ? 1 : -1);
 
         return sample;
     }
