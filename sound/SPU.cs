@@ -1,8 +1,6 @@
 using NAudio.Wave;
 using static SoundRegisters;
 using static Frequencies;
-using System.Threading.Tasks;
-using System.Threading;
 
 class SPU : Hardware, IUpdateable
 {
@@ -35,7 +33,6 @@ class SPU : Hardware, IUpdateable
         channel2 = new Channel2(nr52);
         channel3 = new Channel3(nr52);
         channel4 = new Channel4(nr52);
-
     }
 
     private static readonly ulong cycelsBetweenBatches = (ulong)(System.Math.Ceiling(cpuSpeed / sampleBatchRate));
@@ -47,9 +44,6 @@ class SPU : Hardware, IUpdateable
         if (elapsed < cycelsBetweenBatches) return;
 
         AddNextSamples(samplesPerBatch);
-
-        if (waveEmitter.PlaybackState != PlaybackState.Playing)
-            waveEmitter.Play();
 
         elapsed -= cycelsBetweenBatches;
     }

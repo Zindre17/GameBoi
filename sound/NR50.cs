@@ -13,6 +13,6 @@ class NR50 : Register
             data = VolumeOut1;
         else
             data = VolumeOut2;
-        return data / 15d;
+        return data / 7d;
     }
 }
