@@ -17,11 +17,11 @@ class Sprite : IMemoryRange
     public bool Xflip => data[3].Read()[5];
     public bool Palette => data[3].Read()[4];
 
-    public Byte ScreenYstart => Y - 16;
-    public Byte ScreenXstart => X - 8;
+    public int ScreenYstart => Y - 16;
+    public int ScreenXstart => X - 8;
 
     public bool IsWithinScreenWidth() => X > 0 && X < 168;
-    public bool IsWithinScreenHeight() => ScreenYstart >= 0 && ScreenYstart < 144;
+    public bool IsWithinScreenHeight() => Y > 0 && ScreenYstart < 144;
     public bool IsIntersectWithLine(byte line, bool doubleHeighMode = false)
     {
         int screenYend = ScreenYstart + (doubleHeighMode ? 16 : 8);
