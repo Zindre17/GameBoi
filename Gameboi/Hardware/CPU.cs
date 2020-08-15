@@ -101,20 +101,27 @@ class CPU : Hardware
         }
     }
 
+    private static readonly double frameRate = 60d;
+    private static readonly uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
+    private static long tsPerFrame = (long)(ratio * cyclesPerFrame);
+    private static double tsPerMs = tsPerFrame / 16d;
     public void Loop()
     {
+        long elapsed = 0;
         while (true)
         {
             long tsStart = Stopwatch.GetTimestamp();
             ulong start = Cycles;
-            DoNextInstruction();
-            ulong diff = Cycles - start;
-            var tsTarget = tsStart - leftovers + (ratio * diff);
-            while (Stopwatch.GetTimestamp() < tsTarget)
+            while (elapsed < cyclesPerFrame)
             {
-                Thread.SpinWait(50);
+                DoNextInstruction();
+                elapsed = (uint)(Cycles - start);
             }
-            leftovers = Stopwatch.GetTimestamp() - (long)tsTarget;
+            elapsed -= cyclesPerFrame;
+            long remainingTs = tsStart + tsPerFrame - Stopwatch.GetTimestamp();
+            double remainingMs = remainingTs / tsPerMs;
+            if (remainingMs > 0)
+                Thread.Sleep((int)remainingMs);
         }
     }
 
