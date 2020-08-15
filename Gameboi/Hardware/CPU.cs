@@ -89,7 +89,6 @@ class CPU : Hardware
     public override void Write(Address address, Byte value) => bus.Write(address, value, true);
 
     private static double ratio = Stopwatch.Frequency / (double)cpuSpeed;
-    private long leftovers = 0;
 
     private Task runner;
     public void Run()
@@ -103,14 +102,19 @@ class CPU : Hardware
 
     private static readonly double frameRate = 60d;
     private static readonly uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
-    private static long tsPerFrame = (long)(ratio * cyclesPerFrame);
+    private static double tsPerFrame = ratio * cyclesPerFrame;
     private static double tsPerMs = tsPerFrame / 16d;
+
+    private ulong frame = 0;
     public void Loop()
     {
         long elapsed = 0;
+        long startTs = Stopwatch.GetTimestamp();
+        long nextTs;
         while (true)
         {
-            long tsStart = Stopwatch.GetTimestamp();
+            frame++;
+            nextTs = startTs + (long)(frame * tsPerFrame);
             ulong start = Cycles;
             while (elapsed < cyclesPerFrame)
             {
@@ -118,10 +122,13 @@ class CPU : Hardware
                 elapsed = (uint)(Cycles - start);
             }
             elapsed -= cyclesPerFrame;
-            long remainingTs = tsStart + tsPerFrame - Stopwatch.GetTimestamp();
+
+            bus.AddNextFrameOfSamples();
+
+            long remainingTs = nextTs - Stopwatch.GetTimestamp();
             double remainingMs = remainingTs / tsPerMs;
             if (remainingMs > 0)
-                Thread.Sleep((int)remainingMs);
+                Thread.Sleep((int)Math.Ceiling(remainingMs));
         }
     }
 

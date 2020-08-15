@@ -1,8 +1,7 @@
 using NAudio.Wave;
 using static SoundRegisters;
-using static Frequencies;
 
-class SPU : Hardware, IUpdateable
+class SPU : Hardware
 {
     private NR50 nr50 = new NR50();
     private NR51 nr51 = new NR51();
@@ -18,7 +17,7 @@ class SPU : Hardware, IUpdateable
     private BufferedWaveProvider waveProvider;
     private readonly WaveFormat waveFormat;
     private static int samplesPerBatch;
-    private static readonly double sampleBatchRate = 60d;
+    private static readonly int sampleBatchRate = 60;
 
     public SPU()
     {
@@ -27,25 +26,12 @@ class SPU : Hardware, IUpdateable
         waveProvider.BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate;
         waveProvider.DiscardOnBufferOverflow = true;
 
-        samplesPerBatch = (int)(System.Math.Ceiling(waveProvider.BufferLength / (waveFormat.BlockAlign * sampleBatchRate)));
+        samplesPerBatch = waveProvider.BufferLength / (waveFormat.BlockAlign * sampleBatchRate);
 
         channel1 = new Channel1(nr52);
         channel2 = new Channel2(nr52);
         channel3 = new Channel3(nr52);
         channel4 = new Channel4(nr52);
-    }
-
-    private static readonly ulong cycelsBetweenBatches = (ulong)(System.Math.Ceiling(cpuSpeed / sampleBatchRate));
-    private ulong elapsed;
-    public void Update(byte cycles)
-    {
-        elapsed += cycles;
-
-        if (elapsed < cycelsBetweenBatches) return;
-
-        AddNextSamples(samplesPerBatch);
-
-        elapsed -= cycelsBetweenBatches;
     }
 
     public override void Connect(Bus bus)
@@ -65,21 +51,20 @@ class SPU : Hardware, IUpdateable
         waveEmitter.Play();
     }
 
-    public void AddNextSamples(int sampleCount)
+    public void AddNextSamples()
     {
-        int index = 0;
+        var channel1Samples = channel1.GetNextSampleBatch(samplesPerBatch);
+        var channel2Samples = channel2.GetNextSampleBatch(samplesPerBatch);
+        var channel3Samples = channel3.GetNextSampleBatch(samplesPerBatch);
+        var channel4Samples = channel4.GetNextSampleBatch(samplesPerBatch);
 
-        var channel1Samples = channel1.GetNextSampleBatch(sampleCount);
-        var channel2Samples = channel2.GetNextSampleBatch(sampleCount);
-        var channel3Samples = channel3.GetNextSampleBatch(sampleCount);
-        var channel4Samples = channel4.GetNextSampleBatch(sampleCount);
-
-        var samples = new byte[sampleCount * 4];
+        var samples = new byte[samplesPerBatch * 4];
 
         var out1volume = nr50.GetVolumeScaler(true);
         var out2volume = nr50.GetVolumeScaler(false);
 
-        for (int i = 0; i < sampleCount; i++)
+        int index = 0;
+        for (int i = 0; i < samplesPerBatch; i++)
         {
             //channel1
             short c1Sample = 0;

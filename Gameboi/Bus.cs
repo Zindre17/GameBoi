@@ -6,6 +6,7 @@ class Bus
 {
 
     private CPU cpu;
+    private SPU spu;
 
     private ulong cycles = 0;
     private byte cyclesSinceLast = 0;
@@ -24,6 +25,11 @@ class Bus
         cyclesSinceLast = cyclesToAdd;
         UpdateAll();
         cycles += cyclesToAdd;
+    }
+
+    public void AddNextFrameOfSamples()
+    {
+        spu.AddNextSamples();
     }
 
     private Cartridge game;
@@ -113,6 +119,10 @@ class Bus
         if (component is CPU)
         {
             cpu = (CPU)component;
+        }
+        else if (component is SPU)
+        {
+            spu = (SPU)component;
         }
         else if (component is IUpdateable)
         {
