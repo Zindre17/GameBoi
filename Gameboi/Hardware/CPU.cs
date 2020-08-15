@@ -105,30 +105,33 @@ class CPU : Hardware
     private static double tsPerFrame = ratio * cyclesPerFrame;
     private static double tsPerMs = tsPerFrame / 16d;
 
-    private ulong frame = 0;
     public void Loop()
     {
         long elapsed = 0;
-        long startTs = Stopwatch.GetTimestamp();
-        long nextTs;
         while (true)
         {
-            frame++;
-            nextTs = startTs + (long)(frame * tsPerFrame);
+            long startTs = Stopwatch.GetTimestamp();
             ulong start = Cycles;
+
+            bus.AddNextFrameOfSamples();
+
             while (elapsed < cyclesPerFrame)
             {
                 DoNextInstruction();
                 elapsed = (uint)(Cycles - start);
             }
             elapsed -= cyclesPerFrame;
-
-            bus.AddNextFrameOfSamples();
-
-            long remainingTs = nextTs - Stopwatch.GetTimestamp();
-            double remainingMs = remainingTs / tsPerMs;
-            if (remainingMs > 0)
-                Thread.Sleep((int)Math.Ceiling(remainingMs));
+            long targetTs = startTs + (long)tsPerFrame;
+            long remainingTs = targetTs - Stopwatch.GetTimestamp();
+            if (remainingTs > 0)
+            {
+                double remainingMs = remainingTs / tsPerMs;
+                Thread.Sleep((int)remainingMs);
+            }
+            while (Stopwatch.GetTimestamp() < targetTs)
+            {
+                Thread.SpinWait(1);
+            }
         }
     }
 
