@@ -176,8 +176,11 @@ class Gameboi
     public void TurnOn() => isOn = game != null;
     public void TurnOff()
     {
-        isOn = false;
-        game.CloseFileStream();
+        if (isOn)
+        {
+            isOn = false;
+            game.CloseFileStream();
+        }
     }
 
 }
