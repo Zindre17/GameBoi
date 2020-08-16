@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
 
 namespace GB_Emulator
 {
@@ -22,12 +24,27 @@ namespace GB_Emulator
 
             Deactivated += (_, __) => gameboi.Pause();
             Activated += (_, __) => gameboi.Play();
+
+            KeyDown += CheckKeyPressed;
+        }
+
+        private void CheckKeyPressed(object sender, KeyEventArgs args)
+        {
+            if (args.Key == Key.Escape)
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Filter = "Gb roms (*.gb)|*.gb|All files (*.*)|*.*";
+                if (openFileDialog.ShowDialog() == true) // returns bool? => == true
+                {
+                    gameboi.LoadGame(openFileDialog.FileName);
+                }
+            }
         }
 
         private void Startup(object _, EventArgs __)
         {
             gameboi.TurnOn();
-            new Task(() => gameboi.Play()).Start();
+            gameboi.Play();
             CompositionTarget.Rendering -= Startup;
             CompositionTarget.Rendering += FrameUpdate;
         }
@@ -40,18 +57,8 @@ namespace GB_Emulator
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
+            gameboi.Pause();
             gameboi.TurnOff();
         }
-
-        protected override void OnLostFocus(RoutedEventArgs e)
-        {
-            gameboi.Pause();
-        }
-
-        protected override void OnGotFocus(RoutedEventArgs e)
-        {
-            gameboi.Play();
-        }
-
     }
 }

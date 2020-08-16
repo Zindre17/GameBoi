@@ -4,9 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="GameBoi" Height="450" Width="800">
-    
-    <Grid Background="LightGreen">
-        <Image Grid.Row="0" Grid.Column="0" Source="{Binding }" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
-    </Grid>
+        Title="GameBoi" Height="450" Width="800"
+        Background="Black"
+        >
+    <DockPanel>
+        <WrapPanel HorizontalAlignment="Center">
+            <Image Margin="10" Source="{Binding }" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+        </WrapPanel>
+    </DockPanel>
+
 </Window>

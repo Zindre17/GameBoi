@@ -105,8 +105,15 @@ class CPU : Hardware
     public void Pause()
     {
         isRunning = false;
+        while (runner.Status != TaskStatus.RanToCompletion)
+        {
+            Thread.Sleep(1);
+        }
+        runner.Dispose();
         runner = null;
     }
+
+    public void Restart() => PC = 0x100;
 
     private static readonly double frameRate = 60d;
     private static readonly uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
