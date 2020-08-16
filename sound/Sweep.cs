@@ -40,7 +40,7 @@ class Sweep : MaskedRegister
                 OverflowListeners?.Invoke();
         }
 
-        return result;
+        return result & 0x7FF;
     }
 
     private bool IsActive => SweepTime != 0 && NrSweepShift != 0;
