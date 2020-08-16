@@ -19,6 +19,9 @@ namespace GB_Emulator
             this.DataContext = gameboi.GetScreen();
 
             CompositionTarget.Rendering += Startup;
+
+            Deactivated += (_, __) => gameboi.Pause();
+            Activated += (_, __) => gameboi.Play();
         }
 
         private void Startup(object _, EventArgs __)
@@ -39,5 +42,16 @@ namespace GB_Emulator
         {
             gameboi.TurnOff();
         }
+
+        protected override void OnLostFocus(RoutedEventArgs e)
+        {
+            gameboi.Pause();
+        }
+
+        protected override void OnGotFocus(RoutedEventArgs e)
+        {
+            gameboi.Play();
+        }
+
     }
 }

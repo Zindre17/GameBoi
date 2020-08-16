@@ -162,6 +162,11 @@ class Gameboi
             cpu.Run();
     }
 
+    public void Pause()
+    {
+        if (isOn)
+            cpu.Pause();
+    }
     public ImageSource GetScreen() => lcd.Screen;
 
     public void CheckController() => controller.RegisterInputs();

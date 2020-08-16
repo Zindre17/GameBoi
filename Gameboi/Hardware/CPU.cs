@@ -91,13 +91,21 @@ class CPU : Hardware
     private static double ratio = Stopwatch.Frequency / (double)cpuSpeed;
 
     private Task runner;
+    private bool isRunning;
     public void Run()
     {
+        isRunning = true;
         if (runner == null)
         {
             runner = new Task(Loop);
             runner.Start();
         }
+    }
+
+    public void Pause()
+    {
+        isRunning = false;
+        runner = null;
     }
 
     private static readonly double frameRate = 60d;
@@ -108,7 +116,7 @@ class CPU : Hardware
     public void Loop()
     {
         long elapsed = 0;
-        while (true)
+        while (isRunning)
         {
             long startTs = Stopwatch.GetTimestamp();
             ulong start = Cycles;
