@@ -75,7 +75,7 @@ class LCD : Hardware, IUpdateable
     {
         stat.CoincidenceFlag = newLY == lyc.Read();
         if (stat.IsCoincidenceInterruptEnabled && stat.CoincidenceFlag)
-            bus.RequestInterrrupt(InterruptType.LCDC);
+            bus.RequestInterrupt(InterruptType.LCDC);
     }
 
     public override void Connect(Bus bus)
@@ -114,8 +114,8 @@ class LCD : Hardware, IUpdateable
         {
             if (onEnter != null) onEnter();
 
-            if (mode == 1) bus.RequestInterrrupt(InterruptType.VBlank);
-            else if (mode == 2 || mode == 0) bus.RequestInterrrupt(InterruptType.LCDC);
+            if (mode == 1) bus.RequestInterrupt(InterruptType.VBlank);
+            else if (mode == 2 || mode == 0) bus.RequestInterrupt(InterruptType.LCDC);
         }
 
         uint endCycles = modeDurations[mode];

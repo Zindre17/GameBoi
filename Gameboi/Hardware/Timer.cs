@@ -20,7 +20,7 @@ class Timer : Hardware, IUpdateable
 
         while (cyclesSinceLastDivTick >= cpuToDivRatio)
         {
-            div.Tick();
+            div.Bump();
             cyclesSinceLastDivTick -= cpuToDivRatio;
         }
 
@@ -30,7 +30,7 @@ class Timer : Hardware, IUpdateable
             cyclesSinceLastTimerTick += cycles;
             while (cyclesSinceLastTimerTick >= ratio)
             {
-                tima.Tick();
+                tima.Bump();
                 cyclesSinceLastTimerTick -= ratio;
             }
         }
@@ -38,7 +38,7 @@ class Timer : Hardware, IUpdateable
 
     private void TimaOverflow()
     {
-        bus.RequestInterrrupt(InterruptType.Timer);
+        bus.RequestInterrupt(InterruptType.Timer);
         tima.Write(tma.Read());
     }
 

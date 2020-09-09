@@ -10,10 +10,10 @@ class TIMA : DIV
     public OverflowHandler OnOverflow;
     private bool hasOverflown = false;
 
-    public override void Tick()
+    public override void Bump()
     {
         if (hasOverflown && OnOverflow != null) OnOverflow();
-        else base.Tick();
+        else base.Bump();
         if (data == 0xFF) hasOverflown = true;
     }
 }

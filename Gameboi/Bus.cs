@@ -104,7 +104,7 @@ class Bus
         RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, ExtRAM_EndAddress);
     }
 
-    public void RequestInterrrupt(InterruptType type)
+    public void RequestInterrupt(InterruptType type)
     {
         if (cpu != null)
             cpu.RequestInterrupt(type);

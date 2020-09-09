@@ -48,7 +48,7 @@ class Controller : Hardware, IUpdateable
         if (p1.Active != newActive)
         {
             p1.SetActive(newActive);
-            bus.RequestInterrrupt(InterruptType.Joypad);
+            bus.RequestInterrupt(InterruptType.Joypad);
         }
     }
 

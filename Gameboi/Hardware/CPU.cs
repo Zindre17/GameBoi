@@ -113,7 +113,19 @@ class CPU : Hardware
         runner = null;
     }
 
-    public void Restart() => PC = 0x100;
+    public void Restart()
+    {
+        A = 1;
+        PC = 0x100;
+        SP = 0xFFFE;
+        F = 0xB0;
+        B = 0;
+        C = 0x13;
+        D = 0;
+        E = 0xD8;
+        H = 1;
+        L = 0x4D;
+    }
 
     private static readonly double frameRate = 60d;
     private static readonly uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
