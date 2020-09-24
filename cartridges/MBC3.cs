@@ -1,43 +1,35 @@
 using System;
 
-class MBC3 : Cartridge
+class MBC3 : Mbc
 {
     //TODO: implement internal RTC-clock
 
-    public MBC3(string romPath, bool hasRAM, byte ROMBanks, ushort RAMSize, byte[] cartridgeData) : base(romPath)
+    public MBC3(string romPath, bool hasRam, byte romBanks, RamSize ramSize, byte[] cartridgeData) : base(romPath)
     {
-        Byte[] bankData = GetCartridgeChunk(0, ROMSizePerBank, cartridgeData);
-        romBank0 = new Mbc1Rom(bankData, ToggleRAM, SetROMBankNr);
+        Byte[] bankData = GetCartridgeChunk(0, RomSizePerBank, cartridgeData);
+        romBank0 = new MbcRom(bankData, OnBank0Write);
 
-        IMemoryRange[] switchableBanks = new IMemoryRange[ROMBanks];
-        for (int i = 0; i < ROMBanks; i++)
+        IMemoryRange[] switchableBanks = new IMemoryRange[romBanks];
+        for (int i = 0; i < romBanks; i++)
         {
-            int startAddress = ROMSizePerBank * (i + 1);
-            bankData = GetCartridgeChunk(startAddress, ROMSizePerBank, cartridgeData);
-            switchableBanks[i] = new Mbc1Rom(bankData, SetRAMBankNr);
+            int startAddress = RomSizePerBank * (i + 1);
+            bankData = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
+            switchableBanks[i] = new MbcRom(bankData, OnBank1Write);
         }
         romBankN = new Bank(switchableBanks);
 
 
         byte count;
         ushort size;
-        if (!hasRAM)
+        if (!hasRam)
         {
             count = 0;
             size = 0;
         }
         else
         {
-            if (RAMSize == 0x8000)
-            {
-                count = 4;
-                size = 0x2000;
-            }
-            else
-            {
-                count = 1;
-                size = RAMSize;
-            }
+            count = ramSize.Banks;
+            size = ramSize.SizePerBank;
         }
 
         IMemoryRange[] ramAndClock = new IMemoryRange[0xC];
@@ -59,11 +51,11 @@ class MBC3 : Cartridge
 
     }
 
-    private void ToggleRAM(Byte value)
+    private void ToggleRam(Byte value)
     {
         ((MbcRam)ramBankN).isEnabled = value == 0x0A;
     }
-    private void SetROMBankNr(Byte value)
+    private void SetRomBankNr(Byte value)
     {
         Byte bankNr = value & 0x7F;
         if (bankNr > 0)
@@ -71,12 +63,24 @@ class MBC3 : Cartridge
         ((Bank)RomBankN).Switch(bankNr);
     }
 
-    private void SetRAMBankNr(Byte value)
+    private void SetRamBankNr(Byte value)
     {
         value &= 0x0F;
         if (value > 0x0C) throw new ArgumentOutOfRangeException();
         ((Bank)ramBankN).Switch(value);
     }
 
+    protected override void OnBank0Write(Address address, Byte value)
+    {
+        if (address < RomSizePerBank / 2)
+            ToggleRam(value);
+        else
+            SetRomBankNr(value);
+    }
 
+    protected override void OnBank1Write(Address address, Byte value)
+    {
+        if (address < RomSizePerBank / 2)
+            SetRamBankNr(value);
+    }
 }

@@ -12,7 +12,7 @@ abstract class Cartridge
     public IMemoryRange RomBankN => romBankN;
     public IMemoryRange RamBankN => ramBankN;
 
-    protected const ushort ROMSizePerBank = 0x4000;
+    protected const ushort RomSizePerBank = 0x4000;
 
     private string title;
     private const ushort cartridgeTypeAddress = 0x147;
@@ -49,9 +49,9 @@ abstract class Cartridge
         return romPath.Substring(0, indexOfLastDot) + ".sav";
     }
 
-    private const ushort ROMSizeAddress = 0x148;
+    private const ushort romSizeAddress = 0x148;
 
-    private const ushort RAMSizeAddress = 0x149;
+    private const ushort ramSizeAddress = 0x149;
 
     private const ushort isJapaneseAddress = 0x14A;
     private bool isJapanese;
@@ -73,10 +73,10 @@ abstract class Cartridge
     private static Cartridge SetupCartridge(string romPath, byte[] allBytes)
     {
         Byte type = allBytes[cartridgeTypeAddress];
-        byte ROMSizeType = allBytes[ROMSizeAddress];
-        byte RAMSizeType = allBytes[RAMSizeAddress];
-        byte ROMBanks = TranslateROMSizeTypeToBanks(ROMSizeType);
-        ushort RAMSize = TranslateRAMSizeTypeToTotalSize(RAMSizeType);
+        byte romSizeType = allBytes[romSizeAddress];
+        byte ramSizeType = allBytes[ramSizeAddress];
+        byte romBanks = TranslateRomSizeTypeToBanks(romSizeType);
+        RamSize ramSize = TranslateRamSize(ramSizeType);
         /*
         00h  ROM ONLY                 13h  MBC3+RAM+BATTERY
         01h  MBC1                     15h  MBC4
@@ -100,20 +100,25 @@ abstract class Cartridge
         }
         else if (type > 0 && type < 4)
         {
-            return new MBC1(romPath, type > 1, ROMBanks, RAMSize, allBytes);
+            return new Mbc1(romPath, type > 1, romBanks, ramSize, allBytes);
         }
         else if (type == 5 || type == 6)
         {
-            return new MBC2(romPath, ROMBanks, allBytes);
+            return new Mbc2(romPath, romBanks, allBytes);
         }
         else if (type > 0xF && type < 0x14)
         {
-            return new MBC3(romPath, type == 0x12 || type == 0x13, ROMBanks, RAMSize, allBytes);
+            return new MBC3(romPath, type == 0x12 || type == 0x13, romBanks, ramSize, allBytes);
         }
+        else if (type > 0x18 && type < 0x1F)
+        {
+            return new MBC5(romPath, type != 0x19 && type != 0x1C, romBanks, ramSize, allBytes);
+        }
+
         else throw new ArgumentException($"Could not setup cartridge type: {type}");
     }
 
-    private static byte TranslateROMSizeTypeToBanks(byte type)
+    private static byte TranslateRomSizeTypeToBanks(byte type)
     {
         // Note: 1 bank is allready subtracted due to bank0 always existing
         switch (type)
@@ -134,14 +139,27 @@ abstract class Cartridge
         }
     }
 
-    private static ushort TranslateRAMSizeTypeToTotalSize(byte type)
+    public class RamSize
+    {
+        public RamSize(byte banks, ushort sizePerBank)
+        {
+            Banks = banks;
+            SizePerBank = sizePerBank;
+        }
+
+        public Byte Banks { get; set; }
+        public Address SizePerBank { get; set; }
+    }
+
+    private static RamSize TranslateRamSize(byte type)
     {
         switch (type)
         {
-            case 0: return 0;
-            case 1: return 0x500;
-            case 2: return 0x2000;
-            case 3: return 0x8000;
+            case 0: return new RamSize(0, 0);
+            case 1: return new RamSize(1, 0x500);
+            case 2: return new RamSize(1, 0x2000);
+            case 3: return new RamSize(4, 0x2000);
+            case 4: return new RamSize(16, 0x2000);
             default:
                 throw new ArgumentException();
         }

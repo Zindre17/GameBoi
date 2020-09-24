@@ -5,17 +5,17 @@ class NoMBC : Cartridge
     private bool hasRAM = false;
     private bool hasBattery = false;
 
-    public NoMBC(string romPath, bool hasRAM, byte[] cartridgeData, byte[] batteryStoredRAM = null) : base(romPath)
+    public NoMBC(string romPath, bool hasRam, byte[] cartridgeData, byte[] batteryStoredRam = null) : base(romPath)
     {
-        this.hasRAM = hasRAM;
+        this.hasRAM = hasRam;
 
-        if (batteryStoredRAM != null)
+        if (batteryStoredRam != null)
             hasBattery = true;
 
-        romBank0 = new MemoryRange(GetCartridgeChunk(0, ROMSizePerBank, cartridgeData), true);
-        romBankN = new MemoryRange(GetCartridgeChunk(ROMSizePerBank, ROMSizePerBank, cartridgeData), true);
+        romBank0 = new MemoryRange(GetCartridgeChunk(0, RomSizePerBank, cartridgeData), true);
+        romBankN = new MemoryRange(GetCartridgeChunk(RomSizePerBank, RomSizePerBank, cartridgeData), true);
 
-        if (hasRAM)
+        if (hasRam)
         {
             if (hasBattery)
             {
