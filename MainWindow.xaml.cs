@@ -39,6 +39,8 @@ namespace GB_Emulator
                     gameboi.LoadGame(openFileDialog.FileName);
                 }
             }
+            if (args.Key == Key.Space)
+                gameboi.PausePlayToggle();
         }
 
         private void Startup(object _, EventArgs __)

@@ -91,10 +91,11 @@ class CPU : Hardware
     private static double ratio = Stopwatch.Frequency / (double)cpuSpeed;
 
     private Task runner;
-    private bool isRunning;
+    public bool IsRunning { get; private set; }
+
     public void Run()
     {
-        isRunning = true;
+        IsRunning = true;
         if (runner == null)
         {
             runner = new Task(Loop);
@@ -104,11 +105,9 @@ class CPU : Hardware
 
     public void Pause()
     {
-        isRunning = false;
+        IsRunning = false;
         while (runner.Status != TaskStatus.RanToCompletion)
-        {
             Thread.Sleep(1);
-        }
         runner.Dispose();
         runner = null;
     }
@@ -135,7 +134,7 @@ class CPU : Hardware
     public void Loop()
     {
         long elapsed = 0;
-        while (isRunning)
+        while (IsRunning)
         {
             long startTs = Stopwatch.GetTimestamp();
             ulong start = Cycles;

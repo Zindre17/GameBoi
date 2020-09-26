@@ -37,6 +37,15 @@ class Gameboi
             cpu.Pause();
     }
 
+    public void PausePlayToggle()
+    {
+        if (isOn)
+            if (cpu.IsRunning)
+                cpu.Pause();
+            else
+                cpu.Run();
+    }
+
     public void LoadGame(string path)
     {
         if (game != null)
