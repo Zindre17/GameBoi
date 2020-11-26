@@ -1,7 +1,7 @@
 using static GeneralMemoryMap;
 using static MiscSpecialAddresses;
 
-class DMA : Hardware, IUpdateable
+public class DMA : Hardware, IUpdateable
 {
     private Register dma;
 

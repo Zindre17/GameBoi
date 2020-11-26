@@ -1,4 +1,4 @@
-class MaskedRegister : Register
+public class MaskedRegister : Register
 {
     protected Byte mask;
 

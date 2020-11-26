@@ -2,7 +2,7 @@ using System;
 using static SoundRegisters;
 using static WavSettings;
 
-class Channel3 : SoundChannel
+public class Channel3 : SoundChannel
 {
     private Register state = new MaskedRegister(0x7F);
     private Register soundLength = new Register();

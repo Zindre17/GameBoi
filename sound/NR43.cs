@@ -1,4 +1,4 @@
-class NR43 : Register
+public class NR43 : Register
 {
     public bool GetStepsSelector()
     {

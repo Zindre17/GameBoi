@@ -1,4 +1,4 @@
-class WaveRam : IMemoryRange
+public class WaveRam : IMemoryRange
 {
     public WaveRam()
     {

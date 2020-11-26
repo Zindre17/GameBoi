@@ -1,7 +1,7 @@
 using NAudio.Wave;
 using static SoundRegisters;
 
-class SPU : Hardware
+public class SPU : Hardware
 {
     private NR50 nr50 = new NR50();
     private NR51 nr51 = new NR51();

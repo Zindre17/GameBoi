@@ -1,7 +1,7 @@
 using System;
 using static WavSettings;
 
-class SquareWaveProvider
+public class SquareWaveProvider
 {
     private bool isStopped = true;
     public int lowToHigh;

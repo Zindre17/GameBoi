@@ -1,7 +1,7 @@
 using static ScreenRelatedAddresses;
 using static TileDataConstants;
 
-class TileDataMap : IMemoryRange
+public class TileDataMap : IMemoryRange
 {
 
     private Tile[] tiles = new Tile[tileCount];

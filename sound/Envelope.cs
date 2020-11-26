@@ -1,7 +1,7 @@
 using System;
 using static WavSettings;
 
-class Envelope : Register
+public class Envelope : Register
 {
 
     public void Initialize()

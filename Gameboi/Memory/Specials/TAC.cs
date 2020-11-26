@@ -1,6 +1,6 @@
 using static ByteOperations;
 
-class TAC : MaskedRegister
+public class TAC : MaskedRegister
 {
     public TAC() : base(0xF8) { }
 

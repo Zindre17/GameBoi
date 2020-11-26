@@ -1,4 +1,4 @@
-class MBC5 : Mbc
+public class MBC5 : Mbc
 {
     public MBC5(string romPath, bool hasRam, Byte romBanks, RamSize ramSize, byte[] cartridgeData) : base(romPath)
     {
@@ -8,8 +8,8 @@ class MBC5 : Mbc
             mem[i] = new Register(bankData[i], true);
         romBank0 = new MbcRom(mem, OnBank0Write);
 
-        IMemoryRange[] switchableBanks = new IMemoryRange[romBanks];
-        for (int i = 0; i < romBanks; i++)
+        IMemoryRange[] switchableBanks = new IMemoryRange[romBanks + 1];
+        for (int i = 0; i < switchableBanks.Length; i++)
         {
             if (i == 0)
                 switchableBanks[i] = new MbcRom(mem, OnBank1Write);

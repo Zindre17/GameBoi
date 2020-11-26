@@ -1,6 +1,6 @@
 using static TileMapConstants;
 
-class TileMap : IMemoryRange
+public class TileMap : IMemoryRange
 {
     private IMemory[] tilemaps = new IMemory[tileMapTotalSize];
 

@@ -1,4 +1,4 @@
-class LFSR
+public class LFSR
 {
     private int size;
     private int state;

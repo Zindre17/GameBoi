@@ -1,4 +1,4 @@
-class ModeRegister : MaskedRegister
+public class ModeRegister : MaskedRegister
 {
     public ModeRegister(byte mask = 0x3F)
     {

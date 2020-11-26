@@ -1,4 +1,4 @@
-class NR50 : Register
+public class NR50 : Register
 {
     public bool IsVinOut1 => data[3];
     public bool IsVinOut2 => data[7];

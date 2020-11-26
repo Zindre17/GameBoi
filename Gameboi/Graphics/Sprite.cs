@@ -1,6 +1,6 @@
 
 
-class Sprite : IMemoryRange
+public class Sprite : IMemoryRange
 {
     private IMemory[] data;
 

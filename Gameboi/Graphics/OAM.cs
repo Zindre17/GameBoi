@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-class OAM : IMemoryRange, ILockable
+public class OAM : IMemoryRange, ILockable
 {
     private bool isLocked = false;
 

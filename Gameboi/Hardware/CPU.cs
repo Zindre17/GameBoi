@@ -15,7 +15,7 @@ public enum InterruptType
     Joypad
 }
 
-class CPU : Hardware
+public class CPU : Hardware
 {
     private bool IME = true; // Interrupt Master Enable
 

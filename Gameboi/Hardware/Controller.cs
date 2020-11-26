@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-class Controller : Hardware, IUpdateable
+public class Controller : Hardware, IUpdateable
 {
 
     const ushort P1_address = 0xFF00;

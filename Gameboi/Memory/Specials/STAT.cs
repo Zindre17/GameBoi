@@ -1,6 +1,6 @@
 using static ByteOperations;
 
-class STAT : MaskedRegister
+public class STAT : MaskedRegister
 
 {
     public STAT() : base(0x80) { }

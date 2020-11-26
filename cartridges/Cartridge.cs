@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-abstract class Cartridge
+public abstract class Cartridge
 {
     protected IMemoryRange romBank0;
     protected IMemoryRange romBankN;

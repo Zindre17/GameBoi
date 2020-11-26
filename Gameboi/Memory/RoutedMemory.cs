@@ -1,4 +1,4 @@
-class RoutedMemory : IMemoryRange
+public class RoutedMemory : IMemoryRange
 {
     Address offset;
     IMemoryRange memory;

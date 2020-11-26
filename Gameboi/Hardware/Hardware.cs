@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-abstract class Hardware
+public abstract class Hardware
 {
     protected Bus bus;
 

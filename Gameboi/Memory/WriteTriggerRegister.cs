@@ -1,4 +1,4 @@
-class WriteTriggerRegister : Register
+public class WriteTriggerRegister : Register
 {
 
     public WriteTriggerRegister(OnWriteHandler handler) : base() => OnWrite = handler;

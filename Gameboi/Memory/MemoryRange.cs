@@ -1,5 +1,5 @@
 
-interface IMemoryRange
+public interface IMemoryRange
 {
     Address Size { get; }
     Byte Read(Address address, bool isCpu = false);
@@ -7,7 +7,7 @@ interface IMemoryRange
     void Set(Address address, IMemory replacement);
 }
 
-class MemoryRange : IMemoryRange
+public class MemoryRange : IMemoryRange
 {
     protected IMemory[] memory;
 

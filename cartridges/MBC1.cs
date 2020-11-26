@@ -1,5 +1,5 @@
 
-class Mbc1 : Mbc
+public class Mbc1 : Mbc
 {
     private Byte mode;
 

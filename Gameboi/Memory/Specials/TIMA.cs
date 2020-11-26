@@ -1,4 +1,4 @@
-class TIMA : DIV
+public class TIMA : DIV
 {
     public TIMA(OverflowHandler handler) : base()
     {

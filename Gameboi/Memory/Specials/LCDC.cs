@@ -1,6 +1,6 @@
 using static ByteOperations;
 
-class LCDC : Register
+public class LCDC : Register
 {
     private STAT stat;
 

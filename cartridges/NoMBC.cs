@@ -1,6 +1,6 @@
 using System;
 
-class NoMBC : Cartridge
+public class NoMBC : Cartridge
 {
     private bool hasRAM = false;
     private bool hasBattery = false;

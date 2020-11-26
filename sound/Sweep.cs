@@ -1,6 +1,6 @@
 using static WavSettings;
 
-class Sweep : MaskedRegister
+public class Sweep : MaskedRegister
 {
     public Sweep() : base(0x80) { }
 

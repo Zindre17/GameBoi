@@ -1,6 +1,6 @@
 using static SoundRegisters;
 
-class Channel1 : SquareWaveChannel
+public class Channel1 : SquareWaveChannel
 {
     public Channel1(NR52 _nr52) : base(_nr52, 0, true)
     {

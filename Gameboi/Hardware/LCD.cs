@@ -6,7 +6,7 @@ using static ScreenRelatedAddresses;
 using static ScreenSizes;
 using static ScreenTimings;
 
-class LCD : Hardware, IUpdateable
+public class LCD : Hardware, IUpdateable
 
 {
     private PPU ppu;

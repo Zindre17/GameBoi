@@ -1,5 +1,5 @@
 
-abstract class SoundChannel : Hardware
+public abstract class SoundChannel : Hardware
 {
     protected NR52 nr52;
     public SoundChannel(NR52 nr52) => this.nr52 = nr52;

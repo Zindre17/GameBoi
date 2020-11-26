@@ -1,4 +1,4 @@
-class LY : WriteTriggerRegister
+public class LY : WriteTriggerRegister
 {
     public LY(OnWriteHandler handler) : base(handler) { }
 

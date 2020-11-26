@@ -3,7 +3,7 @@ using static WavSettings;
 using static Frequencies;
 using static SoundRegisters;
 
-class Channel4 : SoundChannel
+public class Channel4 : SoundChannel
 {
 
     private Envelope envelope = new Envelope();

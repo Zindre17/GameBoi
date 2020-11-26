@@ -1,4 +1,4 @@
-class FrequencyHigh : ModeRegister
+public class FrequencyHigh : ModeRegister
 {
     public FrequencyHigh() : base(0x38) { }
 

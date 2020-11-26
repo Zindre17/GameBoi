@@ -1,6 +1,6 @@
 using System;
 
-class MBC3 : Mbc
+public class MBC3 : Mbc
 {
     //TODO: implement internal RTC-clock
 

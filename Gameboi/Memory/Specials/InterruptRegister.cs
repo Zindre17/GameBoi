@@ -1,6 +1,6 @@
 using static ByteOperations;
 
-class InterruptRegister : MaskedRegister
+public class InterruptRegister : MaskedRegister
 {
     public InterruptRegister() : base(0xE0) { }
 

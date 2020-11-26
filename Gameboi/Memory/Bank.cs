@@ -1,5 +1,5 @@
 
-class Bank : IMemoryRange
+public class Bank : IMemoryRange
 {
     protected IMemoryRange[] banks;
     protected Byte pointer = 0;

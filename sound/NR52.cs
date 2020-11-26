@@ -1,4 +1,4 @@
-class NR52 : MaskedRegister
+public class NR52 : MaskedRegister
 {
     public NR52() : base(0x70) { }
 

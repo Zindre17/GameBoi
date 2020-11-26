@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-abstract class Mbc : Cartridge
+public abstract class Mbc : Cartridge
 {
     protected Mbc(string romPath) : base(romPath)
     {
@@ -11,7 +11,7 @@ abstract class Mbc : Cartridge
     protected abstract void OnBank1Write(Address address, Byte value);
 }
 
-class MbcRom : MemoryRange
+public class MbcRom : MemoryRange
 {
 
     public MbcRom(Byte[] memory, Action<Address, Byte> onWrite) : base(memory, true)
@@ -33,7 +33,7 @@ class MbcRom : MemoryRange
 
 }
 
-class MbcRam : Bank
+public class MbcRam : Bank
 {
     public bool isEnabled = false;
 

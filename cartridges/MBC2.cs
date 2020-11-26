@@ -1,7 +1,7 @@
 using System;
 using static ByteOperations;
 
-class Mbc2 : Mbc
+public class Mbc2 : Mbc
 {
     public Mbc2(string romPath, byte romBanks, byte[] cartridgeData) : base(romPath)
     {
@@ -49,7 +49,7 @@ class Mbc2 : Mbc
 
 }
 
-class Mbc2Ram : MbcRam
+public class Mbc2Ram : MbcRam
 {
     private const ushort RAMSize = 0x200;
     public Mbc2Ram(string saveFileName) : base(null, saveFileName)

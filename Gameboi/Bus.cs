@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using static GeneralMemoryMap;
 
-class Bus
+public class Bus
 {
 
     private CPU cpu;

@@ -1,7 +1,7 @@
 using static ScreenRelatedAddresses;
 using static ScreenSizes;
 
-class PPU
+public class PPU
 {
     private OAM oam;
     private VRAM vram;

@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using static Frequencies;
 
-abstract class SquareWaveChannel : SoundChannel
+public abstract class SquareWaveChannel : SoundChannel
 {
     protected Sweep sweep;
     protected WaveDuty waveDuty = new WaveDuty();

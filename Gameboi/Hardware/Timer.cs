@@ -1,7 +1,7 @@
 using static TimerAddresses;
 using static Frequencies;
 
-class Timer : Hardware, IUpdateable
+public class Timer : Hardware, IUpdateable
 {
 
     private TAC tac = new TAC();

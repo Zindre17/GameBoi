@@ -3,7 +3,7 @@ using static TileMapConstants;
 using static TileDataConstants;
 using System;
 
-class VRAM : IMemoryRange, ILockable
+public class VRAM : IMemoryRange, ILockable
 {
     private bool isLocked = false;
 

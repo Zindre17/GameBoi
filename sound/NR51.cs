@@ -1,4 +1,4 @@
-class NR51 : Register
+public class NR51 : Register
 {
     public bool Is1Out1 => data[0];
     public bool Is2Out1 => data[1];

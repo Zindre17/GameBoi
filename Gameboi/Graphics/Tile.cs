@@ -1,7 +1,7 @@
 using System;
 using static TileDataConstants;
 
-class Tile : IMemoryRange
+public class Tile : IMemoryRange
 {
     private IMemory[] data = new IMemory[bytesPerTile];
 

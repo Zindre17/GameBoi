@@ -1,5 +1,5 @@
 
-class P1 : Register
+public class P1 : Register
 {
     public P1() => data = 0xFF;
 

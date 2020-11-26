@@ -1,4 +1,4 @@
-class DummyRange : IMemoryRange
+public class DummyRange : IMemoryRange
 {
     private IMemory dummy = new Dummy();
     public IMemory this[Address address] { get => dummy; set { } }
@@ -11,7 +11,7 @@ class DummyRange : IMemoryRange
     public void Set(Address address, IMemory replacement) { }
 }
 
-class Dummy : IMemory
+public class Dummy : IMemory
 {
     public Byte Read() => 0xFF;
     public void Write(Byte value) { }

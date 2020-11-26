@@ -2,7 +2,7 @@
 using System;
 using System.Windows.Media;
 
-class Gameboi
+public class Gameboi
 {
     private CPU cpu = new CPU();
     private LCD lcd = new LCD();

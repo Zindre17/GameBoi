@@ -1,6 +1,6 @@
 using static WavSettings;
 
-class WaveDuty : Register
+public class WaveDuty : Register
 {
     public Byte Duty => (data & 0xC0) >> 6;
     public Byte SoundLength => data & 0x3F;

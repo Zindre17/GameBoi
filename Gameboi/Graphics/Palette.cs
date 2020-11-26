@@ -1,5 +1,5 @@
 
-class Palette : Register
+public class Palette : Register
 {
     public Palette(Byte initialValue) : base(initialValue) { }
 

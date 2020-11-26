@@ -1,4 +1,4 @@
-class Register : IMemory
+public class Register : IMemory
 {
     bool isReadOnly;
     protected Byte data = 0;
