@@ -39,5 +39,5 @@ public class Envelope : Register
         return ScaleVolume(currentVolume);
     }
 
-    private Address ScaleVolume(byte volume) => 5 * volume;
+    private Address ScaleVolume(byte volume) => 1 * volume;
 }

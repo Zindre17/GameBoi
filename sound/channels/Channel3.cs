@@ -72,9 +72,9 @@ public class Channel3 : SoundChannel
     {
         Byte volumeData = (outputLevel.Read() & 0x60) >> 5;
         if (volumeData == 0) return 0;
-        if (volumeData == 1) return 64;
-        if (volumeData == 2) return 32;
-        return 16;
+        if (volumeData == 1) return 16;
+        if (volumeData == 2) return 8;
+        return 4;
     }
 
     private int step = 0;
