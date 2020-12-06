@@ -43,8 +43,13 @@ public class PPU
             Byte pattern = sprite.Pattern;
             if (lcdc.IsDoubleSpriteSize)
             {
-                if (spriteY >= 8) pattern = sprite.Pattern & 0xFE;
-                else pattern = sprite.Pattern | 0x01;
+                if (spriteY >= 8)
+                {
+                    pattern = sprite.Pattern | 0x01;
+                    spriteY -= 8;
+                }
+                else
+                    pattern = sprite.Pattern & 0xFE;
             }
 
             Tile tile = vram.GetTile(pattern, true);
