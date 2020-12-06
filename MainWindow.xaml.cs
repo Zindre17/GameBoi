@@ -33,7 +33,7 @@ namespace GB_Emulator
             if (args.Key == Key.Escape)
             {
                 OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.Filter = "Gb roms (*.gb)|*.gb|All files (*.*)|*.*";
+                openFileDialog.Filter = "Gb roms (*.gb, *.gbc)|*.gb;*.gbc|All files (*.*)|*.*";
                 if (openFileDialog.ShowDialog() == true) // returns bool? => == true
                 {
                     gameboi.LoadGame(openFileDialog.FileName);
