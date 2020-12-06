@@ -108,7 +108,7 @@ public abstract class Cartridge
         }
         else if (type > 0xF && type < 0x14)
         {
-            return new MBC3(romPath, type == 0x12 || type == 0x13, romBanks, ramSize, allBytes);
+            return new MBC3(romPath, type == 0x10 || type == 0x12 || type == 0x13, romBanks, ramSize, allBytes);
         }
         else if (type > 0x18 && type < 0x1F)
         {
