@@ -1,6 +1,6 @@
 public class DummyRange : IMemoryRange
 {
-    private IMemory dummy = new Dummy();
+    private readonly IMemory dummy = new Dummy();
     public IMemory this[Address address] { get => dummy; set { } }
 
     public Address Size => throw new System.NotImplementedException();

@@ -1,6 +1,6 @@
 public class Register : IMemory
 {
-    bool isReadOnly;
+    readonly bool isReadOnly;
     protected Byte data = 0;
 
     public Register(bool isReadOnly = false) : this(0, isReadOnly) { }

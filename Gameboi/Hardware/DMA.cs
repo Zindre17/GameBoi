@@ -3,7 +3,7 @@ using static MiscSpecialAddresses;
 
 public class DMA : Hardware, IUpdateable
 {
-    private Register dma;
+    private readonly Register dma;
 
     public DMA() => dma = new WriteTriggerRegister(StartTransfer);
 

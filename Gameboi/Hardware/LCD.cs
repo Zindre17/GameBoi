@@ -9,20 +9,20 @@ using static ScreenTimings;
 public class LCD : Hardware, IUpdateable
 
 {
-    private PPU ppu;
+    private readonly PPU ppu;
 
-    private WriteableBitmap screen;
+    private readonly WriteableBitmap screen;
     public ImageSource Screen => screen;
 
-    private STAT stat = new STAT();
-    private LCDC lcdc;
+    private readonly STAT stat = new STAT();
+    private readonly LCDC lcdc;
 
-    private LY ly;
-    private Register lyc = new Register();
+    private readonly LY ly;
+    private readonly Register lyc = new Register();
 
     public LCD()
     {
-        lcdc = new LCDC(stat, OnScreenToggled);
+        lcdc = new LCDC(OnScreenToggled);
         ly = new LY(CheckCoincidence);
         ppu = new PPU(lcdc);
 
@@ -42,7 +42,6 @@ public class LCD : Hardware, IUpdateable
         modeExits[1] = () =>
         {
             ly.Reset();
-            currentFrame++;
         };
 
         modeTicks[1] = () => ly.Set(pixelLines + (cyclesInMode / 456));
@@ -66,10 +65,10 @@ public class LCD : Hardware, IUpdateable
         }
     }
 
-    private uint[] modeDurations = new uint[4] { hblankClocks, vblankClocks, mode2Clocks, mode3Clocks };
-    private Action[] modeEnters = new Action[4];
-    private Action[] modeExits = new Action[4];
-    private Action[] modeTicks = new Action[4];
+    private readonly uint[] modeDurations = new uint[4] { hblankClocks, vblankClocks, mode2Clocks, mode3Clocks };
+    private readonly Action[] modeEnters = new Action[4];
+    private readonly Action[] modeExits = new Action[4];
+    private readonly Action[] modeTicks = new Action[4];
 
     private void CheckCoincidence(Byte newLY)
     {
@@ -91,7 +90,6 @@ public class LCD : Hardware, IUpdateable
         bus.ReplaceMemory(LYC_address, lyc);
     }
 
-    private ulong currentFrame = 0;
     private ulong cyclesInMode = 0;
 
     private byte prevMode;
@@ -112,7 +110,7 @@ public class LCD : Hardware, IUpdateable
         Byte mode = stat.Mode;
         if (prevMode != mode)
         {
-            if (onEnter != null) onEnter();
+            onEnter?.Invoke();
 
             if (mode == 1) bus.RequestInterrupt(InterruptType.VBlank);
             else if (mode == 2 || mode == 0) bus.RequestInterrupt(InterruptType.LCDC);
@@ -122,13 +120,13 @@ public class LCD : Hardware, IUpdateable
         if (cyclesInMode >= endCycles)
         {
             cyclesInMode -= endCycles;
-            if (onExit != null) onExit();
+            onExit?.Invoke();
             SetNextMode();
             return (byte)cyclesInMode;
         }
         else
         {
-            if (onTick != null) onTick();
+            onTick?.Invoke();
             prevMode = mode;
             return 0;
         }
@@ -163,7 +161,7 @@ public class LCD : Hardware, IUpdateable
         }
     }
 
-    private byte[] pixels = new byte[pixelsPerLine * pixelLines];
+    private readonly byte[] pixels = new byte[pixelsPerLine * pixelLines];
 
     private static readonly Int32Rect rect = new Int32Rect(0, 0, pixelsPerLine, pixelLines);
     public void DrawFrame()

@@ -9,19 +9,18 @@ public class NR43 : Register
     {
         Byte value = data & 7;
         long f = 0x400000;
-        switch (value)
+        return (byte)value switch
         {
-            case 0: return f * (1 / 8f) * 2;
-            case 1: return f * (1 / 8f) * 1;
-            case 2: return f * (1 / 8f) * (1f / 2);
-            case 3: return f * (1 / 8f) * (1f / 3);
-            case 4: return f * (1 / 8f) * (1f / 4);
-            case 5: return f * (1 / 8f) * (1f / 5);
-            case 6: return f * (1 / 8f) * (1f / 6);
-            case 7: return f * (1 / 8f) * (1f / 7);
-
-            default: throw new System.Exception();
-        }
+            0 => f * (1 / 8f) * 2,
+            1 => f * (1 / 8f) * 1,
+            2 => f * (1 / 8f) * (1f / 2),
+            3 => f * (1 / 8f) * (1f / 3),
+            4 => f * (1 / 8f) * (1f / 4),
+            5 => f * (1 / 8f) * (1f / 5),
+            6 => f * (1 / 8f) * (1f / 6),
+            7 => f * (1 / 8f) * (1f / 7),
+            _ => throw new System.Exception(),
+        };
     }
 
     public double GetShiftFrequency()

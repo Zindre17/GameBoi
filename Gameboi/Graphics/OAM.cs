@@ -4,7 +4,7 @@ public class OAM : IMemoryRange, ILockable
 {
     private bool isLocked = false;
 
-    private Sprite[] sprites = new Sprite[40];
+    private readonly Sprite[] sprites = new Sprite[40];
 
     public OAM()
     {

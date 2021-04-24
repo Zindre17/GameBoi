@@ -10,6 +10,6 @@ public class WriteTriggerRegister : Register
     public override void Write(Byte value)
     {
         base.Write(value);
-        if (OnWrite != null) OnWrite(value);
+        OnWrite?.Invoke(value);
     }
 }

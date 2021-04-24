@@ -5,7 +5,7 @@ public class Controller : Hardware, IUpdateable
 
     const ushort P1_address = 0xFF00;
 
-    private P1 p1 = new P1();
+    private readonly P1 p1 = new P1();
 
     const Key A = Key.K;
     const Key B = Key.J;

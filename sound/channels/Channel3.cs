@@ -4,13 +4,13 @@ using static WavSettings;
 
 public class Channel3 : SoundChannel
 {
-    private Register state = new MaskedRegister(0x7F);
-    private Register soundLength = new Register();
-    private Register outputLevel = new MaskedRegister(0x9F);
-    private FrequencyLow frequencyLow = new FrequencyLow();
-    private FrequencyHigh frequencyHigh = new FrequencyHigh();
+    private readonly Register state = new MaskedRegister(0x7F);
+    private readonly Register soundLength = new Register();
+    private readonly Register outputLevel = new MaskedRegister(0x9F);
+    private readonly FrequencyLow frequencyLow = new FrequencyLow();
+    private readonly FrequencyHigh frequencyHigh = new FrequencyHigh();
 
-    private WaveRam waveRam = new WaveRam();
+    private readonly WaveRam waveRam = new WaveRam();
     public Channel3(NR52 nr52) : base(nr52) { }
     public override void Connect(Bus bus)
     {
@@ -29,7 +29,7 @@ public class Channel3 : SoundChannel
     private long currentLength;
     private long samplesThisLength;
     private bool isStopped = true;
-    public void Update(byte cycles)
+    public void Update()
     {
         if (frequencyHigh.IsInitial)
         {
@@ -82,7 +82,7 @@ public class Channel3 : SoundChannel
 
     public short[] GetNextSampleBatch(int count)
     {
-        Update(0);
+        Update();
 
         short[] samples = new short[count];
 

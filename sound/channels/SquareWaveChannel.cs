@@ -1,6 +1,3 @@
-using System;
-using System.Threading.Tasks;
-using static Frequencies;
 
 public abstract class SquareWaveChannel : SoundChannel
 {
@@ -12,7 +9,7 @@ public abstract class SquareWaveChannel : SoundChannel
 
     protected byte channelBit;
 
-    private SquareWaveProvider waveProvider = new SquareWaveProvider();
+    private readonly SquareWaveProvider waveProvider = new SquareWaveProvider();
 
     public SquareWaveChannel(NR52 nr52, byte channelBit, bool hasSweep) : base(nr52)
     {
@@ -76,11 +73,6 @@ public abstract class SquareWaveChannel : SoundChannel
     private ushort GetFrequencyData()
     {
         return (ushort)((frequencyHigh.HighBits << 8) | frequencyLow.LowBits);
-    }
-
-    private ushort GetFrequencyData(uint frequency)
-    {
-        return (ushort)(0x800 - (0x20000 / frequency));
     }
 
     private uint GetFrequency(ushort frequencyData)

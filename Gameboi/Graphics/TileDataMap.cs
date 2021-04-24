@@ -4,7 +4,7 @@ using static TileDataConstants;
 public class TileDataMap : IMemoryRange
 {
 
-    private Tile[] tiles = new Tile[tileCount];
+    private readonly Tile[] tiles = new Tile[tileCount];
 
     public Address Size => tileCount * bytesPerTile;
 

@@ -3,18 +3,18 @@ using static SoundRegisters;
 
 public class SPU : Hardware
 {
-    private NR50 nr50 = new NR50();
-    private NR51 nr51 = new NR51();
-    private NR52 nr52 = new NR52();
+    private readonly NR50 nr50 = new NR50();
+    private readonly NR51 nr51 = new NR51();
+    private readonly NR52 nr52 = new NR52();
 
-    private Channel1 channel1;
-    private Channel2 channel2;
-    private Channel3 channel3;
-    private Channel4 channel4;
+    private readonly Channel1 channel1;
+    private readonly Channel2 channel2;
+    private readonly Channel3 channel3;
+    private readonly Channel4 channel4;
 
     private readonly WaveOut waveEmitter = new WaveOut();
 
-    private BufferedWaveProvider waveProvider;
+    private readonly BufferedWaveProvider waveProvider;
     private readonly WaveFormat waveFormat;
     private static int samplesPerBatch;
     private static readonly int sampleBatchRate = 60;
@@ -22,9 +22,11 @@ public class SPU : Hardware
     public SPU()
     {
         waveFormat = new WaveFormat();
-        waveProvider = new BufferedWaveProvider(waveFormat);
-        waveProvider.BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate;
-        waveProvider.DiscardOnBufferOverflow = true;
+        waveProvider = new BufferedWaveProvider(waveFormat)
+        {
+            BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate,
+            DiscardOnBufferOverflow = true
+        };
 
         samplesPerBatch = waveProvider.BufferLength / (waveFormat.BlockAlign * sampleBatchRate);
 
@@ -95,7 +97,7 @@ public class SPU : Hardware
             if (nr51.Is4Out2)
                 c2Sample += (short)(channel4Samples[i] / 4);
 
-            c2Sample = (short)(c2Sample * out1volume);
+            c2Sample = (short)(c2Sample * out2volume);
 
             samples[index++] = (byte)(c2Sample >> 8);
             samples[index++] = (byte)c2Sample;

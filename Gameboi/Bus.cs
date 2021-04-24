@@ -12,7 +12,7 @@ public class Bus
     private byte cyclesSinceLast = 0;
     public ulong Cycles => cycles;
 
-    private List<IUpdateable> updateables = new List<IUpdateable>();
+    private readonly List<IUpdateable> updateables = new List<IUpdateable>();
 
     public void UpdateAll()
     {
@@ -32,9 +32,7 @@ public class Bus
         spu.AddNextSamples();
     }
 
-    private Cartridge game;
-
-    private IMemoryRange[] memory = new IMemoryRange[0x10000];
+    private readonly IMemoryRange[] memory = new IMemoryRange[0x10000];
 
     private IMemoryRange vram;
     public void SetVram(IMemoryRange vram)
@@ -42,19 +40,19 @@ public class Bus
         this.vram = vram;
         RouteMemory(VRAM_StartAddress, this.vram, VRAM_EndAddress);
     }
-    private IMemoryRange wram_0;
-    private IMemoryRange wram_1;
+    private readonly IMemoryRange wram_0;
+    private readonly IMemoryRange wram_1;
     private IMemoryRange oam;
     public void SetOam(IMemoryRange oam)
     {
         this.oam = oam;
         RouteMemory(OAM_StartAddress, this.oam, OAM_EndAddress);
     }
-    private IMemoryRange io;
-    private IMemoryRange hram;
-    private IMemory ie;
+    private readonly IMemoryRange io;
+    private readonly IMemoryRange hram;
+    private readonly IMemory ie;
 
-    private IMemoryRange unusable = new DummyRange();
+    private readonly IMemoryRange unusable = new DummyRange();
 
     public Bus()
     {
@@ -98,7 +96,6 @@ public class Bus
 
     public void ConnectCartridge(Cartridge cartridge)
     {
-        game = cartridge;
         RouteMemory(ROM_bank_0_StartAddress, cartridge.RomBank0);
         RouteMemory(ROM_bank_n_StartAddress, cartridge.RomBankN);
         RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, ExtRAM_EndAddress);
@@ -116,17 +113,17 @@ public class Bus
 
     public void Connect(Hardware component)
     {
-        if (component is CPU)
+        if (component is CPU _cpu)
         {
-            cpu = (CPU)component;
+            cpu = _cpu;
         }
-        else if (component is SPU)
+        else if (component is SPU _spu)
         {
-            spu = (SPU)component;
+            spu = _spu;
         }
-        else if (component is IUpdateable)
+        else if (component is IUpdateable updateable)
         {
-            updateables.Add((IUpdateable)component);
+            updateables.Add(updateable);
         }
         component.Connect(this);
     }

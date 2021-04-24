@@ -2,9 +2,8 @@ using static ByteOperations;
 
 public class LCDC : Register
 {
-    private STAT stat;
 
-    public LCDC(STAT stat, Func onToggled) : base(0x91) => (this.stat, OnScreenToggled) = (stat, onToggled);
+    public LCDC(Func onToggled) : base(0x91) => (OnScreenToggled) = (onToggled);
 
     public override void Write(Byte value)
     {

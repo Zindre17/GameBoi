@@ -3,7 +3,7 @@ using static TileDataConstants;
 
 public class Tile : IMemoryRange
 {
-    private IMemory[] data = new IMemory[bytesPerTile];
+    private readonly IMemory[] data = new IMemory[bytesPerTile];
 
     public Address Size => bytesPerTile;
 

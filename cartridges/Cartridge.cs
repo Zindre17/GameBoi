@@ -14,7 +14,7 @@ public abstract class Cartridge
 
     protected const ushort RomSizePerBank = 0x4000;
 
-    private string title;
+    public string Title { get; set; }
     private const ushort cartridgeTypeAddress = 0x147;
 
     protected string romPath;
@@ -30,16 +30,14 @@ public abstract class Cartridge
         Cartridge game = SetupCartridge(pathToROM, allBytes);
 
         game.isJapanese = allBytes[isJapaneseAddress] == 0;
-        game.title = ReadTitle(allBytes);
+        game.Title = ReadTitle(allBytes);
 
         return game;
     }
 
     public void CloseFileStream()
     {
-        var ram = RamBankN as MbcRam;
-        if (ram == null) return;
-
+        if (!(RamBankN is MbcRam ram)) return;
         ram.CloseFileStream();
     }
 
@@ -121,22 +119,21 @@ public abstract class Cartridge
     private static byte TranslateRomSizeTypeToBanks(byte type)
     {
         // Note: 1 bank is allready subtracted due to bank0 always existing
-        switch (type)
+        return type switch
         {
-            case 0: return 1;
-            case 1: return 3;
-            case 2: return 7;
-            case 3: return 15;
-            case 4: return 31;
-            case 5: return 63;
-            case 6: return 127;
-            case 7: return 255;
-            case 0x52: return 71;
-            case 0x53: return 79;
-            case 0x54: return 95;
-            default:
-                throw new ArgumentException();
-        }
+            0 => 1,
+            1 => 3,
+            2 => 7,
+            3 => 15,
+            4 => 31,
+            5 => 63,
+            6 => 127,
+            7 => 255,
+            0x52 => 71,
+            0x53 => 79,
+            0x54 => 95,
+            _ => throw new ArgumentException(),
+        };
     }
 
     public class RamSize
@@ -153,16 +150,15 @@ public abstract class Cartridge
 
     private static RamSize TranslateRamSize(byte type)
     {
-        switch (type)
+        return type switch
         {
-            case 0: return new RamSize(0, 0);
-            case 1: return new RamSize(1, 0x500);
-            case 2: return new RamSize(1, 0x2000);
-            case 3: return new RamSize(4, 0x2000);
-            case 4: return new RamSize(16, 0x2000);
-            default:
-                throw new ArgumentException();
-        }
+            0 => new RamSize(0, 0),
+            1 => new RamSize(1, 0x500),
+            2 => new RamSize(1, 0x2000),
+            3 => new RamSize(4, 0x2000),
+            4 => new RamSize(16, 0x2000),
+            _ => throw new ArgumentException(),
+        };
     }
 
     protected static Byte[] GetCartridgeChunk(int start, int size, byte[] allBytes)

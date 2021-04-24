@@ -1,18 +1,17 @@
 using System;
-using static WavSettings;
-using static Frequencies;
 using static SoundRegisters;
+using static WavSettings;
 
 public class Channel4 : SoundChannel
 {
 
-    private Envelope envelope = new Envelope();
-    private Register soundLength = new MaskedRegister(0xC0);
-    private NR43 nr43 = new NR43();
-    private ModeRegister mode = new ModeRegister();
+    private readonly Envelope envelope = new Envelope();
+    private readonly Register soundLength = new MaskedRegister(0xC0);
+    private readonly NR43 nr43 = new NR43();
+    private readonly ModeRegister mode = new ModeRegister();
 
-    private LFSR lfsr7 = new LFSR(7);
-    private LFSR lfsr15 = new LFSR(15);
+    private readonly LFSR lfsr7 = new LFSR(7);
+    private readonly LFSR lfsr15 = new LFSR(15);
     private LFSR currentLfsr;
 
     public Channel4(NR52 nr52) : base(nr52) { }
@@ -24,11 +23,6 @@ public class Channel4 : SoundChannel
         return (long)(seconds * SAMPLE_RATE);
     }
 
-    private double GetFrequency()
-    {
-        double sf = nr43.GetShiftFrequency();
-        return SAMPLE_RATE / sf;
-    }
     private int CalculateFrequency(double r, double s)
     {
         return Math.Max(1, (int)(SAMPLE_RATE / (0x80000 / r / (1 << (int)(s + 1)))));
@@ -51,7 +45,7 @@ public class Channel4 : SoundChannel
     private short signal = 0;
     public short[] GetNextSampleBatch(int count)
     {
-        Update(0);
+        Update();
         short[] samples = new short[count];
 
         for (int i = 0; i < samples.Length; i++)
@@ -79,10 +73,9 @@ public class Channel4 : SoundChannel
         return samples;
     }
 
-    public void Update(byte cycles)
+    public void Update()
     {
         currentLfsr = nr43.GetStepsSelector() ? lfsr7 : lfsr15;
-        // samplesPerShift = GetFrequency();
 
         if (mode.IsInitial)
         {

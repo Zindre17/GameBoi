@@ -1,19 +1,15 @@
 using static ScreenSizes;
-using static TileMapConstants;
 using static TileDataConstants;
-using System;
 
-public class VRAM : IMemoryRange, ILockable
+public class VRAM : IMemoryRange
 {
-    private bool isLocked = false;
-
-    private TileMap tileMap = new TileMap();
-    private TileDataMap tileDataMap = new TileDataMap();
+    private readonly TileMap tileMap = new TileMap();
+    private readonly TileDataMap tileDataMap = new TileDataMap();
 
     public Address Size => 0x2000;
 
-    private IMemory scx, scy, wx, wy;
-    private LCDC lcdc;
+    private readonly IMemory scx, scy, wx, wy;
+    private readonly LCDC lcdc;
 
     public VRAM(LCDC lcdc, IMemory scx, IMemory scy, IMemory wx, IMemory wy)
     {
@@ -126,12 +122,20 @@ public class VRAM : IMemoryRange, ILockable
         return tileDataMap;
     }
 
-    public Byte Read(Address address, bool isCpu = false) => GetMemoryArea(address, out Address relAdr).Read(relAdr, isCpu);
+    public Byte Read(Address address, bool isCpu = false)
+    {
+        return GetMemoryArea(address, out Address relAdr).Read(relAdr, isCpu);
+    }
 
-    public void Write(Address address, Byte value, bool isCpu = false) => GetMemoryArea(address, out Address relAdr).Write(relAdr, value, isCpu);
+    public void Write(Address address, Byte value, bool isCpu = false)
+    {
+        GetMemoryArea(address, out Address relAdr).Write(relAdr, value, isCpu);
+    }
 
-    public void Set(Address address, IMemory replacement) => GetMemoryArea(address, out Address relAdr).Set(relAdr, replacement);
 
-    public void SetLock(bool on) => isLocked = on;
+    public void Set(Address address, IMemory replacement)
+    {
+        GetMemoryArea(address, out Address relAdr).Set(relAdr, replacement);
+    }
 
 }

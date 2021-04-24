@@ -2,13 +2,10 @@ using System;
 
 public class NoMBC : Cartridge
 {
-    private bool hasRAM = false;
-    private bool hasBattery = false;
+    private readonly bool hasBattery = false;
 
     public NoMBC(string romPath, bool hasRam, byte[] cartridgeData, byte[] batteryStoredRam = null) : base(romPath)
     {
-        this.hasRAM = hasRam;
-
         if (batteryStoredRam != null)
             hasBattery = true;
 

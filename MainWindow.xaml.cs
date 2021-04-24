@@ -12,13 +12,13 @@ namespace GB_Emulator
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Gameboi gameboi;
+        private readonly Gameboi gameboi;
 
         public MainWindow()
         {
             InitializeComponent();
             gameboi = new Gameboi();
-            this.DataContext = gameboi.GetScreen();
+            DataContext = gameboi.GetScreen();
 
             CompositionTarget.Rendering += Startup;
 
@@ -32,11 +32,13 @@ namespace GB_Emulator
         {
             if (args.Key == Key.Escape)
             {
-                OpenFileDialog openFileDialog = new OpenFileDialog();
-                openFileDialog.Filter = "Gb roms (*.gb, *.gbc)|*.gb;*.gbc|All files (*.*)|*.*";
-                if (openFileDialog.ShowDialog() == true) // returns bool? => == true
+                OpenFileDialog openFileDialog = new OpenFileDialog
                 {
-                    gameboi.LoadGame(openFileDialog.FileName);
+                    Filter = "Gb roms (*.gb, *.gbc)|*.gb;*.gbc|All files (*.*)|*.*"
+                };
+                if (openFileDialog.ShowDialog() ?? false)
+                {
+                    Title = gameboi.LoadGame(openFileDialog.FileName) ?? "Gameboi";
                 }
             }
             if (args.Key == Key.Space)

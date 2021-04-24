@@ -18,7 +18,7 @@ public class WaveRam : IMemoryRange
         return samples;
     }
 
-    private WaveRegister[] ram = new WaveRegister[0x10];
+    private readonly WaveRegister[] ram = new WaveRegister[0x10];
 
     public Address Size => ram.Length;
 

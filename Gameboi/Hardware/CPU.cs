@@ -1,10 +1,10 @@
-using static ByteOperations;
-using static InterruptAddresses;
-using static Frequencies;
+using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using System;
+using static ByteOperations;
+using static Frequencies;
+using static InterruptAddresses;
 
 public enum InterruptType
 {
@@ -22,19 +22,18 @@ public class CPU : Hardware
     private bool shouldUpdateIME = false;
     private bool nextIMEValue = false;
 
-    private InterruptRegister IE = new InterruptRegister();
-    private InterruptRegister IF = new InterruptRegister();
+    private readonly InterruptRegister IE = new InterruptRegister();
+    private readonly InterruptRegister IF = new InterruptRegister();
 
     private bool isHalted = false;
 
-    private Action[] instructions;
-    private byte[] durations;
-    private Action[] cbInstructions;
+    private readonly Action[] instructions;
+    private readonly byte[] durations;
+    private readonly Action[] cbInstructions;
 
     #region Registers
     private byte A = 1; // accumulator
     private byte F = 0xB0; // flag register
-    private Address AF => ConcatBytes(A, F);
     private byte B = 0;
     private byte C = 0x13;
     private Address BC => ConcatBytes(B, C);
@@ -88,7 +87,7 @@ public class CPU : Hardware
     public override Byte Read(Address address) => bus.Read(address, true);
     public override void Write(Address address, Byte value) => bus.Write(address, value, true);
 
-    private static double ratio = Stopwatch.Frequency / (double)cpuSpeed;
+    private static readonly double ratio = Stopwatch.Frequency / (double)cpuSpeed;
 
     private Task runner;
     public bool IsRunning { get; private set; }
@@ -128,8 +127,8 @@ public class CPU : Hardware
 
     private static readonly double frameRate = 60d;
     private static readonly uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
-    private static double tsPerFrame = ratio * cyclesPerFrame;
-    private static double tsPerMs = tsPerFrame / 16d;
+    private static readonly double tsPerFrame = ratio * cyclesPerFrame;
+    private static readonly double tsPerMs = tsPerFrame / 16d;
 
     public void Loop()
     {
@@ -180,12 +179,6 @@ public class CPU : Hardware
     }
 
     #region Interrupts
-    private const byte V_Blank_bit = 0;
-    private const byte LCDC_bit = 1;
-    private const byte Timer_bit = 2;
-    private const byte Link_bit = 3;
-    private const byte Joypad_bit = 4;
-
     private void HandleInterrupts()
     {
         if (shouldUpdateIME)
@@ -310,7 +303,7 @@ public class CPU : Hardware
     #region Misc
     private void Empty() { }
     private void NoOperation() { }
-    private void Stop(byte arg)
+    private void Stop(byte _)
     {
         //TODO: display white line in center and do nothing untill any button is pressed. 
     }
@@ -498,7 +491,7 @@ public class CPU : Hardware
             target = (byte)(rotated | 1); //wrap around carry bit
         else
             target = (byte)rotated; //no need for wrap around
-        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
     }
     private void RotateRightWithCarry(ref byte target, bool cb_mode = true)
     {
@@ -508,7 +501,7 @@ public class CPU : Hardware
             target = (byte)(rotated | 0x80);
         else
             target = (byte)rotated;
-        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
     }
     private void RotateLeft(ref byte target, bool cb_mode = true)
     {
@@ -519,7 +512,7 @@ public class CPU : Hardware
             target = (byte)(rotated | 1);
         else
             target = (byte)rotated;
-        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
     }
     private void RotateRight(ref byte target, bool cb_mode = true)
     {
@@ -530,7 +523,7 @@ public class CPU : Hardware
             target = (byte)(rotated | 0x80);
         else
             target = (byte)rotated;
-        SetFlags(cb_mode ? target == 0 : false, false, false, isCarry);
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
     }
 
     private void Set(int bit, ushort address)

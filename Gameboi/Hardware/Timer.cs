@@ -1,13 +1,13 @@
-using static TimerAddresses;
 using static Frequencies;
+using static TimerAddresses;
 
 public class Timer : Hardware, IUpdateable
 {
 
-    private TAC tac = new TAC();
-    private DIV div = new DIV();
-    private Register tma = new Register();
-    private TIMA tima;
+    private readonly TAC tac = new TAC();
+    private readonly DIV div = new DIV();
+    private readonly Register tma = new Register();
+    private readonly TIMA tima;
 
     public Timer() => tima = new TIMA(TimaOverflow);
 

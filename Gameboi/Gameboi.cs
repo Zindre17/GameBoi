@@ -4,13 +4,13 @@ using System.Windows.Media;
 
 public class Gameboi
 {
-    private CPU cpu = new CPU();
-    private LCD lcd = new LCD();
-    private Controller controller = new Controller();
-    private DMA dma = new DMA();
-    private SPU spu = new SPU();
-    private Bus bus = new Bus();
-    private Timer timer = new Timer();
+    private readonly CPU cpu = new CPU();
+    private readonly LCD lcd = new LCD();
+    private readonly Controller controller = new Controller();
+    private readonly DMA dma = new DMA();
+    private readonly SPU spu = new SPU();
+    private readonly Bus bus = new Bus();
+    private readonly Timer timer = new Timer();
 
     private Cartridge game;
 
@@ -46,7 +46,7 @@ public class Gameboi
                 cpu.Run();
     }
 
-    public void LoadGame(string path)
+    public string LoadGame(string path)
     {
         if (game != null)
         {
@@ -60,8 +60,10 @@ public class Gameboi
             cpu.Restart();
             TurnOn();
             Play();
+            return game.Title;
         }
         catch (Exception) { }
+        return null;
     }
 
     public ImageSource GetScreen() => lcd.Screen;

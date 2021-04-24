@@ -1,7 +1,7 @@
 public class RoutedMemory : IMemoryRange
 {
-    Address offset;
-    IMemoryRange memory;
+    readonly Address offset;
+    readonly IMemoryRange memory;
 
     public RoutedMemory(Address offset, IMemoryRange memory) => (this.offset, this.memory) = (offset, memory);
     public RoutedMemory(Address offset, IMemory memory) => (this.offset, this.memory) = (offset, new MemoryRange(memory));

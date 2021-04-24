@@ -2,7 +2,7 @@ using static TileMapConstants;
 
 public class TileMap : IMemoryRange
 {
-    private IMemory[] tilemaps = new IMemory[tileMapTotalSize];
+    private readonly IMemory[] tilemaps = new IMemory[tileMapTotalSize];
 
     public Address Size => tilemaps.Length;
 

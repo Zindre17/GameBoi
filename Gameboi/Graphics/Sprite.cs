@@ -2,9 +2,9 @@
 
 public class Sprite : IMemoryRange
 {
-    private IMemory[] data;
+    private readonly IMemory[] data;
 
-    private Byte nr;
+    private readonly Byte nr;
     public Byte Nr => nr;
 
     public Sprite(Byte nr) => (data, this.nr) = (Register.CreateMany(4), nr);

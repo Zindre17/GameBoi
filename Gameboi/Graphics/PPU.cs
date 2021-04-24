@@ -3,21 +3,21 @@ using static ScreenSizes;
 
 public class PPU
 {
-    private OAM oam;
-    private VRAM vram;
+    private readonly OAM oam;
+    private readonly VRAM vram;
 
-    private Palette obp0 = new Palette(0xFF);
-    private Palette obp1 = new Palette(0xFF);
-    private Palette bgp = new Palette(0xFC);
+    private readonly Palette obp0 = new Palette(0xFF);
+    private readonly Palette obp1 = new Palette(0xFF);
+    private readonly Palette bgp = new Palette(0xFC);
 
-    private Register scy = new Register();
-    private Register scx = new Register();
+    private readonly Register scy = new Register();
+    private readonly Register scx = new Register();
 
-    private Register wx = new Register();
-    private Register wy = new Register();
+    private readonly Register wx = new Register();
+    private readonly Register wy = new Register();
 
 
-    private LCDC lcdc;
+    private readonly LCDC lcdc;
 
     public PPU(LCDC lcdc)
     {
@@ -83,7 +83,7 @@ public class PPU
         return pixelLine;
     }
 
-    public void SetVramLock(bool on) => vram.SetLock(on);
+    public void SetVramLock(bool _) { }
     public void SetOamLock(bool on) => oam.SetLock(on);
 
     public void Connect(Bus bus)
