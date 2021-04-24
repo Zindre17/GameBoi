@@ -1,30 +1,33 @@
-public class Register : IMemory
+namespace GB_Emulator.Gameboi.Memory
 {
-    readonly bool isReadOnly;
-    protected Byte data = 0;
-
-    public Register(bool isReadOnly = false) : this(0, isReadOnly) { }
-
-    public Register(Byte initialValue, bool isReadOnly = false) => (data, this.isReadOnly) = (initialValue, isReadOnly);
-
-    public virtual void Write(Byte value)
+    public class Register : IMemory
     {
-        if (isReadOnly) return;
-        data = value;
+        readonly bool isReadOnly;
+        protected Byte data = 0;
+
+        public Register(bool isReadOnly = false) : this(0, isReadOnly) { }
+
+        public Register(Byte initialValue, bool isReadOnly = false) => (data, this.isReadOnly) = (initialValue, isReadOnly);
+
+        public virtual void Write(Byte value)
+        {
+            if (isReadOnly) return;
+            data = value;
+        }
+
+        public virtual Byte Read() => data;
+
+        public override string ToString() => data.ToString();
+
+        public static Register[] CreateMany(Address amount, bool isReadOnly = false)
+        {
+            Register[] registers = new Register[amount];
+
+            for (int i = 0; i < amount; i++)
+                registers[i] = new Register(isReadOnly);
+
+            return registers;
+        }
+
     }
-
-    public virtual Byte Read() => data;
-
-    public override string ToString() => data.ToString();
-
-    public static Register[] CreateMany(Address amount, bool isReadOnly = false)
-    {
-        Register[] registers = new Register[amount];
-
-        for (int i = 0; i < amount; i++)
-            registers[i] = new Register(isReadOnly);
-
-        return registers;
-    }
-
 }

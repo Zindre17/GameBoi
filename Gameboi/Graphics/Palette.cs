@@ -1,7 +1,11 @@
+using GB_Emulator.Gameboi.Memory;
 
-public class Palette : Register
+namespace GB_Emulator.Gameboi.Graphics
 {
-    public Palette(Byte initialValue) : base(initialValue) { }
+    public class Palette : Register
+    {
+        public Palette(Byte initialValue) : base(initialValue) { }
 
-    public Byte DecodeColorNumber(byte colorCode) => (~data >> (colorCode * 2)) & 3;
+        public Byte DecodeColorNumber(byte colorCode) => ~data >> colorCode * 2 & 3;
+    }
 }

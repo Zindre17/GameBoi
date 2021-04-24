@@ -1,15 +1,18 @@
-public class WriteTriggerRegister : Register
+namespace GB_Emulator.Gameboi.Memory
 {
-
-    public WriteTriggerRegister(OnWriteHandler handler) : base() => OnWrite = handler;
-
-    public delegate void OnWriteHandler(Byte value);
-
-    public OnWriteHandler OnWrite;
-
-    public override void Write(Byte value)
+    public class WriteTriggerRegister : Register
     {
-        base.Write(value);
-        OnWrite?.Invoke(value);
+
+        public WriteTriggerRegister(OnWriteHandler handler) : base() => OnWrite = handler;
+
+        public delegate void OnWriteHandler(Byte value);
+
+        public OnWriteHandler OnWrite;
+
+        public override void Write(Byte value)
+        {
+            base.Write(value);
+            OnWrite?.Invoke(value);
+        }
     }
 }

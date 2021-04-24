@@ -1,6 +1,8 @@
-
-public interface IMemory
+namespace GB_Emulator.Gameboi.Memory
 {
-    Byte Read();
-    void Write(Byte value);
+    public interface IMemory
+    {
+        Byte Read();
+        void Write(Byte value);
+    }
 }

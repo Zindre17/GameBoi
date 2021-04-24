@@ -1,31 +1,35 @@
 using System;
+using GB_Emulator.Gameboi.Memory;
 
-public class NoMBC : Cartridge
+namespace GB_Emulator.Cartridges
 {
-    private readonly bool hasBattery = false;
-
-    public NoMBC(string romPath, bool hasRam, byte[] cartridgeData, byte[] batteryStoredRam = null) : base(romPath)
+    public class NoMBC : Cartridge
     {
-        if (batteryStoredRam != null)
-            hasBattery = true;
+        private readonly bool hasBattery = false;
 
-        romBank0 = new MemoryRange(GetCartridgeChunk(0, RomSizePerBank, cartridgeData), true);
-        romBankN = new MemoryRange(GetCartridgeChunk(RomSizePerBank, RomSizePerBank, cartridgeData), true);
-
-        if (hasRam)
+        public NoMBC(string romPath, bool hasRam, byte[] cartridgeData, byte[] batteryStoredRam = null) : base(romPath)
         {
-            if (hasBattery)
+            if (batteryStoredRam != null)
+                hasBattery = true;
+
+            romBank0 = new MemoryRange(GetCartridgeChunk(0, RomSizePerBank, cartridgeData), true);
+            romBankN = new MemoryRange(GetCartridgeChunk(RomSizePerBank, RomSizePerBank, cartridgeData), true);
+
+            if (hasRam)
             {
-                throw new NotImplementedException();
+                if (hasBattery)
+                {
+                    throw new NotImplementedException();
+                }
+                else
+                {
+                    ramBankN = new MemoryRange(0x2000);
+                }
             }
             else
             {
-                ramBankN = new MemoryRange(0x2000);
+                ramBankN = new DummyRange();
             }
-        }
-        else
-        {
-            ramBankN = new DummyRange();
         }
     }
 }

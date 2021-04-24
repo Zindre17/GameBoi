@@ -1,7 +1,12 @@
-public class FrequencyHigh : ModeRegister
+using GB_Emulator.Gameboi.Memory;
+
+namespace GB_Emulator.Sound
 {
-    public FrequencyHigh() : base(0x38) { }
+    public class FrequencyHigh : ModeRegister
+    {
+        public FrequencyHigh() : base(0x38) { }
 
-    public Byte HighBits => data & 7;
+        public Byte HighBits => data & 7;
 
+    }
 }

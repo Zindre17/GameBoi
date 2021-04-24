@@ -1,60 +1,65 @@
-public class MBC5 : Mbc
+using GB_Emulator.Gameboi.Memory;
+
+namespace GB_Emulator.Cartridges
 {
-    public MBC5(string romPath, bool hasRam, Byte romBanks, RamSize ramSize, byte[] cartridgeData) : base(romPath)
+    public class MBC5 : Mbc
     {
-        Byte[] bankData = GetCartridgeChunk(0, RomSizePerBank, cartridgeData);
-        IMemory[] mem = new IMemory[bankData.Length];
-        for (int i = 0; i < bankData.Length; i++)
-            mem[i] = new Register(bankData[i], true);
-        romBank0 = new MbcRom(mem, OnBank0Write);
-
-        IMemoryRange[] switchableBanks = new IMemoryRange[romBanks + 1];
-        for (int i = 0; i < switchableBanks.Length; i++)
+        public MBC5(string romPath, bool hasRam, Byte romBanks, RamSize ramSize, byte[] cartridgeData) : base(romPath)
         {
-            if (i == 0)
-                switchableBanks[i] = new MbcRom(mem, OnBank1Write);
-            else
+            Byte[] bankData = GetCartridgeChunk(0, RomSizePerBank, cartridgeData);
+            IMemory[] mem = new IMemory[bankData.Length];
+            for (int i = 0; i < bankData.Length; i++)
+                mem[i] = new Register(bankData[i], true);
+            romBank0 = new MbcRom(mem, OnBank0Write);
+
+            IMemoryRange[] switchableBanks = new IMemoryRange[romBanks + 1];
+            for (int i = 0; i < switchableBanks.Length; i++)
             {
-                int startAddress = RomSizePerBank * (i);
-                bankData = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
-                switchableBanks[i] = new MbcRom(bankData, OnBank1Write);
+                if (i == 0)
+                    switchableBanks[i] = new MbcRom(mem, OnBank1Write);
+                else
+                {
+                    int startAddress = RomSizePerBank * i;
+                    bankData = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
+                    switchableBanks[i] = new MbcRom(bankData, OnBank1Write);
+                }
             }
+            romBankN = new Bank(switchableBanks);
+
+            if (hasRam)
+                ramBankN = new MbcRam(ramSize.Banks, ramSize.SizePerBank, GetSaveFilePath());
+            else
+                ramBankN = new Bank(0, 0);
         }
-        romBankN = new Bank(switchableBanks);
 
-        if (hasRam)
-            ramBankN = new MbcRam(ramSize.Banks, ramSize.SizePerBank, GetSaveFilePath());
-        else
-            ramBankN = new Bank(0, 0);
-    }
+        private const ushort QuarterBank = RomSizePerBank / 4;
 
-    private const ushort QuarterBank = RomSizePerBank / 4;
+        private Byte lowerRomSelect;
+        private Byte upperRomSelect;
 
-    private Byte lowerRomSelect;
-    private Byte upperRomSelect;
+        private Byte ramSelect;
 
-    private Byte ramSelect;
-
-    protected override void OnBank0Write(Address address, Byte value)
-    {
-        if (address < QuarterBank * 2)
+        protected override void OnBank0Write(Address address, Byte value)
         {
+            if (address < QuarterBank * 2)
+            {
 
+            }
+            else if (address < QuarterBank * 3)
+                lowerRomSelect = value;
+            else
+                upperRomSelect = value & 1;
+
+            Address bankNr = upperRomSelect << 8 | lowerRomSelect;
+            ((Bank)romBankN).Switch(bankNr);
         }
-        else if (address < QuarterBank * 3)
-            lowerRomSelect = value;
-        else
-            upperRomSelect = value & 1;
 
-        Address bankNr = (upperRomSelect << 8) | lowerRomSelect;
-        ((Bank)romBankN).Switch(bankNr);
-    }
+        protected override void OnBank1Write(Address address, Byte value)
+        {
+            if (address < QuarterBank * 2)
+                ramSelect = value & 0x0F;
 
-    protected override void OnBank1Write(Address address, Byte value)
-    {
-        if (address < QuarterBank * 2)
-            ramSelect = value & 0x0F;
-
-        ((Bank)ramBankN).Switch(ramSelect);
+            ((Bank)ramBankN).Switch(ramSelect);
+        }
     }
 }

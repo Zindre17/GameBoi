@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -12,12 +11,12 @@ namespace GB_Emulator
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly Gameboi gameboi;
+        private readonly Gameboi.Gameboi gameboi;
 
         public MainWindow()
         {
             InitializeComponent();
-            gameboi = new Gameboi();
+            gameboi = new();
             DataContext = gameboi.GetScreen();
 
             CompositionTarget.Rendering += Startup;
@@ -32,7 +31,7 @@ namespace GB_Emulator
         {
             if (args.Key == Key.Escape)
             {
-                OpenFileDialog openFileDialog = new OpenFileDialog
+                OpenFileDialog openFileDialog = new()
                 {
                     Filter = "Gb roms (*.gb, *.gbc)|*.gb;*.gbc|All files (*.*)|*.*"
                 };

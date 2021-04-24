@@ -1,11 +1,14 @@
-using static ByteOperations;
+using static GB_Emulator.Statics.ByteOperations;
 
-public class TAC : MaskedRegister
+namespace GB_Emulator.Gameboi.Memory.Specials
 {
-    public TAC() : base(0xF8) { }
+    public class TAC : MaskedRegister
+    {
+        public TAC() : base(0xF8) { }
 
-    public bool IsStarted => TestBit(2, data);
+        public bool IsStarted => TestBit(2, data);
 
-    public Byte TimerSpeed => data & 3;
+        public Byte TimerSpeed => data & 3;
 
+    }
 }

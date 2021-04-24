@@ -1,51 +1,55 @@
 using System.Collections.Generic;
+using GB_Emulator.Gameboi.Memory;
 
-public class OAM : IMemoryRange, ILockable
+namespace GB_Emulator.Gameboi.Graphics
 {
-    private bool isLocked = false;
-
-    private readonly Sprite[] sprites = new Sprite[40];
-
-    public OAM()
+    public class OAM : IMemoryRange, ILockable
     {
-        for (int i = 0; i < 40; i++)
-            sprites[i] = new Sprite(i);
-    }
+        private bool isLocked = false;
 
-    public List<Sprite> GetSpritesOnLine(Byte ly, bool isDoubleHeight)
-    {
-        var result = new List<Sprite>();
-        int spriteHeight = isDoubleHeight ? 16 : 8;
+        private readonly Sprite[] sprites = new Sprite[40];
 
-        foreach (var sprite in sprites)
+        public OAM()
         {
-            if (!sprite.IsWithinScreenWidth()) continue;
-            if (!sprite.IsWithinScreenHeight()) continue;
-
-            if (sprite.IsIntersectWithLine(ly, isDoubleHeight))
-                result.Add(sprite);
+            for (int i = 0; i < 40; i++)
+                sprites[i] = new Sprite(i);
         }
-        result.Sort((a, b) => b.X - a.X);
-        result.Sort((a, b) => b.Nr - a.Nr);
-        return result;
+
+        public List<Sprite> GetSpritesOnLine(Byte ly, bool isDoubleHeight)
+        {
+            var result = new List<Sprite>();
+            int spriteHeight = isDoubleHeight ? 16 : 8;
+
+            foreach (var sprite in sprites)
+            {
+                if (!sprite.IsWithinScreenWidth()) continue;
+                if (!sprite.IsWithinScreenHeight()) continue;
+
+                if (sprite.IsIntersectWithLine(ly, isDoubleHeight))
+                    result.Add(sprite);
+            }
+            result.Sort((a, b) => b.X - a.X);
+            result.Sort((a, b) => b.Nr - a.Nr);
+            return result;
+        }
+
+        public void Set(Address address, IMemory replacement) => sprites[address / 4].Set(address % 4, replacement);
+
+        public Address Size => 40 * 4;
+
+        public Byte Read(Address address, bool isCpu = false)
+        {
+            if (isCpu && isLocked) return 0xFF;
+            return sprites[address / 4].Read(address % 4, isCpu);
+        }
+
+        public void Write(Address address, Byte value, bool isCpu = false)
+        {
+            if (isCpu && isLocked) return;
+            sprites[address / 4].Write(address % 4, value, isCpu);
+        }
+
+        public void SetLock(bool on) => isLocked = on;
+
     }
-
-    public void Set(Address address, IMemory replacement) => sprites[address / 4].Set(address % 4, replacement);
-
-    public Address Size => 40 * 4;
-
-    public Byte Read(Address address, bool isCpu = false)
-    {
-        if (isCpu && isLocked) return 0xFF;
-        return sprites[address / 4].Read(address % 4, isCpu);
-    }
-
-    public void Write(Address address, Byte value, bool isCpu = false)
-    {
-        if (isCpu && isLocked) return;
-        sprites[address / 4].Write(address % 4, value, isCpu);
-    }
-
-    public void SetLock(bool on) => isLocked = on;
-
 }

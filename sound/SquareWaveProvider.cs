@@ -1,48 +1,51 @@
 using System;
-using static WavSettings;
+using static GB_Emulator.Statics.WavSettings;
 
-public class SquareWaveProvider
+namespace GB_Emulator.Sound
 {
-    private bool isStopped = true;
-    public int lowToHigh;
-    public int durationInSamples = -1;
-    public int samplesPerPeriod;
-
-    public void UpdateSound(uint frequency, double duty, bool isInitial, int duration = -1)
+    public class SquareWaveProvider
     {
-        durationInSamples = isInitial ? duration : durationInSamples;
-        samplesPerPeriod = Math.Max((int)(SAMPLE_RATE / frequency), 2);
-        lowToHigh = (int)(samplesPerPeriod * duty);
+        private bool isStopped = true;
+        public int lowToHigh;
+        public int durationInSamples = -1;
+        public int samplesPerPeriod;
 
-        if (isInitial)
+        public void UpdateSound(uint frequency, double duty, bool isInitial, int duration = -1)
         {
-            isStopped = false;
-        }
-    }
+            durationInSamples = isInitial ? duration : durationInSamples;
+            samplesPerPeriod = Math.Max((int)(SAMPLE_RATE / frequency), 2);
+            lowToHigh = (int)(samplesPerPeriod * duty);
 
-    private bool HasDuration => durationInSamples != -1;
-
-    public delegate void DurationCompleteAction();
-    public DurationCompleteAction OnDurationCompleted;
-
-    public int GetSample(int sampleNr)
-    {
-        if (HasDuration && sampleNr >= durationInSamples)
-        {
-            isStopped = true;
-            OnDurationCompleted?.Invoke();
+            if (isInitial)
+            {
+                isStopped = false;
+            }
         }
 
-        short sample;
+        private bool HasDuration => durationInSamples != -1;
 
-        var samplePoint = sampleNr % samplesPerPeriod;
+        public delegate void DurationCompleteAction();
+        public DurationCompleteAction OnDurationCompleted;
 
-        if (isStopped || samplePoint == lowToHigh || samplePoint == 0)
-            sample = 0;
-        else
-            sample = (short)(samplePoint > lowToHigh ? 1 : -1);
+        public int GetSample(int sampleNr)
+        {
+            if (HasDuration && sampleNr >= durationInSamples)
+            {
+                isStopped = true;
+                OnDurationCompleted?.Invoke();
+            }
 
-        return sample;
+            short sample;
+
+            var samplePoint = sampleNr % samplesPerPeriod;
+
+            if (isStopped || samplePoint == lowToHigh || samplePoint == 0)
+                sample = 0;
+            else
+                sample = (short)(samplePoint > lowToHigh ? 1 : -1);
+
+            return sample;
+        }
+
     }
-
 }

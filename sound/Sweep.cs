@@ -1,79 +1,83 @@
-using static WavSettings;
+using GB_Emulator.Gameboi.Memory;
+using static GB_Emulator.Statics.WavSettings;
 
-public class Sweep : MaskedRegister
+namespace GB_Emulator.Sound
 {
-    public Sweep() : base(0x80) { }
-
-    private Byte SweepTime => (data & 0x70) >> 4;
-    private bool IsSubtraction => data[3];
-    private Byte NrSweepShift => data & 7;
-
-    public delegate void OnSweepOverflow();
-    public OnSweepOverflow OverflowListeners;
-
-    public Address GetFrequencyAfterSweep(Address frequencyData, int sampleThisDuration)
+    public class Sweep : MaskedRegister
     {
-        Address result = frequencyData;
-        if (IsActive)
+        public Sweep() : base(0x80) { }
+
+        private Byte SweepTime => (data & 0x70) >> 4;
+        private bool IsSubtraction => data[3];
+        private Byte NrSweepShift => data & 7;
+
+        public delegate void OnSweepOverflow();
+        public OnSweepOverflow OverflowListeners;
+
+        public Address GetFrequencyAfterSweep(Address frequencyData, int sampleThisDuration)
         {
-            var freq = 128 / SweepTime;
-            var samplesPerStep = SAMPLE_RATE / freq;
-            int steps = (int)(sampleThisDuration / samplesPerStep);
-
-            var alteration = (1 << NrSweepShift);
-
-            for (int i = 0; i < steps; i++)
+            Address result = frequencyData;
+            if (IsActive)
             {
+                var freq = 128 / SweepTime;
+                var samplesPerStep = SAMPLE_RATE / freq;
+                int steps = (int)(sampleThisDuration / samplesPerStep);
 
+                var alteration = 1 << NrSweepShift;
+
+                for (int i = 0; i < steps; i++)
+                {
+
+                    if (IsSubtraction)
+                        result -= result / alteration;
+                    else
+                        result += result / alteration;
+                }
+            }
+
+            if (result >= 0x7FF)
+            {
                 if (IsSubtraction)
-                    result -= result / alteration;
+                    result = 0;
                 else
-                    result += result / alteration;
+                    OverflowListeners?.Invoke();
             }
+
+            return result & 0x7FF;
         }
 
-        if (result >= 0x7FF)
+        private bool IsActive => SweepTime != 0 && NrSweepShift != 0;
+        public ushort GetFrequencyDataChange(Address frequencyData, int times, byte sweepShifts, bool isSubtraction)
         {
-            if (IsSubtraction)
-                result = 0;
-            else
-                OverflowListeners?.Invoke();
-        }
+            if (NrSweepShift == 0) return frequencyData;
 
-        return result & 0x7FF;
-    }
+            Address result = frequencyData;
 
-    private bool IsActive => SweepTime != 0 && NrSweepShift != 0;
-    public ushort GetFrequencyDataChange(Address frequencyData, int times, byte sweepShifts, bool isSubtraction)
-    {
-        if (NrSweepShift == 0) return frequencyData;
-
-        Address result = frequencyData;
-
-        if (isSubtraction)
-        {
-            for (int i = 0; i < times; i++)
+            if (isSubtraction)
             {
-                Address shift = result / (1 << sweepShifts);
-                result -= shift;
+                for (int i = 0; i < times; i++)
+                {
+                    Address shift = result / (1 << sweepShifts);
+                    result -= shift;
+                }
             }
-        }
-        else
-            for (int i = 0; i < times; i++)
-            {
-                Address shift = result / (1 << sweepShifts);
-                result += shift;
-            }
-
-        if (result >= 0x7FF)
-        {
-            if (IsSubtraction)
-                result = 0;
             else
-                OverflowListeners?.Invoke();
+                for (int i = 0; i < times; i++)
+                {
+                    Address shift = result / (1 << sweepShifts);
+                    result += shift;
+                }
+
+            if (result >= 0x7FF)
+            {
+                if (IsSubtraction)
+                    result = 0;
+                else
+                    OverflowListeners?.Invoke();
+            }
+
+            return result;
         }
 
-        return result;
     }
-
 }

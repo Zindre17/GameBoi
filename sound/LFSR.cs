@@ -1,35 +1,38 @@
-public class LFSR
+namespace GB_Emulator.Sound
 {
-    private readonly int size;
-    private int state;
-
-    public LFSR(int size)
+    public class LFSR
     {
-        this.size = size;
-        Reset();
-    }
+        private readonly int size;
+        private int state;
 
-    public void Reset()
-    {
-        for (int i = 0; i < size; i++)
+        public LFSR(int size)
         {
-            int bit = 1 << i;
-            state |= bit;
+            this.size = size;
+            Reset();
         }
+
+        public void Reset()
+        {
+            for (int i = 0; i < size; i++)
+            {
+                int bit = 1 << i;
+                state |= bit;
+            }
+        }
+
+        public bool Tick()
+        {
+            int bit0 = state & 1;
+            int next = bit0 ^ (state & 2) >> 1;
+
+            state >>= 1;
+
+            if (next != 0)
+                state |= 1 << size - 1;
+
+            if (state == 0) throw new System.Exception();
+            return bit0 != 0;
+        }
+
     }
-
-    public bool Tick()
-    {
-        int bit0 = state & 1;
-        int next = bit0 ^ ((state & 2) >> 1);
-
-        state >>= 1;
-
-        if (next != 0)
-            state |= 1 << (size - 1);
-
-        if (state == 0) throw new System.Exception();
-        return bit0 != 0;
-    }
-
 }

@@ -1,107 +1,111 @@
-using static ScreenRelatedAddresses;
-using static ScreenSizes;
+using GB_Emulator.Gameboi.Memory;
+using GB_Emulator.Gameboi.Memory.Specials;
+using static GB_Emulator.Statics.ScreenRelatedAddresses;
+using static GB_Emulator.Statics.ScreenSizes;
 
-public class PPU
+namespace GB_Emulator.Gameboi.Graphics
 {
-    private readonly OAM oam;
-    private readonly VRAM vram;
-
-    private readonly Palette obp0 = new Palette(0xFF);
-    private readonly Palette obp1 = new Palette(0xFF);
-    private readonly Palette bgp = new Palette(0xFC);
-
-    private readonly Register scy = new Register();
-    private readonly Register scx = new Register();
-
-    private readonly Register wx = new Register();
-    private readonly Register wy = new Register();
-
-
-    private readonly LCDC lcdc;
-
-    public PPU(LCDC lcdc)
+    public class PPU
     {
-        this.lcdc = lcdc;
+        private readonly OAM oam;
+        private readonly VRAM vram;
 
-        oam = new OAM();
-        vram = new VRAM(lcdc, scx, scy, wx, wy);
-    }
+        private readonly Palette obp0 = new(0xFF);
+        private readonly Palette obp1 = new(0xFF);
+        private readonly Palette bgp = new(0xFC);
 
-    public Byte[] GetLine(Byte line)
-    {
+        private readonly Register scy = new();
+        private readonly Register scx = new();
 
-        Byte[] pixelLine = vram.GetBackgroundAndWindowLine(line);
+        private readonly Register wx = new();
+        private readonly Register wy = new();
 
-        var sprites = oam.GetSpritesOnLine(line, lcdc.IsDoubleSpriteSize);
-        Byte[] spriteLayer = new Byte[pixelsPerLine];
 
-        foreach (var sprite in sprites)
+        private readonly LCDC lcdc;
+
+        public PPU(LCDC lcdc)
         {
-            Byte spriteY = line - sprite.ScreenYstart;
-            spriteY = sprite.Yflip ? (Byte)(7 - spriteY) : spriteY;
+            this.lcdc = lcdc;
 
-            Byte pattern = sprite.Pattern;
-            if (lcdc.IsDoubleSpriteSize)
+            oam = new OAM();
+            vram = new VRAM(lcdc, scx, scy, wx, wy);
+        }
+
+        public Byte[] GetLine(Byte line)
+        {
+
+            Byte[] pixelLine = vram.GetBackgroundAndWindowLine(line);
+
+            var sprites = oam.GetSpritesOnLine(line, lcdc.IsDoubleSpriteSize);
+            Byte[] spriteLayer = new Byte[pixelsPerLine];
+
+            foreach (var sprite in sprites)
             {
-                if (spriteY >= 8)
+                Byte spriteY = line - sprite.ScreenYstart;
+                spriteY = sprite.Yflip ? 7 - spriteY : spriteY;
+
+                Byte pattern = sprite.Pattern;
+                if (lcdc.IsDoubleSpriteSize)
                 {
-                    pattern = sprite.Pattern | 0x01;
-                    spriteY -= 8;
+                    if (spriteY >= 8)
+                    {
+                        pattern = sprite.Pattern | 0x01;
+                        spriteY -= 8;
+                    }
+                    else
+                        pattern = sprite.Pattern & 0xFE;
                 }
-                else
-                    pattern = sprite.Pattern & 0xFE;
+
+                Tile tile = vram.GetTile(pattern, true);
+
+                Palette palette = sprite.Palette ? obp1 : obp0;
+
+                for (Byte x = 0; x < 8; x++)
+                {
+                    Byte screenX = sprite.ScreenXstart + x;
+                    if (screenX >= 160) continue;
+
+                    Byte spriteX = sprite.Xflip ? 7 - x : x;
+                    Byte color = tile.GetColorCode(spriteX, spriteY);
+
+                    if (color == 0) continue;
+
+                    if (!sprite.Hidden || pixelLine[screenX] == 0)
+                        spriteLayer[screenX] = palette.DecodeColorNumber(color) + 1;
+                }
             }
 
-            Tile tile = vram.GetTile(pattern, true);
-
-            Palette palette = sprite.Palette ? obp1 : obp0;
-
-            for (Byte x = 0; x < 8; x++)
+            // merge layers and decode background/window colors
+            for (int i = 0; i < pixelsPerLine; i++)
             {
-                Byte screenX = sprite.ScreenXstart + x;
-                if (screenX >= 160) continue;
-
-                Byte spriteX = sprite.Xflip ? (Byte)(7 - x) : x;
-                Byte color = tile.GetColorCode(spriteX, spriteY);
-
-                if (color == 0) continue;
-
-                if (!sprite.Hidden || pixelLine[screenX] == 0)
-                    spriteLayer[screenX] = palette.DecodeColorNumber(color) + 1;
+                Byte s = spriteLayer[i];
+                if (s == 0)
+                    pixelLine[i] = bgp.DecodeColorNumber(pixelLine[i]);
+                else
+                    pixelLine[i] = s - 1;
             }
+            return pixelLine;
         }
 
-        // merge layers and decode background/window colors
-        for (int i = 0; i < pixelsPerLine; i++)
+        public void SetOamLock(bool on) => oam.SetLock(on);
+
+        public void Connect(Bus bus)
         {
-            Byte s = spriteLayer[i];
-            if (s == 0)
-                pixelLine[i] = bgp.DecodeColorNumber(pixelLine[i]);
-            else
-                pixelLine[i] = s - 1;
+            bus.SetOam(oam);
+
+            bus.SetVram(vram);
+
+            bus.ReplaceMemory(OBP0_address, obp0);
+            bus.ReplaceMemory(OBP1_address, obp1);
+            bus.ReplaceMemory(BGP_address, bgp);
+
+            bus.ReplaceMemory(SCX_address, scx);
+            bus.ReplaceMemory(SCY_address, scy);
+
+            bus.ReplaceMemory(WX_address, wx);
+            bus.ReplaceMemory(WY_address, wy);
         }
-        return pixelLine;
+
+
     }
-
-    public void SetVramLock(bool _) { }
-    public void SetOamLock(bool on) => oam.SetLock(on);
-
-    public void Connect(Bus bus)
-    {
-        bus.SetOam(oam);
-
-        bus.SetVram(vram);
-
-        bus.ReplaceMemory(OBP0_address, obp0);
-        bus.ReplaceMemory(OBP1_address, obp1);
-        bus.ReplaceMemory(BGP_address, bgp);
-
-        bus.ReplaceMemory(SCX_address, scx);
-        bus.ReplaceMemory(SCY_address, scy);
-
-        bus.ReplaceMemory(WX_address, wx);
-        bus.ReplaceMemory(WY_address, wy);
-    }
-
-
 }

@@ -1,83 +1,87 @@
+using GB_Emulator.Gameboi;
 
-public abstract class SquareWaveChannel : SoundChannel
+namespace GB_Emulator.Sound.channels
 {
-    protected Sweep sweep;
-    protected WaveDuty waveDuty = new WaveDuty();
-    protected Envelope envelope = new Envelope();
-    protected FrequencyLow frequencyLow = new FrequencyLow();
-    protected FrequencyHigh frequencyHigh = new FrequencyHigh();
-
-    protected byte channelBit;
-
-    private readonly SquareWaveProvider waveProvider = new SquareWaveProvider();
-
-    public SquareWaveChannel(NR52 nr52, byte channelBit, bool hasSweep) : base(nr52)
+    public abstract class SquareWaveChannel : SoundChannel
     {
-        this.channelBit = channelBit;
+        protected Sweep sweep;
+        protected WaveDuty waveDuty = new();
+        protected Envelope envelope = new();
+        protected FrequencyLow frequencyLow = new();
+        protected FrequencyHigh frequencyHigh = new();
 
-        if (hasSweep) sweep = new Sweep();
+        protected byte channelBit;
 
-        waveProvider.OnDurationCompleted += () => nr52.TurnOff(channelBit);
-    }
+        private readonly SquareWaveProvider waveProvider = new();
 
-    private int samplesThisDuration = 0;
-    public short[] GetNextSampleBatch(int count)
-    {
-        ushort frequencyData = GetFrequencyData();
-        if (frequencyHigh.IsInitial)
+        public SquareWaveChannel(NR52 nr52, byte channelBit, bool hasSweep) : base(nr52)
         {
-            frequencyHigh.IsInitial = false;
-            nr52.TurnOn(channelBit);
+            this.channelBit = channelBit;
 
-            samplesThisDuration = 0;
+            if (hasSweep) sweep = new Sweep();
 
-            envelope.Initialize();
-
-            int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : -1;
-
-            waveProvider.UpdateSound(
-                GetFrequency(frequencyData),
-                waveDuty.GetDuty(),
-                true,
-                newDuration
-            );
-        }
-        else
-        {
-            if (sweep != null)
-                frequencyData = sweep.GetFrequencyAfterSweep(frequencyData, samplesThisDuration);
-
-            waveProvider.UpdateSound(
-                GetFrequency(frequencyData),
-                waveDuty.GetDuty(),
-                false
-            );
+            waveProvider.OnDurationCompleted += () => nr52.TurnOff(channelBit);
         }
 
-        short[] samples = new short[count];
-        if (nr52.IsAllOn)
+        private int samplesThisDuration = 0;
+        public short[] GetNextSampleBatch(int count)
         {
-            for (int i = 0; i < count; i++)
+            ushort frequencyData = GetFrequencyData();
+            if (frequencyHigh.IsInitial)
             {
-                samples[i] = (short)(waveProvider.GetSample(samplesThisDuration) * envelope.GetVolume(samplesThisDuration));
-                samplesThisDuration++;
+                frequencyHigh.IsInitial = false;
+                nr52.TurnOn(channelBit);
+
+                samplesThisDuration = 0;
+
+                envelope.Initialize();
+
+                int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : -1;
+
+                waveProvider.UpdateSound(
+                    GetFrequency(frequencyData),
+                    waveDuty.GetDuty(),
+                    true,
+                    newDuration
+                );
             }
+            else
+            {
+                if (sweep != null)
+                    frequencyData = sweep.GetFrequencyAfterSweep(frequencyData, samplesThisDuration);
+
+                waveProvider.UpdateSound(
+                    GetFrequency(frequencyData),
+                    waveDuty.GetDuty(),
+                    false
+                );
+            }
+
+            short[] samples = new short[count];
+            if (nr52.IsAllOn)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    samples[i] = (short)(waveProvider.GetSample(samplesThisDuration) * envelope.GetVolume(samplesThisDuration));
+                    samplesThisDuration++;
+                }
+            }
+
+            return samples;
         }
 
-        return samples;
+        public abstract override void Connect(Bus bus);
+
+
+        private ushort GetFrequencyData()
+        {
+            return (ushort)(frequencyHigh.HighBits << 8 | frequencyLow.LowBits);
+        }
+
+        private static uint GetFrequency(ushort frequencyData)
+        {
+            return (uint)(0x20000 / (0x800 - frequencyData));
+        }
+
     }
-
-    public abstract override void Connect(Bus bus);
-
-
-    private ushort GetFrequencyData()
-    {
-        return (ushort)((frequencyHigh.HighBits << 8) | frequencyLow.LowBits);
-    }
-
-    private uint GetFrequency(ushort frequencyData)
-    {
-        return (uint)(0x20000 / (0x800 - frequencyData));
-    }
-
 }

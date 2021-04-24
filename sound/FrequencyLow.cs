@@ -1,7 +1,12 @@
-public class FrequencyLow : Register
+using GB_Emulator.Gameboi.Memory;
+
+namespace GB_Emulator.Sound
 {
-    public override Byte Read() => 0xFF;
+    public class FrequencyLow : Register
+    {
+        public override Byte Read() => 0xFF;
 
-    public Byte LowBits => data;
+        public Byte LowBits => data;
 
+    }
 }

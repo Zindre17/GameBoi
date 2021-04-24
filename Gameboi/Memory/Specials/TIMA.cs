@@ -1,19 +1,22 @@
-public class TIMA : DIV
+namespace GB_Emulator.Gameboi.Memory.Specials
 {
-    public TIMA(OverflowHandler handler) : base()
+    public class TIMA : DIV
     {
-        OnOverflow += handler;
-    }
+        public TIMA(OverflowHandler handler) : base()
+        {
+            OnOverflow += handler;
+        }
 
-    public delegate void OverflowHandler();
+        public delegate void OverflowHandler();
 
-    public OverflowHandler OnOverflow;
-    private bool hasOverflown = false;
+        public OverflowHandler OnOverflow;
+        private bool hasOverflown = false;
 
-    public override void Bump()
-    {
-        if (hasOverflown && OnOverflow != null) OnOverflow();
-        else base.Bump();
-        if (data == 0xFF) hasOverflown = true;
+        public override void Bump()
+        {
+            if (hasOverflown && OnOverflow != null) OnOverflow();
+            else base.Bump();
+            if (data == 0xFF) hasOverflown = true;
+        }
     }
 }

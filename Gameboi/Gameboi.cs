@@ -1,85 +1,90 @@
-
 using System;
 using System.Windows.Media;
+using GB_Emulator.Cartridges;
+using GB_Emulator.Gameboi.Hardware;
+using GB_Emulator.Sound;
 
-public class Gameboi
+namespace GB_Emulator.Gameboi
 {
-    private readonly CPU cpu = new CPU();
-    private readonly LCD lcd = new LCD();
-    private readonly Controller controller = new Controller();
-    private readonly DMA dma = new DMA();
-    private readonly SPU spu = new SPU();
-    private readonly Bus bus = new Bus();
-    private readonly Timer timer = new Timer();
-
-    private Cartridge game;
-
-
-    public Gameboi()
+    public class Gameboi
     {
-        bus.Connect(cpu);
-        bus.Connect(spu);
-        bus.Connect(timer);
-        bus.Connect(controller);
-        bus.Connect(dma);
-        bus.Connect(lcd);
-    }
+        private readonly CPU cpu = new();
+        private readonly LCD lcd = new();
+        private readonly Controller controller = new();
+        private readonly DMA dma = new();
+        private readonly SPU spu = new();
+        private readonly Bus bus = new();
+        private readonly Timer timer = new();
 
-    public void Play()
-    {
-        if (isOn)
-            cpu.Run();
-    }
+        private Cartridge game;
 
-    public void Pause()
-    {
-        if (isOn)
-            cpu.Pause();
-    }
 
-    public void PausePlayToggle()
-    {
-        if (isOn)
-            if (cpu.IsRunning)
-                cpu.Pause();
-            else
+        public Gameboi()
+        {
+            bus.Connect(cpu);
+            bus.Connect(spu);
+            bus.Connect(timer);
+            bus.Connect(controller);
+            bus.Connect(dma);
+            bus.Connect(lcd);
+        }
+
+        public void Play()
+        {
+            if (isOn)
                 cpu.Run();
-    }
-
-    public string LoadGame(string path)
-    {
-        if (game != null)
-        {
-            Pause();
-            TurnOff();
         }
-        try
+
+        public void Pause()
         {
-            game = Cartridge.LoadGame(path);
-            bus.ConnectCartridge(game);
-            cpu.Restart();
-            TurnOn();
-            Play();
-            return game.Title;
+            if (isOn)
+                cpu.Pause();
         }
-        catch (Exception) { }
-        return null;
-    }
 
-    public ImageSource GetScreen() => lcd.Screen;
-
-    public void CheckController() => controller.RegisterInputs();
-    public void Render() => lcd.DrawFrame();
-
-    private bool isOn = false;
-    public void TurnOn() => isOn = game != null;
-    public void TurnOff()
-    {
-        if (isOn)
+        public void PausePlayToggle()
         {
-            isOn = false;
-            game.CloseFileStream();
+            if (isOn)
+                if (cpu.IsRunning)
+                    cpu.Pause();
+                else
+                    cpu.Run();
         }
-    }
 
+        public string LoadGame(string path)
+        {
+            if (game != null)
+            {
+                Pause();
+                TurnOff();
+            }
+            try
+            {
+                game = Cartridge.LoadGame(path);
+                bus.ConnectCartridge(game);
+                cpu.Restart();
+                TurnOn();
+                Play();
+                return game.Title;
+            }
+            catch (Exception) { }
+            return null;
+        }
+
+        public ImageSource GetScreen() => lcd.Screen;
+
+        public void CheckController() => controller.RegisterInputs();
+        public void Render() => lcd.DrawFrame();
+
+        private bool isOn = false;
+        public void TurnOn() => isOn = game != null;
+        public void TurnOff()
+        {
+            if (isOn)
+            {
+                isOn = false;
+                game.CloseFileStream();
+            }
+        }
+
+    }
 }
