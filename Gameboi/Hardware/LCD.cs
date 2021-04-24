@@ -168,7 +168,7 @@ public class LCD : Hardware, IUpdateable
     private static readonly Int32Rect rect = new Int32Rect(0, 0, pixelsPerLine, pixelLines);
     public void DrawFrame()
     {
-        byte[] formattedPixels = new byte[pixels.Length / 4];
+        byte[] formattedPixels = new byte[pixels.Length >> 2];
         if (lcdc.IsEnabled)
         {
             int index = 0;
