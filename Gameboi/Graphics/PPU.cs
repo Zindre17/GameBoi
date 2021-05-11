@@ -20,6 +20,9 @@ namespace GB_Emulator.Gameboi.Graphics
         private readonly Register wx = new();
         private readonly Register wy = new();
 
+        public Palette Obp0 => obp0;
+        public Palette Obp1 => obp1;
+        public Palette Bgp => bgp;
 
         private readonly LCDC lcdc;
 
@@ -31,22 +34,21 @@ namespace GB_Emulator.Gameboi.Graphics
             vram = new VRAM(lcdc, scx, scy, wx, wy);
         }
 
-        public Byte[] GetLine(Byte line)
+        public (Byte[], Byte[], Byte[]) GetLineLayers(Byte line)
         {
-
-            Byte[] pixelLine = vram.GetBackgroundAndWindowLine(line);
+            Byte[] backgroundLine = vram.GetBackgroundLine(line);
+            Byte[] spriteLine = new Byte[pixelsPerLine];
 
             var sprites = oam.GetSpritesOnLine(line, lcdc.IsDoubleSpriteSize);
-            Byte[] spriteLayer = new Byte[pixelsPerLine];
-
             foreach (var sprite in sprites)
             {
                 Byte spriteY = line - sprite.ScreenYstart;
-                spriteY = sprite.Yflip ? 7 - spriteY : spriteY;
 
                 Byte pattern = sprite.Pattern;
+
                 if (lcdc.IsDoubleSpriteSize)
                 {
+                    spriteY = sprite.Yflip ? 15 - spriteY : spriteY;
                     if (spriteY >= 8)
                     {
                         pattern = sprite.Pattern | 0x01;
@@ -55,36 +57,35 @@ namespace GB_Emulator.Gameboi.Graphics
                     else
                         pattern = sprite.Pattern & 0xFE;
                 }
+                else
+                {
+                    spriteY = sprite.Yflip ? 7 - spriteY : spriteY;
+                }
 
                 Tile tile = vram.GetTile(pattern, true);
 
-                Palette palette = sprite.Palette ? obp1 : obp0;
+                // color 1-3 obp0, color 5 - 7 obp1 (0 is transparent)
+                Byte colorOffset = sprite.Palette ? 4 : 0;
 
                 for (Byte x = 0; x < 8; x++)
                 {
                     Byte screenX = sprite.ScreenXstart + x;
-                    if (screenX >= 160) continue;
+
+                    if (screenX >= 160) break;
+
+                    if (sprite.Hidden && backgroundLine[screenX] != 0) continue;
 
                     Byte spriteX = sprite.Xflip ? 7 - x : x;
+
                     Byte color = tile.GetColorCode(spriteX, spriteY);
 
                     if (color == 0) continue;
 
-                    if (!sprite.Hidden || pixelLine[screenX] == 0)
-                        spriteLayer[screenX] = palette.DecodeColorNumber(color) + 1;
+                    spriteLine[screenX] = colorOffset + color + 1;
                 }
             }
 
-            // merge layers and decode background/window colors
-            for (int i = 0; i < pixelsPerLine; i++)
-            {
-                Byte s = spriteLayer[i];
-                if (s == 0)
-                    pixelLine[i] = bgp.DecodeColorNumber(pixelLine[i]);
-                else
-                    pixelLine[i] = s - 1;
-            }
-            return pixelLine;
+            return (backgroundLine, vram.GetWindowLine(line), spriteLine);
         }
 
         public void SetOamLock(bool on) => oam.SetLock(on);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using GB_Emulator.Gameboi.Memory;
 
 namespace GB_Emulator.Gameboi.Graphics
@@ -18,7 +19,6 @@ namespace GB_Emulator.Gameboi.Graphics
         public List<Sprite> GetSpritesOnLine(Byte ly, bool isDoubleHeight)
         {
             var result = new List<Sprite>();
-            int spriteHeight = isDoubleHeight ? 16 : 8;
 
             foreach (var sprite in sprites)
             {
@@ -28,9 +28,13 @@ namespace GB_Emulator.Gameboi.Graphics
                 if (sprite.IsIntersectWithLine(ly, isDoubleHeight))
                     result.Add(sprite);
             }
-            result.Sort((a, b) => b.X - a.X);
-            result.Sort((a, b) => b.Nr - a.Nr);
-            return result;
+            result.Sort((a, b) =>
+            {
+                if (a.X == b.X)
+                    return b.Nr - a.Nr;
+                return b.X - a.X;
+            });
+            return result.TakeLast(10).ToList();
         }
 
         public void Set(Address address, IMemory replacement) => sprites[address / 4].Set(address % 4, replacement);

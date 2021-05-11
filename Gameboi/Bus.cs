@@ -109,8 +109,7 @@ namespace GB_Emulator.Gameboi
 
         public void RequestInterrupt(InterruptType type)
         {
-            if (cpu != null)
-                cpu.RequestInterrupt(type);
+            cpu?.RequestInterrupt(type);
         }
 
         public Byte Read(Address address, bool isCpu = false) => memory[address].Read(address, isCpu);

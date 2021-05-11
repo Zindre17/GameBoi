@@ -15,7 +15,7 @@ namespace GB_Emulator.Gameboi.Graphics
                 tilemaps[i] = new Register();
         }
 
-        //mapSelect => false: 0x9800 - 0x9BFF | true: 0x9C00 - 0x9FFF
+        //mapSelect: false => 0x9800 - 0x9BFF | true => 0x9C00 - 0x9FFF
         public Byte GetTilePatternIndex(Byte x, Byte y, bool mapSelect)
         {
             int index = y * tileMapWidth + x;

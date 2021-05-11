@@ -74,7 +74,7 @@ namespace GB_Emulator.Gameboi.Hardware
         private readonly Action[] modeExits = new Action[4];
         private readonly Action[] modeTicks = new Action[4];
 
-        private void CheckCoincidence(GB_Emulator.Gameboi.Memory.Byte newLY)
+        private void CheckCoincidence(Byte newLY)
         {
             stat.CoincidenceFlag = newLY == lyc.Read();
             if (stat.IsCoincidenceInterruptEnabled && stat.CoincidenceFlag)
@@ -157,36 +157,62 @@ namespace GB_Emulator.Gameboi.Hardware
             ppu.SetOamLock(false);
 
             int firstPixelIndex = ly.Y * pixelsPerLine;
-            Byte[] line = ppu.GetLine(ly.Y);
+            (Byte[] b, Byte[] w, Byte[] s) = ppu.GetLineLayers(ly.Y);
             for (int i = 0; i < pixelsPerLine; i++)
             {
-                pixels[firstPixelIndex + i] = line[i];
+                backgroundLayer[firstPixelIndex + i] = b[i];
+                windowLayer[firstPixelIndex + i] = w[i];
+                spriteLayer[firstPixelIndex + i] = s[i];
             }
         }
 
-        private readonly byte[] pixels = new byte[pixelsPerLine * pixelLines];
+
+
+        private readonly Byte[] backgroundLayer = new Byte[pixelsPerLine * pixelLines];
+        private readonly Byte[] windowLayer = new Byte[pixelsPerLine * pixelLines];
+        private readonly Byte[] spriteLayer = new Byte[pixelsPerLine * pixelLines];
+
+
+        private byte[] PreparePixels()
+        {
+            byte[] pixels = new byte[backgroundLayer.Length * screen.Format.BitsPerPixel / 8];
+            Palette[] sps = new Palette[2] { ppu.Obp0, ppu.Obp1 };
+            byte colorsPerPalette = 4;
+
+            for (int i = 0; i < backgroundLayer.Length; i++)
+            {
+                var position = (3 - i % 4) * 2;
+
+                Byte pixel = spriteLayer[i];
+                if (pixel != 0)
+                {
+                    pixel--;
+                    pixels[i / 4] |= (byte)(sps[pixel / 4].DecodeColorNumber((byte)(pixel % colorsPerPalette)) << position);
+                    continue;
+                }
+
+                pixel = windowLayer[i];
+                if (pixel == 0)
+                    pixel = backgroundLayer[i];
+                else pixel--;
+
+                pixels[i / 4] |= (byte)(ppu.Bgp.DecodeColorNumber(pixel) << position);
+            }
+
+            return pixels;
+        }
 
         private static readonly Int32Rect rect = new(0, 0, pixelsPerLine, pixelLines);
+
         public void DrawFrame()
         {
-            byte[] formattedPixels = new byte[pixels.Length >> 2];
+            byte[] pixels = PreparePixels();
             if (lcdc.IsEnabled)
             {
-                int index = 0;
-                for (int i = 0; i < pixels.Length; i += 4)
-                {
-                    Byte value = pixels[i] << 6 | pixels[i + 1] << 4 | pixels[i + 2] << 2 | pixels[i + 3];
-                    formattedPixels[index++] = value;
-                }
+                screen.WritePixels(rect, pixels, pixels.Length / rect.Height, 0);
+                return;
             }
-            else
-            {
-                for (int i = 0; i < formattedPixels.Length; i++)
-                {
-                    formattedPixels[i] = 0xFF;
-                }
-            }
-            screen.WritePixels(rect, formattedPixels, formattedPixels.Length / rect.Height, 0);
+            screen.WritePixels(rect, new byte[pixels.Length], pixels.Length / rect.Height, 0);
         }
     }
 }
