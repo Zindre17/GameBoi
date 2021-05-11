@@ -77,6 +77,9 @@ namespace GB_Emulator.Statics
         public const ushort BGP_address = 0xFF47;
         public const ushort OBP0_address = 0xFF48;
         public const ushort OBP1_address = 0xFF49;
+        public const ushort CBGP_address = 0xFF68;
+        public const ushort COBP_address = 0xFF6A;
+
         public const ushort WY_address = 0xFF4A;
         public const ushort WX_address = 0xFF4B;
 
