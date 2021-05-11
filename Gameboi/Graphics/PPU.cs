@@ -9,6 +9,7 @@ namespace GB_Emulator.Gameboi.Graphics
     {
         private readonly OAM oam;
         private readonly VRAM vram;
+        private readonly VramDma vramDma = new();
 
         private readonly Palette obp0 = new(0xFF);
         private readonly Palette obp1 = new(0xFF);
@@ -89,9 +90,11 @@ namespace GB_Emulator.Gameboi.Graphics
         }
 
         public void SetOamLock(bool on) => oam.SetLock(on);
+        public void AllowBlockTransfer() => vramDma.TransferIfActive();
 
         public void Connect(Bus bus)
         {
+            vramDma.Connect(bus);
             bus.SetOam(oam);
 
             bus.SetVram(vram);

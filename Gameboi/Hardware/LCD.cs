@@ -26,6 +26,9 @@ namespace GB_Emulator.Gameboi.Hardware
         private readonly LY ly;
         private readonly Register lyc = new();
 
+        private readonly ColorPalette cbgp = new();
+        private readonly ColorPalette cobp = new();
+
         public LCD()
         {
             lcdc = new LCDC(OnScreenToggled);
@@ -37,7 +40,8 @@ namespace GB_Emulator.Gameboi.Hardware
                 pixelLines,
                 1,
                 1,
-                PixelFormats.Gray2,
+                // PixelFormats.Gray2,
+                PixelFormats.Rgb24,
                 null);
 
             modeEnters[0] = LoadLine;
@@ -92,6 +96,9 @@ namespace GB_Emulator.Gameboi.Hardware
 
             bus.ReplaceMemory(LY_address, ly);
             bus.ReplaceMemory(LYC_address, lyc);
+
+            bus.RouteMemory(CBGP_address, cbgp);
+            bus.RouteMemory(COBP_address, cobp);
         }
 
         private ulong cyclesInMode = 0;
@@ -156,6 +163,8 @@ namespace GB_Emulator.Gameboi.Hardware
             // hblank => open vram and oam
             ppu.SetOamLock(false);
 
+            ppu.AllowBlockTransfer();
+
             int firstPixelIndex = ly.Y * pixelsPerLine;
             (Byte[] b, Byte[] w, Byte[] s) = ppu.GetLineLayers(ly.Y);
             for (int i = 0; i < pixelsPerLine; i++)
@@ -176,29 +185,43 @@ namespace GB_Emulator.Gameboi.Hardware
         private byte[] PreparePixels()
         {
             byte[] pixels = new byte[backgroundLayer.Length * screen.Format.BitsPerPixel / 8];
-            Palette[] sps = new Palette[2] { ppu.Obp0, ppu.Obp1 };
-            byte colorsPerPalette = 4;
-
-            for (int i = 0; i < backgroundLayer.Length; i++)
+            //grayscale
+            if (screen.Format.BitsPerPixel == 2)
             {
-                var position = (3 - i % 4) * 2;
-
-                Byte pixel = spriteLayer[i];
-                if (pixel != 0)
+                Palette[] sps = new Palette[2] { ppu.Obp0, ppu.Obp1 };
+                byte colorsPerPalette = 4;
+                for (int i = 0; i < backgroundLayer.Length; i++)
                 {
-                    pixel--;
-                    pixels[i / 4] |= (byte)(sps[pixel / 4].DecodeColorNumber((byte)(pixel % colorsPerPalette)) << position);
-                    continue;
+                    var position = (3 - i % 4) * 2;
+
+                    Byte pixel = spriteLayer[i];
+                    if (pixel != 0)
+                    {
+                        pixel--;
+                        pixels[i / 4] |= (byte)(sps[pixel / 4].DecodeColorNumber((byte)(pixel % colorsPerPalette)) << position);
+                        continue;
+                    }
+
+                    pixel = windowLayer[i];
+                    if (pixel == 0)
+                        pixel = backgroundLayer[i];
+                    else pixel--;
+
+                    pixels[i / 4] |= (byte)(ppu.Bgp.DecodeColorNumber(pixel) << position);
                 }
-
-                pixel = windowLayer[i];
-                if (pixel == 0)
-                    pixel = backgroundLayer[i];
-                else pixel--;
-
-                pixels[i / 4] |= (byte)(ppu.Bgp.DecodeColorNumber(pixel) << position);
             }
-
+            //color
+            else
+            {
+                for (int i = 0; i < backgroundLayer.Length; i++)
+                {
+                    int start = i * 3;
+                    Address color = cobp.DecodeColorNumber(backgroundLayer[i]);
+                    pixels[start] = (byte)(color & 0x1f);
+                    pixels[start + 1] = (byte)((color >> 5) & 0x1f);
+                    pixels[start + 2] = (byte)((color >> 10) & 0x1f);
+                }
+            }
             return pixels;
         }
 
