@@ -15,6 +15,15 @@ Some games does not function correctly. Of games tested, Pokemon Yellow have som
 * __Enter -__ Start-button
 * __Rigth Shift -__ Select-button
 
+## Future development plans
+_These are not ordered by priority!_
+* Expand to GBC
+* Switch to MAUI
+* Improve performance
+* Improve Sound
+* Add Link Cable functionality (locally and over internet)
+
+
 ## Information sources and other useful links
 * [Pan Docs](http://bgb.bircd.org/pandocs.htm)
 * [Game Boy CPU Manual](http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf)
