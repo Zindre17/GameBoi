@@ -16,7 +16,7 @@ namespace GB_Emulator.Gameboi.Graphics
                 sprites[i] = new Sprite(i);
         }
 
-        public List<Sprite> GetSpritesOnLine(Byte ly, bool isDoubleHeight)
+        public Sprite[] GetSpritesOnLine(Byte ly, bool isDoubleHeight)
         {
             var result = new List<Sprite>();
 
@@ -34,7 +34,7 @@ namespace GB_Emulator.Gameboi.Graphics
                     return b.Nr - a.Nr;
                 return b.X - a.X;
             });
-            return result.TakeLast(10).ToList();
+            return result.TakeLast(10).ToArray();
         }
 
         public void Set(Address address, IMemory replacement) => sprites[address / 4].Set(address % 4, replacement);
