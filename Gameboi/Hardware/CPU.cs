@@ -803,7 +803,7 @@ namespace GB_Emulator.Gameboi.Hardware
 
 
             // 0x2X
-            () => ConditionalJumpBy(!ZeroFlag,Fetch()),
+            () => ConditionalJumpBy(!ZeroFlag, Fetch()),
             () => Load(ref H, ref L, GetDirectAddress()),
             () => { LoadToMem(HL, A); Increment(ref H, ref L); },
             () => Increment(ref H, ref L),
@@ -1101,7 +1101,7 @@ namespace GB_Emulator.Gameboi.Hardware
              8,12,12, 0,12,16, 8,16,   8,16,12, 0,12, 0, 8,16,
             12,12, 8, 0, 0,16, 8,16,  16, 4,16, 0, 0, 0, 8,16,
             12,12, 8, 4, 0,16, 8,16,  12, 8,16, 4, 0, 0, 8,16,
-        };
+            };
 
             //setup cb instructions
             cbInstructions = new Action[0x100]

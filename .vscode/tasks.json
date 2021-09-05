@@ -14,6 +14,19 @@
             "problemMatcher": "$msCompile"
         },
         {
+            "label": "build release",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "/property:Configuration=Release",
+                "${workspaceFolder}/GB_Emulator.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
             "label": "publish",
             "command": "dotnet",
             "type": "process",
