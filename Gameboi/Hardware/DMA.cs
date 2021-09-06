@@ -32,7 +32,7 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private ulong lastClock = 0;
 
-        public void Update(byte cycles)
+        public void Update(byte cycles, int speed)
         {
             ulong newClock = Cycles;
             ulong elapsedCpuClocks = newClock - lastClock;
@@ -40,10 +40,10 @@ namespace GB_Emulator.Gameboi.Hardware
 
             if (inProgress)
             {
-                while (elapsedCpuClocks >= clocksPerByte)
+                while (elapsedCpuClocks >= clocksPerByte / (ulong)speed)
                 {
                     Write(target++, Read(source++));
-                    elapsedCpuClocks -= clocksPerByte;
+                    elapsedCpuClocks -= clocksPerByte / (ulong)speed;
 
                     if (target == OAM_EndAddress)
                     {

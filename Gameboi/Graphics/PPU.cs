@@ -27,6 +27,17 @@ namespace GB_Emulator.Gameboi.Graphics
 
         private readonly LCDC lcdc;
 
+        private bool isColorMode;
+        public bool IsColorMode
+        {
+            get => isColorMode;
+            set
+            {
+                vram.SetColorMode(value);
+                isColorMode = value;
+            }
+        }
+
         public PPU(LCDC lcdc)
         {
             this.lcdc = lcdc;
@@ -66,7 +77,7 @@ namespace GB_Emulator.Gameboi.Graphics
                 Tile tile = vram.GetTile(pattern, true);
 
                 // color 1-3 obp0, color 5 - 7 obp1 (0 is transparent)
-                Byte colorOffset = sprite.Palette ? 4 : 0;
+                Byte colorOffset = IsColorMode ? sprite.ColorPalette * 4 : sprite.Palette ? 4 : 0;
 
                 for (Byte x = 0; x < 8; x++)
                 {
@@ -82,7 +93,7 @@ namespace GB_Emulator.Gameboi.Graphics
 
                     if (color == 0) continue;
 
-                    spriteLine[screenX] = colorOffset + color + 1;
+                    spriteLine[screenX] = colorOffset + color;
                 }
             }
 
@@ -108,6 +119,7 @@ namespace GB_Emulator.Gameboi.Graphics
 
             bus.ReplaceMemory(WX_address, wx);
             bus.ReplaceMemory(WY_address, wy);
+            bus.ReplaceMemory(0xFF4F, vram.BankSelectRegister);
         }
 
 

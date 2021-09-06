@@ -62,7 +62,7 @@ namespace GB_Emulator.Gameboi.Hardware
             bus.ReplaceMemory(P1_address, p1);
         }
 
-        public void Update(byte cycles)
+        public void Update(byte cycles, int speed)
         {
             CheckInputs();
         }

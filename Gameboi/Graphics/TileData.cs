@@ -3,14 +3,14 @@ using static GB_Emulator.Statics.TileDataConstants;
 
 namespace GB_Emulator.Gameboi.Graphics
 {
-    public class TileDataMap : IMemoryRange
+    public class TileData : IMemoryRange
     {
 
         private readonly Tile[] tiles = new Tile[tileCount];
 
         public Address Size => tileCount * bytesPerTile;
 
-        public TileDataMap()
+        public TileData()
         {
             for (int i = 0; i < tileCount; i++)
                 tiles[i] = new Tile();

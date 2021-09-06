@@ -51,7 +51,7 @@ namespace GB_Emulator.Gameboi.Graphics
                     {
                         bus.Write(Destination + i, bus.Read(Source + i));
                     }
-                    bus.UpdateCycles(8 * Length / 16);
+                    bus.UpdateCycles(8 * Length / 16, 1);
                 }
             }
         }
@@ -72,7 +72,7 @@ namespace GB_Emulator.Gameboi.Graphics
                 registers[2] = (newDest & 0xff00) >> 8;
                 registers[3] = newDest & 0x00ff;
 
-                bus.UpdateCycles(8);
+                bus.UpdateCycles(8, 1);
             }
         }
 

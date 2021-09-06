@@ -14,19 +14,24 @@ namespace GB_Emulator.Gameboi.Graphics
         private Byte palletIndex = new();
         private bool IsAutoIncrementEnabled => (palletIndex & 0x80) > 0;
         private Byte Index => palletIndex & 0x3F;
-        private Byte PalletNo => palletIndex & 0x38;
 
         public Address Size => 2;
 
         private readonly Byte[] dataMemory = new Byte[64];
 
-        public Address DecodeColorNumber(byte colorCode)
+        public (byte, byte, byte) DecodeColorNumber(byte colorCode)
         {
-            if (colorCode > 3) throw new System.ArgumentOutOfRangeException(nameof(colorCode));
-            var start = PalletNo + (2 * colorCode);
+            // if (colorCode > 3) throw new System.ArgumentOutOfRangeException(nameof(colorCode));
+            var pallet = colorCode / 7;
+            var start = pallet + (2 * (colorCode % 7));
             var lb = dataMemory[start];
             var hb = dataMemory[start + 1];
-            return (hb << 8) | lb;
+            var color = (hb << 8) | lb;
+            return (
+                (byte)((color & 0x1f) << 3),
+                (byte)(((color >> 5) & 0x1f) << 3),
+                (byte)(((color >> 10) & 0x1f) << 3)
+            );
         }
 
         public Byte Read(Address address, bool isCpu = false)

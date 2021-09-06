@@ -60,8 +60,9 @@ namespace GB_Emulator.Gameboi
             try
             {
                 game = Cartridge.LoadGame(path);
+                lcd.UseColorScreen(game.IsColorGame);
                 bus.ConnectCartridge(game);
-                cpu.Restart();
+                cpu.Restart(game.IsColorGame);
                 TurnOn();
                 Play();
                 return game.Title;

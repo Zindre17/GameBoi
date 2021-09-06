@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using GB_Emulator.Gameboi.Graphics;
@@ -17,7 +20,7 @@ namespace GB_Emulator.Gameboi.Hardware
     {
         private readonly PPU ppu;
 
-        private readonly WriteableBitmap screen;
+        private WriteableBitmap screen;
         public ImageSource Screen => screen;
 
         private readonly STAT stat = new();
@@ -35,15 +38,6 @@ namespace GB_Emulator.Gameboi.Hardware
             ly = new LY(CheckCoincidence);
             ppu = new PPU(lcdc);
 
-            screen = new WriteableBitmap(
-                pixelsPerLine,
-                pixelLines,
-                1,
-                1,
-                // PixelFormats.Gray2,
-                PixelFormats.Rgb24,
-                null);
-
             modeEnters[0] = LoadLine;
             modeEnters[2] = () => ppu.SetOamLock(true);
 
@@ -54,6 +48,19 @@ namespace GB_Emulator.Gameboi.Hardware
             };
 
             modeTicks[1] = () => ly.Set(pixelLines + cyclesInMode / 456);
+        }
+
+        public void UseColorScreen(bool on)
+        {
+            ppu.IsColorMode = on;
+            screen = new WriteableBitmap(
+                pixelsPerLine,
+                pixelLines,
+                1,
+                1,
+                on ? PixelFormats.Rgb24 : PixelFormats.Gray2,
+                null
+            );
         }
 
         private void OnScreenToggled(bool on)
@@ -105,7 +112,7 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private byte prevMode;
 
-        public void Update(byte cycles)
+        public void Update(byte cycles, int speed)
         {
             cyclesInMode += cycles;
 
@@ -197,15 +204,13 @@ namespace GB_Emulator.Gameboi.Hardware
                     Byte pixel = spriteLayer[i];
                     if (pixel != 0)
                     {
-                        pixel--;
                         pixels[i / 4] |= (byte)(sps[pixel / 4].DecodeColorNumber((byte)(pixel % colorsPerPalette)) << position);
                         continue;
                     }
 
                     pixel = windowLayer[i];
-                    if (pixel == 0)
+                    if (pixel % 4 == 0)
                         pixel = backgroundLayer[i];
-                    else pixel--;
 
                     pixels[i / 4] |= (byte)(ppu.Bgp.DecodeColorNumber(pixel) << position);
                 }
@@ -216,26 +221,45 @@ namespace GB_Emulator.Gameboi.Hardware
                 for (int i = 0; i < backgroundLayer.Length; i++)
                 {
                     int start = i * 3;
-                    Address color = cobp.DecodeColorNumber(backgroundLayer[i]);
-                    pixels[start] = (byte)(color & 0x1f);
-                    pixels[start + 1] = (byte)((color >> 5) & 0x1f);
-                    pixels[start + 2] = (byte)((color >> 10) & 0x1f);
+
+                    Byte pixel = spriteLayer[i];
+                    if (pixel % 4 != 0)
+                    {
+                        var (sr, sg, sb) = cobp.DecodeColorNumber(pixel);
+                        pixels[start] = sr;
+                        pixels[start + 1] = sg;
+                        pixels[start + 2] = sb;
+                        continue;
+                    }
+
+                    pixel = windowLayer[i];
+                    if (pixel % 4 == 0)
+                        pixel = backgroundLayer[i];
+
+                    var (r, g, b) = cbgp.DecodeColorNumber(pixel);
+                    pixels[start] = r;
+                    pixels[start + 1] = g;
+                    pixels[start + 2] = b;
                 }
             }
             return pixels;
         }
 
+
         private static readonly Int32Rect rect = new(0, 0, pixelsPerLine, pixelLines);
 
         public void DrawFrame()
         {
-            byte[] pixels = PreparePixels();
-            if (lcdc.IsEnabled)
+            if (screen is not null)
             {
-                screen.WritePixels(rect, pixels, pixels.Length / rect.Height, 0);
-                return;
+                byte[] pixels = PreparePixels();
+                if (lcdc.IsEnabled)
+                {
+                    screen.WritePixels(rect, pixels, pixels.Length / rect.Height, 0);
+                    return;
+                }
+                screen.WritePixels(rect, new byte[pixels.Length], pixels.Length / rect.Height, 0);
             }
-            screen.WritePixels(rect, new byte[pixels.Length], pixels.Length / rect.Height, 0);
         }
     }
 }
