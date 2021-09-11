@@ -34,7 +34,7 @@ namespace GB_Emulator.Gameboi.Graphics
                     return b.Nr - a.Nr;
                 return b.X - a.X;
             });
-            return result.TakeLast(10).ToArray();
+            return result.TakeLast(10).Reverse().ToArray();
         }
 
         public void Set(Address address, IMemory replacement) => sprites[address / 4].Set(address % 4, replacement);
