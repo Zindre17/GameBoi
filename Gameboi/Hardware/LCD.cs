@@ -40,10 +40,23 @@ namespace GB_Emulator.Gameboi.Hardware
                 PixelFormats.Gray2,
                 null);
 
-            modeEnters[0] = LoadLine;
-            modeEnters[2] = () => ppu.SetOamLock(true);
+            modeEnters[2] = () =>
+            {
+                ppu.SetOamLock(true);
+                if (stat.IsOAMInterruptEnabled)
+                    bus.RequestInterrupt(InterruptType.LCDC);
+            };
 
+            modeEnters[3] = LoadLine;
+
+            modeEnters[0] = () =>
+            {
+                if (stat.IsHblankInterruptEnabled)
+                    bus.RequestInterrupt(InterruptType.LCDC);
+            };
             modeExits[0] = ly.Increment;
+
+            modeEnters[1] = () => bus.RequestInterrupt(InterruptType.VBlank);
             modeExits[1] = () =>
             {
                 ly.Reset();
@@ -115,9 +128,6 @@ namespace GB_Emulator.Gameboi.Hardware
             if (prevMode != mode)
             {
                 onEnter?.Invoke();
-
-                if (mode == 1) bus.RequestInterrupt(InterruptType.VBlank);
-                else if (mode == 2 || mode == 0) bus.RequestInterrupt(InterruptType.LCDC);
             }
 
             uint endCycles = modeDurations[mode];
