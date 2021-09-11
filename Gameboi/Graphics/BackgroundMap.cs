@@ -3,13 +3,13 @@ using static GB_Emulator.Statics.TileMapConstants;
 
 namespace GB_Emulator.Gameboi.Graphics
 {
-    public class TileMap : IMemoryRange
+    public class BackgroundMap : IMemoryRange
     {
         private readonly IMemory[] tilemaps = new IMemory[tileMapTotalSize];
 
         public Address Size => tilemaps.Length;
 
-        public TileMap()
+        public BackgroundMap()
         {
             for (int i = 0; i < tileMapTotalSize; i++)
                 tilemaps[i] = new Register();

@@ -7,8 +7,8 @@ namespace GB_Emulator.Gameboi.Graphics
 {
     public class VRAM : IMemoryRange
     {
-        private readonly TileMap tileMap = new();
-        private readonly TileDataMap tileDataMap = new();
+        private readonly BackgroundMap tileMap = new();
+        private readonly TileData tileDataMap = new();
 
         public Address Size => 0x2000;
 
