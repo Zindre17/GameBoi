@@ -42,8 +42,8 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private void TimaOverflow()
         {
-            bus.RequestInterrupt(InterruptType.Timer);
             tima.Write(tma.Read());
+            bus.RequestInterrupt(InterruptType.Timer);
         }
 
         public override void Connect(Bus bus)
