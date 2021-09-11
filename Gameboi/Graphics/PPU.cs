@@ -69,17 +69,18 @@ namespace GB_Emulator.Gameboi.Graphics
 
                 for (Byte x = 0; x < 8; x++)
                 {
-                    Byte screenX = sprite.ScreenXstart + x;
+                    var screenXint = sprite.ScreenXstart + x;
+                    if (screenXint >= 160) break; // outside on the right already. No need to check the rest of the sprite
+                    if (screenXint < 0) continue; // outside on the left, but should still check the rest of the sprite
 
-                    if (screenX >= 160) break;
+                    Byte screenX = screenXint;
 
-                    if (sprite.Hidden && backgroundLine[screenX] != 0) continue;
+                    if (sprite.Hidden && backgroundLine[screenX] != 0) continue; // background has priority
 
                     Byte spriteX = sprite.Xflip ? 7 - x : x;
 
                     Byte color = tile.GetColorCode(spriteX, spriteY);
-
-                    if (color == 0) continue;
+                    if (color == 0) continue; // transparent
 
                     spriteLine[screenX] = colorOffset + color + 1;
                 }
