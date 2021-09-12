@@ -50,6 +50,19 @@ namespace GB_Emulator.Gameboi
                     cpu.Run();
         }
 
+        public void ToggleBackground()
+        {
+            lcd.ToggleBackground();
+        }
+        public void ToggleWindow()
+        {
+            lcd.ToggleWindow();
+        }
+        public void ToggleSprites()
+        {
+            lcd.ToggleSprites();
+        }
+
         public string LoadGame(string path)
         {
             if (game != null)

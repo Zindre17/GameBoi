@@ -172,6 +172,22 @@ namespace GB_Emulator.Gameboi.Hardware
             stat.Mode = mode;
         }
 
+        private bool showBackground = true;
+        private bool showWindow = true;
+        private bool showSprites = true;
+        public void ToggleBackground()
+        {
+            showBackground = !showBackground;
+        }
+        public void ToggleWindow()
+        {
+            showWindow = !showWindow;
+        }
+        public void ToggleSprites()
+        {
+            showSprites = !showSprites;
+        }
+
         private void LoadLine()
         {
             // hblank => open vram and oam
@@ -183,9 +199,9 @@ namespace GB_Emulator.Gameboi.Hardware
             (Byte[] b, Byte[] w, Byte[] s) = ppu.GetLineLayers(ly.Y);
             for (int i = 0; i < pixelsPerLine; i++)
             {
-                backgroundLayer[firstPixelIndex + i] = b[i];
-                windowLayer[firstPixelIndex + i] = w[i];
-                spriteLayer[firstPixelIndex + i] = s[i];
+                backgroundLayer[firstPixelIndex + i] = showBackground ? b[i] : 0;
+                windowLayer[firstPixelIndex + i] = showWindow ? w[i] : 0;
+                spriteLayer[firstPixelIndex + i] = showSprites ? s[i] : 0;
             }
         }
 

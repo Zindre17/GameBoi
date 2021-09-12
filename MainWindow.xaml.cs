@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -40,6 +40,14 @@ namespace GB_Emulator
                     DataContext = gameboi.GetScreen();
                 }
             }
+
+            if (args.Key == Key.D1)
+                gameboi.ToggleBackground();
+            if (args.Key == Key.D2)
+                gameboi.ToggleWindow();
+            if (args.Key == Key.D3)
+                gameboi.ToggleSprites();
+
             if (args.Key == Key.Space)
                 gameboi.PausePlayToggle();
         }
