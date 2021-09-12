@@ -74,7 +74,7 @@ namespace GB_Emulator.Gameboi
             {
                 game = Cartridge.LoadGame(path);
                 lcd.UseColorScreen(game.IsColorGame);
-                bus.ConnectCartridge(game);
+                game.Connect(bus);
                 cpu.Restart(game.IsColorGame);
                 TurnOn();
                 Play();

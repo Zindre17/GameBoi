@@ -7,38 +7,34 @@ namespace GB_Emulator.Cartridges
 {
     public class Mbc2 : Mbc
     {
-        public Mbc2(string romPath, byte romBanks, byte[] cartridgeData) : base(romPath)
+        public Mbc2(string romPath, int romBankCount, byte[] cartridgeData) : base(romPath)
         {
-            if (romBanks > 15) throw new ArgumentOutOfRangeException(nameof(romBanks));
+            if (romBankCount > 16) throw new ArgumentOutOfRangeException(nameof(romBankCount));
 
-            Byte[] bankData = GetCartridgeChunk(0, RomSizePerBank, cartridgeData);
-            romBank0 = new MbcRom(bankData, OnBank0Write);
-
-            IMemoryRange[] switchableBanks = new IMemoryRange[romBanks];
-            for (int i = 0; i < romBanks; i++)
+            MemoryRange[] switchableBanks = new MemoryRange[romBankCount];
+            for (int i = 0; i < romBankCount; i++)
             {
-                int startAddress = RomSizePerBank * (i + 1);
-                bankData = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
+                int startAddress = RomSizePerBank * i;
+                var bankData = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
                 switchableBanks[i] = new MemoryRange(bankData, true);
             }
-            romBankN = new Bank(switchableBanks);
 
-            ramBankN = new Mbc2Ram(GetSaveFilePath());
+            romBanks = new Bank(switchableBanks);
+            ramBanks = new Mbc2Ram(GetSaveFilePath());
         }
-
 
         private void ToggleRam(Address address)
         {
             Byte highByte = GetHighByte(address);
             if (!highByte[0])
-                ((MbcRam)ramBankN).isEnabled = !((MbcRam)ramBankN).isEnabled;
+                ((MbcRam)ramBanks).isEnabled = !((MbcRam)ramBanks).isEnabled;
         }
 
         private void SetRomBankNr(Address address, Byte value)
         {
             Byte highByte = GetHighByte(address);
             if (highByte[0])
-                ((Bank)romBankN).Switch(value & 0x0F);
+                romBanks.Switch(value & 0x0F);
         }
 
         protected override void OnBank0Write(Address address, Byte value)
@@ -56,7 +52,7 @@ namespace GB_Emulator.Cartridges
     public class Mbc2Ram : MbcRam
     {
         private const ushort RAMSize = 0x200;
-        public Mbc2Ram(string saveFileName) : base(null, saveFileName)
+        public Mbc2Ram(string saveFileName) : base(null, null)
         {
             banks = new IMemoryRange[1];
 
@@ -68,6 +64,7 @@ namespace GB_Emulator.Cartridges
                 else ram[i] = new Dummy();
             }
             banks[0] = new MemoryRange(ram);
+            PrepareSaveFile(saveFileName);
         }
     }
 }

@@ -1,5 +1,7 @@
 using System;
+using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Memory;
+using static GB_Emulator.Statics.GeneralMemoryMap;
 
 namespace GB_Emulator.Cartridges
 {
@@ -12,8 +14,10 @@ namespace GB_Emulator.Cartridges
             if (batteryStoredRam != null)
                 hasBattery = true;
 
-            romBank0 = new MemoryRange(GetCartridgeChunk(0, RomSizePerBank, cartridgeData), true);
-            romBankN = new MemoryRange(GetCartridgeChunk(RomSizePerBank, RomSizePerBank, cartridgeData), true);
+            romBanks = new Bank(new IMemoryRange[]{
+                new MemoryRange(GetCartridgeChunk(0, RomSizePerBank, cartridgeData), true),
+                new MemoryRange(GetCartridgeChunk(RomSizePerBank, RomSizePerBank, cartridgeData), true)
+            });
 
             if (hasRam)
             {
@@ -23,13 +27,20 @@ namespace GB_Emulator.Cartridges
                 }
                 else
                 {
-                    ramBankN = new MemoryRange(0x2000);
+                    ramBanks = new Bank(1, 0x2000);
                 }
             }
             else
             {
-                ramBankN = new DummyRange();
+                ramBanks = new Bank(0, 0);
             }
+        }
+
+        public override void Connect(Bus bus)
+        {
+            bus.RouteMemory(ROM_bank_0_StartAddress, romBanks.GetBank(0));
+            bus.RouteMemory(ROM_bank_n_StartAddress, romBanks);
+            bus.RouteMemory(ExtRAM_StartAddress, ramBanks, ExtRAM_EndAddress);
         }
     }
 }

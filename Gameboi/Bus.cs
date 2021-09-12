@@ -99,22 +99,16 @@ namespace GB_Emulator.Gameboi
             this.memory[address].Set(address, memory);
         }
 
-        public void RouteMemory(Address startAddress, IMemoryRange memory) => RouteMemory(startAddress, memory, startAddress + memory.Size);
+        public void RouteMemory(Address startAddress, IMemoryRange memory, System.Action<Address, Byte> onWrite = null)
+            => RouteMemory(startAddress, memory, startAddress + memory.Size, onWrite);
 
         public void RouteMemory(Address address, IMemory memory) => this.memory[address] = new RoutedMemory(address, memory);
 
-        public void RouteMemory(Address startAddress, IMemoryRange memory, Address endAddress)
+        public void RouteMemory(Address startAddress, IMemoryRange memory, Address endAddress, System.Action<Address, Byte> onWrite = null)
         {
-            var routedMemory = new RoutedMemory(startAddress, memory);
+            var routedMemory = new RoutedMemory(startAddress, memory, onWrite);
             for (int current = startAddress; current < endAddress; current++)
                 this.memory[current] = routedMemory;
-        }
-
-        public void ConnectCartridge(Cartridge cartridge)
-        {
-            RouteMemory(ROM_bank_0_StartAddress, cartridge.RomBank0);
-            RouteMemory(ROM_bank_n_StartAddress, cartridge.RomBankN);
-            RouteMemory(ExtRAM_StartAddress, cartridge.RamBankN, ExtRAM_EndAddress);
         }
 
         public void RequestInterrupt(InterruptType type)

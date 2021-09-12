@@ -6,44 +6,37 @@ namespace GB_Emulator.Cartridges
     {
         private Byte mode;
 
-        private Byte RomBankNumber;
-        private Byte RamBankNumber;
+        private int RomBankNumber;
+        private int RamBankNumber;
 
-
-
-        public Mbc1(string romPath, bool hasRam, Byte romBanks, RamSize ramSize, byte[] cartridgeData) : base(romPath)
+        public Mbc1(string romPath, bool hasRam, int romBankCount, RamSize ramSize, byte[] cartridgeData) : base(romPath)
         {
             mode = 0;
 
-            Byte[] bankdata = GetCartridgeChunk(0, RomSizePerBank, cartridgeData);
-            romBank0 = new MbcRom(bankdata, OnBank0Write);
-
-            // adjust for "holes" in bankspace at(0x20, 0x40, 0x60)
-            if (romBanks == 63)
-                romBanks--;
-            else if (romBanks == 127)
-                romBanks -= 3;
-
-            IMemoryRange[] switchableBanks = new IMemoryRange[romBanks];
-            for (int i = 0; i < romBanks; i++)
+            MemoryRange[] switchableBanks = new MemoryRange[romBankCount];
+            int banksLoaded = 0;
+            for (int i = 0; i < romBankCount; i++)
             {
-                int startAddress = RomSizePerBank * (i + 1);
-                bankdata = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
-                switchableBanks[i] = new MbcRom(bankdata, OnBank1Write);
+                if (i == 0x20 || i == 0x40 || i == 0x60) continue;
+
+                int startAddress = RomSizePerBank * banksLoaded++;
+                var bankdata = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
+                switchableBanks[i] = new MemoryRange(bankdata, true);
             }
-            romBankN = new Bank(switchableBanks);
+            romBanks = new Bank(switchableBanks);
 
             if (hasRam)
             {
-                ramBankN = new MbcRam(ramSize.Banks, ramSize.SizePerBank, GetSaveFilePath());
+                ramBanks = new MbcRam(ramSize.Banks, ramSize.SizePerBank, GetSaveFilePath());
             }
-            else ramBankN = new Bank(0, 0);
+            else ramBanks = new MbcRam(0, 0);
         }
 
         protected override void OnBank0Write(Address address, Byte value)
         {
             if (address < RomSizePerBank / 2)
-                ((MbcRam)ramBankN).isEnabled = value == 0x0A;
+                // A value of 0xXA will enable ram. Any other value will disable it.
+                ((MbcRam)ramBanks).isEnabled = (value & 0x0F) == 0x0A;
             else
                 RomBankNumber = value & 0x1F;
             UpdateBanks();
@@ -60,31 +53,28 @@ namespace GB_Emulator.Cartridges
 
         private void UpdateBanks()
         {
-            ((Bank)ramBankN).Switch(mode * RamBankNumber);
-            ((Bank)romBankN).Switch(GetRomBankPointer());
+            ramBanks.Switch(mode * RamBankNumber);
+            romBanks.Switch(GetRomBankPointer());
         }
 
-        private Byte GetRomBankPointer()
+        private int GetRomBankPointer()
         {
-            Byte nr;
             if (mode == 0)
             {
-                nr = RamBankNumber << 5 | RomBankNumber;
-                nr = CorrectedRomBankNumber(nr);
+                var nr = RamBankNumber << 5 | RomBankNumber;
+                return CorrectedRomBankNumber(nr);
             }
             else
             {
-                nr = CorrectedRomBankNumber(RomBankNumber);
+                return CorrectedRomBankNumber(RomBankNumber);
             }
-            return nr;
         }
 
-        private Byte CorrectedRomBankNumber(Byte value)
+        // Adjust for "holes" in bankspace at(0x20, 0x40, 0x60) and 0 -> 1
+        private static int CorrectedRomBankNumber(int value)
         {
-            if (RomBankNumber > 0x60) value -= 4;
-            else if (RomBankNumber > 0x40) value -= 3;
-            else if (RomBankNumber > 0x20) value -= 2;
-            else if (RomBankNumber > 0) value -= 1;
+            if (value == 0 || value == 0x20 || value == 0x40 || value == 0x60)
+                return value + 1;
             return value;
         }
     }

@@ -5,8 +5,7 @@ namespace GB_Emulator.Gameboi.Memory
         private readonly IMemory dummy = new Dummy();
         public IMemory this[Address address] { get => dummy; set { } }
 
-        public Address Size => throw new System.NotImplementedException();
-
+        public Address Size => 0;
         public Byte Read(Address address, bool isCpu = false) => 0xFF;
         public void Write(Address address, Byte value, bool isCpu = false) { }
 

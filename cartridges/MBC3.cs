@@ -1,6 +1,4 @@
-using System;
 using GB_Emulator.Gameboi.Memory;
-using Byte = GB_Emulator.Gameboi.Memory.Byte;
 
 namespace GB_Emulator.Cartridges
 {
@@ -8,20 +6,16 @@ namespace GB_Emulator.Cartridges
     {
         //TODO: implement internal RTC-clock
 
-        public MBC3(string romPath, bool hasRam, byte romBanks, RamSize ramSize, byte[] cartridgeData) : base(romPath)
+        public MBC3(string romPath, bool hasRam, int romBankCount, RamSize ramSize, byte[] cartridgeData) : base(romPath)
         {
-            Byte[] bankData = GetCartridgeChunk(0, RomSizePerBank, cartridgeData);
-            romBank0 = new MbcRom(bankData, OnBank0Write);
-
-            IMemoryRange[] switchableBanks = new IMemoryRange[romBanks];
-            for (int i = 0; i < romBanks; i++)
+            MemoryRange[] switchableBanks = new MemoryRange[romBankCount];
+            for (int i = 0; i < romBankCount; i++)
             {
-                int startAddress = RomSizePerBank * (i + 1);
-                bankData = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
-                switchableBanks[i] = new MbcRom(bankData, OnBank1Write);
+                int startAddress = RomSizePerBank * i;
+                var bankData = GetCartridgeChunk(startAddress, RomSizePerBank, cartridgeData);
+                switchableBanks[i] = new MemoryRange(bankData, true);
             }
-            romBankN = new Bank(switchableBanks);
-
+            romBanks = new Bank(switchableBanks);
 
             byte count;
             ushort size;
@@ -36,10 +30,10 @@ namespace GB_Emulator.Cartridges
                 size = ramSize.SizePerBank;
             }
 
-            IMemoryRange[] ramAndClock = new IMemoryRange[0xC];
-            for (int i = 0; i < 0xC; i++)
+            IMemoryRange[] ramAndClock = new IMemoryRange[0xD];
+            for (int i = 0; i < ramAndClock.Length; i++)
             {
-                if (i > 3)
+                if (i > 0x07)
                 {
                     ramAndClock[i] = new MemoryRange(new Register());
                 }
@@ -48,30 +42,34 @@ namespace GB_Emulator.Cartridges
                     if (i <= count)
                         ramAndClock[i] = new MemoryRange(size);
                     else
-                        ramAndClock[i] = null;
+                        ramAndClock[i] = new DummyRange();
                 }
             }
-            ramBankN = new MbcRam(ramAndClock, GetSaveFilePath());
-
+            ramBanks = new MbcRam(ramAndClock, GetSaveFilePath());
         }
 
         private void ToggleRam(Byte value)
         {
-            ((MbcRam)ramBankN).isEnabled = value == 0x0A;
+            if (value == 0x0A)
+                ((MbcRam)ramBanks).isEnabled = true;
+            else if (value == 0)
+                ((MbcRam)ramBanks).isEnabled = false;
         }
         private void SetRomBankNr(Byte value)
         {
-            Byte bankNr = value & 0x7F;
-            if (bankNr > 0)
-                bankNr--;
-            ((Bank)RomBankN).Switch(bankNr);
+            var bankNr = value & 0x7F;
+
+            // Selecting bank 0 translates to bank 1
+            if (bankNr == 0)
+                bankNr++;
+
+            romBanks.Switch(bankNr);
         }
 
         private void SetRamBankNr(Byte value)
         {
-            value &= 0x0F;
-            if (value > 0x0C) throw new ArgumentOutOfRangeException(nameof(value));
-            ((Bank)ramBankN).Switch(value);
+            if (value < 0x0D)
+                ramBanks.Switch(value);
         }
 
         protected override void OnBank0Write(Address address, Byte value)

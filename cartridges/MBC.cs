@@ -1,7 +1,7 @@
-using System;
 using System.IO;
+using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Memory;
-using Byte = GB_Emulator.Gameboi.Memory.Byte;
+using static GB_Emulator.Statics.GeneralMemoryMap;
 
 namespace GB_Emulator.Cartridges
 {
@@ -13,28 +13,13 @@ namespace GB_Emulator.Cartridges
 
         protected abstract void OnBank0Write(Address address, Byte value);
         protected abstract void OnBank1Write(Address address, Byte value);
-    }
 
-    public class MbcRom : MemoryRange
-    {
-
-        public MbcRom(Byte[] memory, Action<Address, Byte> onWrite) : base(memory, true)
+        public override void Connect(Bus bus)
         {
-            OnWrite = onWrite;
+            bus.RouteMemory(ROM_bank_0_StartAddress, romBanks.GetBank(0), OnBank0Write);
+            bus.RouteMemory(ROM_bank_n_StartAddress, romBanks, OnBank1Write);
+            bus.RouteMemory(ExtRAM_StartAddress, ramBanks, ExtRAM_EndAddress);
         }
-
-        public MbcRom(IMemory[] memory, Action<Address, Byte> onWrite) : base(memory)
-        {
-            OnWrite = onWrite;
-        }
-
-        public Action<Address, Byte> OnWrite;
-
-        public override void Write(Address address, Byte value, bool isCpu = false)
-        {
-            OnWrite?.Invoke(address, value);
-        }
-
     }
 
     public class MbcRam : Bank
@@ -46,7 +31,7 @@ namespace GB_Emulator.Cartridges
 
         private FileStream file;
 
-        private void PrepareSaveFile(string saveFileName)
+        public void PrepareSaveFile(string saveFileName)
         {
             if (string.IsNullOrEmpty(saveFileName)) return;
 
@@ -57,6 +42,8 @@ namespace GB_Emulator.Cartridges
                 bool first = true;
                 for (int i = 0; i < allBytes.Length; i++)
                 {
+                    while (Size == 0)
+                        pointer++;
                     Address relAdr = i % Size;
                     if (relAdr == 0 && !first) pointer++;
                     else first = false;
@@ -71,7 +58,8 @@ namespace GB_Emulator.Cartridges
 
             file = File.OpenWrite(saveFileName);
         }
-        public void CloseFileStream() => file.Close();
+
+        public void CloseFileStream() => file?.Close();
 
         public override Byte Read(Address address, bool isCpu = false)
         {

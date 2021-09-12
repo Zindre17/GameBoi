@@ -3,33 +3,38 @@ namespace GB_Emulator.Gameboi.Memory
     public class Bank : IMemoryRange
     {
         protected IMemoryRange[] banks;
-        protected Byte pointer = 0;
+        protected int pointer = 0;
 
         public Address Size => banks[pointer].Size;
 
 
-        public Bank(byte amount, ushort size, bool isReadOnly = false)
+        public Bank(byte count, ushort size, bool isReadOnly = false)
         {
-            if (amount == 0)
+            if (count == 0)
             {
                 banks = new IMemoryRange[] { new DummyRange() };
             }
             else
             {
-                banks = new IMemoryRange[amount];
-                for (int i = 0; i < amount; i++)
+                banks = new IMemoryRange[count];
+                for (int i = 0; i < count; i++)
                     banks[i] = new MemoryRange(size, isReadOnly);
             }
         }
 
         public Bank(IMemoryRange[] banks) { this.banks = banks; }
 
-        public void Switch(Byte to)
+        public void Switch(int to)
         {
             if (to < banks.Length)
                 pointer = to;
             else
                 pointer = 0;
+        }
+
+        public IMemoryRange GetBank(Byte bankNr)
+        {
+            return banks[bankNr];
         }
 
         public long GetTotalSize()

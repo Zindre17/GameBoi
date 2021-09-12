@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Memory;
 using Byte = GB_Emulator.Gameboi.Memory.Byte;
 
@@ -8,13 +9,9 @@ namespace GB_Emulator.Cartridges
 {
     public abstract class Cartridge
     {
-        protected IMemoryRange romBank0;
-        protected IMemoryRange romBankN;
-        protected IMemoryRange ramBankN;
 
-        public IMemoryRange RomBank0 => romBank0;
-        public IMemoryRange RomBankN => romBankN;
-        public IMemoryRange RamBankN => ramBankN;
+        protected Bank romBanks;
+        protected Bank ramBanks;
 
         protected const ushort RomSizePerBank = 0x4000;
 
@@ -27,6 +24,8 @@ namespace GB_Emulator.Cartridges
         protected string romPath;
 
         protected Cartridge(string romPath) => this.romPath = romPath;
+
+        public abstract void Connect(Bus bus);
 
         public static Cartridge LoadGame(string pathToROM)
         {
@@ -44,7 +43,7 @@ namespace GB_Emulator.Cartridges
 
         public void CloseFileStream()
         {
-            if (RamBankN is not MbcRam ram) return;
+            if (ramBanks is not MbcRam ram) return;
             ram.CloseFileStream();
         }
 
@@ -80,7 +79,7 @@ namespace GB_Emulator.Cartridges
             Byte type = allBytes[cartridgeTypeAddress];
             byte romSizeType = allBytes[romSizeAddress];
             byte ramSizeType = allBytes[ramSizeAddress];
-            byte romBanks = TranslateRomSizeTypeToBanks(romSizeType);
+            var romBanks = TranslateRomSizeTypeToBanks(romSizeType);
             RamSize ramSize = TranslateRamSize(ramSizeType);
             /*
             00h  ROM ONLY                 13h  MBC3+RAM+BATTERY
@@ -123,22 +122,21 @@ namespace GB_Emulator.Cartridges
             else throw new ArgumentException($"Could not setup cartridge type: {type}");
         }
 
-        private static byte TranslateRomSizeTypeToBanks(byte type)
+        private static int TranslateRomSizeTypeToBanks(byte type)
         {
-            // Note: 1 bank is allready subtracted due to bank0 always existing
             return type switch
             {
-                0 => 1,
-                1 => 3,
-                2 => 7,
-                3 => 15,
-                4 => 31,
-                5 => 63,
-                6 => 127,
-                7 => 255,
-                0x52 => 71,
-                0x53 => 79,
-                0x54 => 95,
+                0 => 2,
+                1 => 4,
+                2 => 8,
+                3 => 16,
+                4 => 32,
+                5 => 64,
+                6 => 128,
+                7 => 256,
+                0x52 => 72,
+                0x53 => 80,
+                0x54 => 96,
                 _ => throw new ArgumentException("Unexpected type"),
             };
         }
