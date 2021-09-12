@@ -15,13 +15,23 @@ Some games does not function correctly. Of games tested, Pokemon Yellow have som
 * __Enter -__ Start-button
 * __Rigth Shift -__ Select-button
 
+### Extras
+* __1 -__ Toggle background on/off
+* __2 -__ Toggle window on/off
+* __3 -__ Toggle sprites on/off
+
+
 ## Future development plans
 _These are not ordered by priority!_
-* Expand to GBC
-* Switch to MAUI
-* Improve performance
-* Improve Sound
-* Add Link Cable functionality (locally and over internet)
+- [x] Expand to GBC
+- [x] Fix slow animations bug
+- [ ] Implement RTC registers
+- [ ] Implement full state snapshots
+- [ ] Fix MBC issues
+- [ ] ~~Switch to MAUI~~ Use cross-platform rendering of some sorts
+- [ ] Improve performance
+- [ ] Improve Sound
+- [ ] Add Link Cable functionality (locally and over internet)
 
 
 ## Information sources and other useful links
