@@ -28,6 +28,11 @@ _These are not ordered by priority!_
 - [ ] Implement RTC registers
 - [ ] Implement full state snapshots
 - [ ] Fix MBC issues
+  - [x] Fix Pokemon Yellow rendering issues (black boxes)
+  - [x] Fix Link's Awakening save-slots all maxed out on startup
+  - [ ] Fix Pokemon Trading Card Game not starting
+  - [ ] Fix Pokemon Crystal rendering issues after intro + crash after new game initiation
+  - [ ] Fix Link's Awakening background displays wrong tiles after dialog boxes dissapear
 - [ ] ~~Switch to MAUI~~ Use cross-platform rendering of some sorts
 - [ ] Improve performance
 - [ ] Improve Sound
