@@ -51,7 +51,12 @@ namespace GB_Emulator.Gameboi.Hardware
             };
             modeExits[0] = ly.Increment;
 
-            modeEnters[1] = () => bus.RequestInterrupt(InterruptType.VBlank);
+            modeEnters[1] = () =>
+            {
+                if (stat.IsVblankInterruptEnabled)
+                    bus.RequestInterrupt(InterruptType.LCDC);
+                bus.RequestInterrupt(InterruptType.VBlank);
+            };
             modeExits[1] = () =>
             {
                 ly.Reset();
