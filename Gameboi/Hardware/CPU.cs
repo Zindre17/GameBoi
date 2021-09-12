@@ -37,18 +37,18 @@ namespace GB_Emulator.Gameboi.Hardware
         private readonly Action[] cbInstructions;
 
         #region Registers
-        private byte A = 1; // accumulator
-        private byte F = 0xB0; // flag register
-        private byte B = 0;
-        private byte C = 0x13;
+        private byte A; // accumulator
+        private byte F; // flag register
+        private byte B;
+        private byte C;
         private Address BC => ConcatBytes(B, C);
-        private byte D = 0;
-        private byte E = 0xD8;
+        private byte D;
+        private byte E;
         private Address DE => ConcatBytes(D, E);
-        private byte H = 1;
-        private byte L = 0x4D;
+        private byte H;
+        private byte L;
         private Address HL => ConcatBytes(H, L);
-        private ushort PC = 0x100; //progarm counter
+        private ushort PC; //progarm counter
         private byte PC_P => GetHighByte(PC);
         private byte PC_C => GetLowByte(PC);
         private ushort SP = 0xFFFE; //stack pointer
@@ -116,9 +116,9 @@ namespace GB_Emulator.Gameboi.Hardware
             runner = null;
         }
 
-        public void Restart()
+        public void Restart(bool isColorMode)
         {
-            A = 1;
+            A = (byte)(isColorMode ? 0x11 : 0x01);
             PC = 0x100;
             SP = 0xFFFE;
             F = 0xB0;

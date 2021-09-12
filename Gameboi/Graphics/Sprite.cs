@@ -18,6 +18,8 @@ namespace GB_Emulator.Gameboi.Graphics
         public bool Yflip => data[3].Read()[6];
         public bool Xflip => data[3].Read()[5];
         public bool Palette => data[3].Read()[4];
+        public int VramBank => data[3].Read()[3] ? 1 : 0;
+        public byte ColorPalette => (byte)(data[3].Read() & 7);
 
         public int ScreenYstart => Y - 16;
         public int ScreenXstart => X - 8;

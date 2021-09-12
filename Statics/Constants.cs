@@ -15,6 +15,7 @@ namespace GB_Emulator.Statics
         //   8000-9FFF   8KB Video RAM (VRAM) (switchable bank 0-1 in CGB Mode)
         public const ushort VRAM_StartAddress = ROM_bank_n_EndAddress;
         public const ushort VRAM_EndAddress = 0xA000;
+        public const ushort VRAM_SwitchAddress = 0xFF4F;
 
         //   A000-BFFF   8KB External RAM     (in cartridge, switchable bank, if any)
         public const ushort ExtRAM_StartAddress = VRAM_EndAddress;
@@ -27,6 +28,7 @@ namespace GB_Emulator.Statics
         //   D000-DFFF   4KB Work RAM Bank 1 (WRAM)  (switchable bank 1-7 in CGB Mode)
         public const ushort WRAM_1_StartAddress = WRAM_0_EndAddress;
         public const ushort WRAM_1_EndAddress = 0xE000;
+        public const ushort WRAM_1_SwitchAddress = 0xFF70;
 
         //   E000-FDFF   Same as C000-DDFF (ECHO)    (typically not used)
         public const ushort WRAM_ECHO_StartAddress = WRAM_1_EndAddress;
@@ -77,6 +79,9 @@ namespace GB_Emulator.Statics
         public const ushort BGP_address = 0xFF47;
         public const ushort OBP0_address = 0xFF48;
         public const ushort OBP1_address = 0xFF49;
+        public const ushort CBGP_address = 0xFF68;
+        public const ushort COBP_address = 0xFF6A;
+
         public const ushort WY_address = 0xFF4A;
         public const ushort WX_address = 0xFF4B;
 

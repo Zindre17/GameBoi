@@ -8,7 +8,18 @@ namespace GB_Emulator.Gameboi.Graphics
     public class VRAM : IMemoryRange
     {
         private readonly BackgroundMap tileMap = new();
-        private readonly TileData tileDataMap = new();
+        private readonly TileData tileData0 = new();
+
+        private readonly TileData tileData1 = new();
+
+        private readonly TileData[] tileData;
+        private readonly IMemoryRange[] backgroundMap;
+        private readonly BackgroundAttributeMap backgroundAttributeMap = new();
+
+        private bool isColorMode = false;
+        private int BankSelect => BankSelectRegister.Read() & 1;
+
+        public IMemory BankSelectRegister { get; private set; } = new Register();
 
         public Address Size => 0x2000;
 
@@ -22,6 +33,14 @@ namespace GB_Emulator.Gameboi.Graphics
             this.scy = scy;
             this.wx = wx;
             this.wy = wy;
+            tileData = new[] { tileData0, tileData1 };
+            backgroundMap = new IMemoryRange[] { tileMap, backgroundAttributeMap };
+        }
+
+        public void SetColorMode(bool on)
+        {
+            BankSelectRegister.Write(0);
+            isColorMode = on;
         }
 
         public Byte[] GetBackgroundLine(Byte line)
@@ -39,17 +58,35 @@ namespace GB_Emulator.Gameboi.Graphics
 
             Byte scrollX = scx.Read();
 
+            int palletOffset = 0;
+            int tileBank = 0;
+
             for (int i = 0; i < pixelsPerLine; i++)
             {
                 Byte screenX = scrollX + i;
 
                 Byte mapX = screenX / 8;
-                Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.BgMapSelect);
-
-                Tile tile = tileDataMap.LoadTilePattern(patternIndex, lcdc.BgWdDataSelect);
 
                 Byte tileX = screenX % 8;
-                pixelLine[i] = tile.GetColorCode(tileX, tileY);
+
+                if (isColorMode)
+                {
+                    var attribute = backgroundAttributeMap.GetBackgroundAttributes(mapX, mapY, lcdc.BgMapSelect);
+
+                    if (attribute.IsHorizontallyFlipped)
+                        tileX = 7 - tileX;
+
+                    if (attribute.IsVerticallyFlipped)
+                        tileY = 7 - tileY;
+
+                    palletOffset = attribute.PalletNr * 4;
+                    tileBank = attribute.VramBankNr;
+                }
+
+                Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.BgMapSelect);
+                Tile tile = tileData[tileBank].LoadTilePattern(patternIndex, lcdc.BgWdDataSelect);
+
+                pixelLine[i] = tile.GetColorCode(tileX, tileY) + palletOffset;
             }
 
             return pixelLine;
@@ -101,23 +138,39 @@ namespace GB_Emulator.Gameboi.Graphics
             Byte mapY = windowY / 8;
             Byte tileY = windowY % 8;
 
+            int palletOffset = 0;
+            int tileBank = 0;
             for (int i = windowXstart; i < windowXend; i++)
             {
                 Byte mapX = (i - windowXstart) / 8;
-                Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.WdMapSelect);
-
-                Tile tile = tileDataMap.LoadTilePattern(patternIndex, lcdc.BgWdDataSelect);
-
                 Byte tileX = (i - windowXstart) % 8;
-                pixelLine[i] = tile.GetColorCode(tileX, tileY) + 1;
+
+                if (isColorMode)
+                {
+                    var attribute = backgroundAttributeMap.GetBackgroundAttributes(mapX, mapY, lcdc.WdMapSelect);
+
+                    if (attribute.IsHorizontallyFlipped)
+                        tileX = 7 - tileX;
+
+                    if (attribute.IsVerticallyFlipped)
+                        tileY = 7 - tileY;
+
+                    palletOffset = attribute.PalletNr * 4;
+                    tileBank = attribute.VramBankNr;
+                }
+
+                Byte patternIndex = tileMap.GetTilePatternIndex(mapX, mapY, lcdc.WdMapSelect);
+                Tile tile = tileData[tileBank].LoadTilePattern(patternIndex, lcdc.BgWdDataSelect);
+
+                pixelLine[i] = tile.GetColorCode(tileX, tileY) + palletOffset + 1;
             }
 
             return pixelLine;
         }
 
-        public Tile GetTile(Byte patternIndex, bool dataSelect)
+        public Tile GetTile(Byte patternIndex, int ramBank, bool dataSelect)
         {
-            return tileDataMap.LoadTilePattern(patternIndex, dataSelect);
+            return tileData[ramBank].LoadTilePattern(patternIndex, dataSelect);
         }
 
         private IMemoryRange GetMemoryArea(Address address, out Address relativeAddress)
@@ -126,10 +179,10 @@ namespace GB_Emulator.Gameboi.Graphics
             if (address >= tileDataSize)
             {
                 relativeAddress = address - tileDataSize;
-                return tileMap;
+                return backgroundMap[BankSelect];
             }
             relativeAddress = address;
-            return tileDataMap;
+            return tileData[BankSelect];
         }
 
         public Byte Read(Address address, bool isCpu = false)

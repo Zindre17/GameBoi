@@ -47,7 +47,8 @@ namespace GB_Emulator.Gameboi
             RouteMemory(VRAM_StartAddress, this.vram, VRAM_EndAddress);
         }
         private readonly IMemoryRange wram_0;
-        private readonly IMemoryRange wram_1;
+        private readonly Bank wram_1;
+        private readonly IMemory wramSwitch;
         private IMemoryRange oam;
         public void SetOam(IMemoryRange oam)
         {
@@ -60,14 +61,23 @@ namespace GB_Emulator.Gameboi
 
         private readonly IMemoryRange unusable = new DummyRange();
 
+        private void SwitchBank(Byte value)
+        {
+            if (value == 0)
+                value++;
+            wram_1.Switch((value & 7) - 1);
+        }
+
         public Bus()
         {
 
             wram_0 = new MemoryRange(0x1000);
             RouteMemory(WRAM_0_StartAddress, wram_0);
 
-            wram_1 = new MemoryRange(0x1000);
+            wram_1 = new Bank(7, 0x1000);
             RouteMemory(WRAM_1_StartAddress, wram_1);
+            wramSwitch = new WriteTriggerRegister(SwitchBank);
+            RouteMemory(WRAM_1_SwitchAddress, wramSwitch);
 
             RouteMemory(WRAM_ECHO_StartAddress, wram_0);
             RouteMemory(WRAM_ECHO_StartAddress + wram_0.Size, wram_1, OAM_StartAddress);

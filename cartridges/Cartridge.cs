@@ -20,6 +20,9 @@ namespace GB_Emulator.Cartridges
 
         public string Title { get; set; }
         private const ushort cartridgeTypeAddress = 0x147;
+        private const ushort colorModeAddress = 0x143; // 0x80 both | 0xC0 only GBC | else only GB
+
+        public bool IsColorGame { get; set; }
 
         protected string romPath;
 
@@ -32,7 +35,7 @@ namespace GB_Emulator.Cartridges
 
             //get info from header
             Cartridge game = SetupCartridge(pathToROM, allBytes);
-
+            game.IsColorGame = allBytes[colorModeAddress] != 0;
             game.isJapanese = allBytes[isJapaneseAddress] == 0;
             game.Title = ReadTitle(allBytes);
 

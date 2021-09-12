@@ -1,5 +1,6 @@
 using GB_Emulator.Gameboi.Memory;
 using GB_Emulator.Gameboi.Memory.Specials;
+using static GB_Emulator.Statics.GeneralMemoryMap;
 using static GB_Emulator.Statics.ScreenRelatedAddresses;
 using static GB_Emulator.Statics.ScreenSizes;
 
@@ -9,6 +10,7 @@ namespace GB_Emulator.Gameboi.Graphics
     {
         private readonly OAM oam;
         private readonly VRAM vram;
+        private readonly VramDma vramDma = new();
 
         private readonly Palette obp0 = new(0xFF);
         private readonly Palette obp1 = new(0xFF);
@@ -26,6 +28,17 @@ namespace GB_Emulator.Gameboi.Graphics
 
         private readonly LCDC lcdc;
 
+        private bool isColorMode;
+        public bool IsColorMode
+        {
+            get => isColorMode;
+            set
+            {
+                vram.SetColorMode(value);
+                isColorMode = value;
+            }
+        }
+
         public PPU(LCDC lcdc)
         {
             this.lcdc = lcdc;
@@ -36,10 +49,19 @@ namespace GB_Emulator.Gameboi.Graphics
 
         public (Byte[], Byte[], Byte[]) GetLineLayers(Byte line)
         {
-            Byte[] backgroundLine = vram.GetBackgroundLine(line);
-            Byte[] spriteLine = new Byte[pixelsPerLine];
+            var backgroundLine = vram.GetBackgroundLine(line);
+            var windowLine = vram.GetWindowLine(line);
+            var spriteLine = GetSpriteLine(line, lcdc, backgroundLine);
+
+            return (backgroundLine, windowLine, spriteLine);
+        }
+
+        public Byte[] GetSpriteLine(Byte line, LCDC lcdc, Byte[] backgroundLine)
+        {
+            var spriteLine = new Byte[pixelsPerLine];
 
             var sprites = oam.GetSpritesOnLine(line, lcdc.IsDoubleSpriteSize);
+
             foreach (var sprite in sprites)
             {
                 Byte spriteY = line - sprite.ScreenYstart;
@@ -62,10 +84,10 @@ namespace GB_Emulator.Gameboi.Graphics
                     spriteY = sprite.Yflip ? 7 - spriteY : spriteY;
                 }
 
-                Tile tile = vram.GetTile(pattern, true);
+                Tile tile = vram.GetTile(pattern, IsColorMode ? sprite.VramBank : 0, true);
 
                 // color 1-3 obp0, color 5 - 7 obp1 (0 is transparent)
-                Byte colorOffset = sprite.Palette ? 4 : 0;
+                Byte colorOffset = IsColorMode ? sprite.ColorPalette * 4 : sprite.Palette ? 4 : 0;
 
                 for (Byte x = 0; x < 8; x++)
                 {
@@ -75,24 +97,25 @@ namespace GB_Emulator.Gameboi.Graphics
 
                     Byte screenX = screenXint;
 
-                    if (sprite.Hidden && backgroundLine[screenX] != 0) continue; // background has priority
+                    if (sprite.Hidden && backgroundLine[screenX] % 4 > 0) continue; // background has priority
 
                     Byte spriteX = sprite.Xflip ? 7 - x : x;
 
                     Byte color = tile.GetColorCode(spriteX, spriteY);
                     if (color == 0) continue; // transparent
 
-                    spriteLine[screenX] = colorOffset + color + 1;
+                    spriteLine[screenX] = colorOffset + color;
                 }
             }
-
-            return (backgroundLine, vram.GetWindowLine(line), spriteLine);
+            return spriteLine;
         }
 
         public void SetOamLock(bool on) => oam.SetLock(on);
+        public void AllowBlockTransfer() => vramDma.TransferIfActive();
 
         public void Connect(Bus bus)
         {
+            vramDma.Connect(bus);
             bus.SetOam(oam);
 
             bus.SetVram(vram);
@@ -106,6 +129,7 @@ namespace GB_Emulator.Gameboi.Graphics
 
             bus.ReplaceMemory(WX_address, wx);
             bus.ReplaceMemory(WY_address, wy);
+            bus.ReplaceMemory(VRAM_SwitchAddress, vram.BankSelectRegister);
         }
 
 

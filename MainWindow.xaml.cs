@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -17,7 +17,6 @@ namespace GB_Emulator
         {
             InitializeComponent();
             gameboi = new();
-            DataContext = gameboi.GetScreen();
 
             CompositionTarget.Rendering += Startup;
 
@@ -38,6 +37,7 @@ namespace GB_Emulator
                 if (openFileDialog.ShowDialog() ?? false)
                 {
                     Title = gameboi.LoadGame(openFileDialog.FileName) ?? "Gameboi";
+                    DataContext = gameboi.GetScreen();
                 }
             }
             if (args.Key == Key.Space)
