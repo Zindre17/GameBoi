@@ -1,5 +1,4 @@
 using GB_Emulator.Gameboi.Memory;
-using GB_Emulator.Gameboi.Memory.Specials;
 
 namespace GB_Emulator.Gameboi.Graphics
 {
@@ -52,7 +51,6 @@ namespace GB_Emulator.Gameboi.Graphics
                     {
                         bus.Write(Destination + i, bus.Read(Source + i));
                     }
-                    bus.UpdateCycles(8 * Length / 16, SpeedMode.NormalSpeed);
                 }
             }
         }
@@ -72,8 +70,6 @@ namespace GB_Emulator.Gameboi.Graphics
                 var newDest = Destination + 16;
                 registers[2] = (newDest & 0xff00) >> 8;
                 registers[3] = newDest & 0x00ff;
-
-                bus.UpdateCycles(8, SpeedMode.NormalSpeed);
             }
         }
 
