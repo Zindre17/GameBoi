@@ -60,6 +60,9 @@ namespace GB_Emulator.Gameboi.Graphics
         {
             var spriteLine = new Byte[pixelsPerLine];
 
+            if (!lcdc.IsSpritesEnabled)
+                return spriteLine;
+
             var sprites = oam.GetSpritesOnLine(line, lcdc.IsDoubleSpriteSize);
 
             foreach (var sprite in sprites)
