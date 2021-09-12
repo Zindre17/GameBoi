@@ -93,10 +93,15 @@ namespace GB_Emulator.Gameboi.Graphics
         }
 
         private Byte linesOfWindowDrawn = 0;
+        private Byte windowY = 0;
 
         public Byte[] GetWindowLine(Byte line)
         {
-            if (line == 0) linesOfWindowDrawn = 0;
+            if (line == 0)
+            {
+                linesOfWindowDrawn = 0;
+                windowY = wy.Read();
+            }
 
             Byte[] pixelLine = new Byte[pixelsPerLine];
 
@@ -105,18 +110,10 @@ namespace GB_Emulator.Gameboi.Graphics
                 return pixelLine;
             }
 
-            Byte windowY = wy.Read();
-            if (windowY > line)
+            if (windowY > line || windowY > 143)
             {
                 return pixelLine;
             }
-
-            windowY = linesOfWindowDrawn;
-            if (windowY > 143)
-            {
-                return pixelLine;
-            }
-            linesOfWindowDrawn++;
 
             Byte windowXstart = wx.Read();
             if (windowXstart > 166)
@@ -124,26 +121,25 @@ namespace GB_Emulator.Gameboi.Graphics
                 return pixelLine;
             }
 
-            windowXstart -= 7;
-
-            Byte windowXend;
-
-            if (windowXstart[7])
-            {
-                windowXend = windowXstart + pixelsPerLine;
-                windowXstart = 0;
-            }
-            else windowXend = pixelsPerLine;
-
-            Byte mapY = windowY / 8;
-            Byte tileY = windowY % 8;
+            Byte mapY = linesOfWindowDrawn / 8;
+            Byte tileY = linesOfWindowDrawn % 8;
 
             int palletOffset = 0;
             int tileBank = 0;
-            for (int i = windowXstart; i < windowXend; i++)
+
+            int currentX = 0;
+            for (int i = windowXstart - 7; i < pixelsPerLine; i++)
             {
-                Byte mapX = (i - windowXstart) / 8;
-                Byte tileX = (i - windowXstart) % 8;
+                if (i < 0)
+                {
+                    currentX++;
+                    continue;
+                }
+
+                Byte mapX = currentX / 8;
+                Byte tileX = currentX % 8;
+
+                currentX++;
 
                 if (isColorMode)
                 {
@@ -165,6 +161,7 @@ namespace GB_Emulator.Gameboi.Graphics
                 pixelLine[i] = tile.GetColorCode(tileX, tileY) + palletOffset + 1;
             }
 
+            linesOfWindowDrawn++;
             return pixelLine;
         }
 
