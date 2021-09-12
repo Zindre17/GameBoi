@@ -18,9 +18,9 @@ namespace GB_Emulator.Gameboi.Hardware
         private ulong cyclesSinceLastDivTick = 0;
         private ulong cyclesSinceLastTimerTick = 0;
 
-        public void Update(byte cycles)
+        public void Update(byte cycles, ulong speed)
         {
-            cyclesSinceLastDivTick += cycles;
+            cyclesSinceLastDivTick += cycles / speed;
 
             while (cyclesSinceLastDivTick >= cpuToDivRatio)
             {

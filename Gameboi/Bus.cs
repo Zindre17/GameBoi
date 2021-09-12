@@ -20,16 +20,16 @@ namespace GB_Emulator.Gameboi
 
         private readonly List<IUpdateable> updateables = new();
 
-        public void UpdateAll()
+        public void UpdateAll(ulong speed)
         {
             foreach (var component in updateables)
-                component.Update(cyclesSinceLast);
+                component.Update(cyclesSinceLast, speed);
         }
 
-        public void UpdateCycles(Byte cyclesToAdd)
+        public void UpdateCycles(Byte cyclesToAdd, ulong speed)
         {
             cyclesSinceLast = cyclesToAdd;
-            UpdateAll();
+            UpdateAll(speed);
             cycles += cyclesToAdd;
         }
 

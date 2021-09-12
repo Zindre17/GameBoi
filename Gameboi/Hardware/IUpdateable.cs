@@ -1,4 +1,4 @@
 interface IUpdateable
 {
-    void Update(byte cycles);
+    void Update(byte cycles, ulong speed);
 }

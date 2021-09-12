@@ -22,6 +22,9 @@ namespace GB_Emulator.Gameboi.Hardware
 
     public class CPU : Hardware
     {
+        private readonly SpeedMode speedMode = new();
+        private ulong Speed => speedMode.Mode;
+
         private bool IME = true; // Interrupt Master Enable
 
         private bool shouldUpdateIME = false;
@@ -172,14 +175,14 @@ namespace GB_Emulator.Gameboi.Hardware
             if (isHalted)
             {
                 NoOperation();
-                bus.UpdateCycles(4);
+                bus.UpdateCycles(4, Speed);
             }
             else
             {
                 // Fetch, Decode, Execute
                 byte opCode = Fetch();
                 instructions[opCode]();
-                bus.UpdateCycles(durations[opCode]);
+                bus.UpdateCycles(durations[opCode], Speed);
             }
         }
 
@@ -242,7 +245,7 @@ namespace GB_Emulator.Gameboi.Hardware
         {
             IME = false;
             Call(interruptVector);
-            bus.UpdateCycles(24);
+            bus.UpdateCycles(24, Speed);
         }
 
         public void RequestInterrupt(InterruptType type)
@@ -287,6 +290,7 @@ namespace GB_Emulator.Gameboi.Hardware
             base.Connect(bus);
             bus.ReplaceMemory(IE_address, IE);
             bus.ReplaceMemory(IF_address, IF);
+            bus.ReplaceMemory(0xFF4D, speedMode);
         }
 
         private byte Fetch()
@@ -308,8 +312,9 @@ namespace GB_Emulator.Gameboi.Hardware
         #region Misc
         private void Empty() { }
         private void NoOperation() { }
-        private static void Stop(byte _)
+        private void Stop(byte _)
         {
+            if (speedMode.ShouldSwapSpeed) speedMode.SwapSpeed();
             //TODO: display white line in center and do nothing untill any button is pressed. 
         }
         private void Halt()
@@ -335,7 +340,7 @@ namespace GB_Emulator.Gameboi.Hardware
             cbInstructions[opCode]();
             Byte modded = opCode % 8;
             Byte duration = modded == 6 ? 16 : 8;
-            bus.UpdateCycles(duration);
+            bus.UpdateCycles(duration, Speed);
         }
 
         private void SetCarryFlagInstruction()
@@ -642,7 +647,7 @@ namespace GB_Emulator.Gameboi.Hardware
         {
             if (condition)
             {
-                bus.UpdateCycles(4);
+                bus.UpdateCycles(4, Speed);
                 JumpBy(increment);
             }
         }
@@ -655,7 +660,7 @@ namespace GB_Emulator.Gameboi.Hardware
         {
             if (condition)
             {
-                bus.UpdateCycles(4);
+                bus.UpdateCycles(4, Speed);
                 JumpTo(address);
             }
         }
@@ -667,7 +672,7 @@ namespace GB_Emulator.Gameboi.Hardware
         {
             if (condition)
             {
-                bus.UpdateCycles(12);
+                bus.UpdateCycles(12, Speed);
                 Return();
             }
         }
@@ -686,7 +691,7 @@ namespace GB_Emulator.Gameboi.Hardware
         {
             if (condition)
             {
-                bus.UpdateCycles(12);
+                bus.UpdateCycles(12, Speed);
                 Call(address);
             }
         }

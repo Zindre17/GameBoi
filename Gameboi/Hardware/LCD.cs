@@ -127,7 +127,7 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private byte prevMode;
 
-        public void Update(byte cycles)
+        public void Update(byte cycles, ulong _)
         {
             cyclesInMode += cycles;
 
