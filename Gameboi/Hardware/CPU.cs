@@ -131,6 +131,7 @@ namespace GB_Emulator.Gameboi.Hardware
             E = 0xD8;
             H = 1;
             L = 0x4D;
+            speedMode.Reset();
         }
 
         private static readonly double frameRate = 60d;

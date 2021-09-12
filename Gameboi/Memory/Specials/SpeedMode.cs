@@ -9,6 +9,11 @@ namespace GB_Emulator.Gameboi.Memory.Specials
         public bool ShouldSwapSpeed => data[0];
         public ulong Mode => data[7] ? DoubleSpeed : NormalSpeed;
 
+        public void Reset()
+        {
+            data = 0;
+        }
+
         public override void Write(Byte value) => data = value & 1;
         public override Byte Read() => data | 0x7E;
 
