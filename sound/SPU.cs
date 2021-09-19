@@ -1,8 +1,12 @@
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Hardware;
 using GB_Emulator.Sound.channels;
 using NAudio.Wave;
 using static GB_Emulator.Statics.SoundRegisters;
+using static GB_Emulator.Statics.WavSettings;
 
 namespace GB_Emulator.Sound
 {
@@ -21,8 +25,50 @@ namespace GB_Emulator.Sound
 
         private readonly BufferedWaveProvider waveProvider;
         private readonly WaveFormat waveFormat;
-        private static int samplesPerBatch;
-        private static readonly int sampleBatchRate = 60;
+
+        private readonly Stopwatch stopwatch = new();
+
+        private Task runner;
+        public bool IsRunning { get; private set; } = false;
+        public void Run()
+        {
+            IsRunning = true;
+            if (runner == null)
+            {
+                runner = new Task(Loop);
+                runner.Start();
+            }
+        }
+
+        public void Pause()
+        {
+            IsRunning = false;
+            while (runner.Status != TaskStatus.RanToCompletion)
+                Thread.Sleep(1);
+            runner.Dispose();
+            runner = null;
+        }
+
+        private long samplesAdded = 0;
+
+        private const float samplesPerMillisecond = SAMPLE_RATE / 1000f;
+
+        private void Loop()
+        {
+            stopwatch.Start();
+            while (IsRunning)
+            {
+                var current = stopwatch.ElapsedMilliseconds;
+                var samplesAfter = (long)(current * samplesPerMillisecond);
+                var samplesToAdd = samplesAfter - samplesAdded;
+                samplesAdded = samplesAfter;
+                if (samplesToAdd > 0)
+                    AddNextSamples((int)samplesToAdd);
+                Thread.Sleep(10);
+            }
+            samplesAdded = 0;
+            stopwatch.Reset();
+        }
 
         public SPU()
         {
@@ -32,8 +78,6 @@ namespace GB_Emulator.Sound
                 BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate,
                 DiscardOnBufferOverflow = true
             };
-
-            samplesPerBatch = waveProvider.BufferLength / (waveFormat.BlockAlign * sampleBatchRate);
 
             channel1 = new Channel1(nr52);
             channel2 = new Channel2(nr52);
@@ -58,12 +102,12 @@ namespace GB_Emulator.Sound
             waveEmitter.Play();
         }
 
-        public void AddNextSamples()
+        public void AddNextSamples(int samplesPerBatch)
         {
-            var channel1Samples = channel1.GetNextSampleBatch(samplesPerBatch);
-            var channel2Samples = channel2.GetNextSampleBatch(samplesPerBatch);
-            var channel3Samples = channel3.GetNextSampleBatch(samplesPerBatch);
-            var channel4Samples = channel4.GetNextSampleBatch(samplesPerBatch);
+            var channel1Samples = nr52.IsAllOn || nr52.IsSoundOn(0) ? channel1.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
+            var channel2Samples = nr52.IsAllOn || nr52.IsSoundOn(1) ? channel2.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
+            var channel3Samples = nr52.IsAllOn || nr52.IsSoundOn(2) ? channel3.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
+            var channel4Samples = nr52.IsAllOn || nr52.IsSoundOn(3) ? channel4.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
 
             var samples = new byte[samplesPerBatch * 4];
 

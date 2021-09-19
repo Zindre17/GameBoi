@@ -8,7 +8,7 @@ namespace GB_Emulator.Sound
 
         public bool IsAllOn => data[7];
 
-        public bool IsSoundOn(byte channel)
+        public bool IsSoundOn(int channel)
         {
             if (channel > 3) throw new System.Exception();
             return data[channel];

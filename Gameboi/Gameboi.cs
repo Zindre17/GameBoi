@@ -32,22 +32,29 @@ namespace GB_Emulator.Gameboi
         public void Play()
         {
             if (isOn)
+            {
                 cpu.Run();
+                spu.Run();
+            }
         }
 
         public void Pause()
         {
             if (isOn)
+            {
                 cpu.Pause();
+                spu.Pause();
+            }
+
         }
 
         public void PausePlayToggle()
         {
             if (isOn)
                 if (cpu.IsRunning)
-                    cpu.Pause();
+                    Pause();
                 else
-                    cpu.Run();
+                    Play();
         }
 
         public void ToggleBackground()

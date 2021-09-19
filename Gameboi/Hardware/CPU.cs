@@ -147,8 +147,6 @@ namespace GB_Emulator.Gameboi.Hardware
                 long startTs = Stopwatch.GetTimestamp();
                 ulong start = Cycles;
 
-                bus.AddNextFrameOfSamples();
-
                 while (elapsed < cyclesPerFrame)
                 {
                     DoNextInstruction();

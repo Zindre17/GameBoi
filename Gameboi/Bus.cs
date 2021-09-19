@@ -1,9 +1,7 @@
 using System.Collections.Generic;
-using GB_Emulator.Cartridges;
 using GB_Emulator.Gameboi.Hardware;
 using GB_Emulator.Gameboi.Memory;
 using GB_Emulator.Gameboi.Memory.Specials;
-using GB_Emulator.Sound;
 using static GB_Emulator.Statics.GeneralMemoryMap;
 
 namespace GB_Emulator.Gameboi
@@ -12,7 +10,6 @@ namespace GB_Emulator.Gameboi
     {
 
         private CPU cpu;
-        private SPU spu;
 
         private ulong cycles = 0;
         private byte cyclesSinceLast = 0;
@@ -31,11 +28,6 @@ namespace GB_Emulator.Gameboi
             cyclesSinceLast = cyclesToAdd;
             UpdateAll(speed);
             cycles += cyclesToAdd;
-        }
-
-        public void AddNextFrameOfSamples()
-        {
-            spu.AddNextSamples();
         }
 
         private readonly IMemoryRange[] memory = new IMemoryRange[0x10000];
@@ -125,10 +117,6 @@ namespace GB_Emulator.Gameboi
             if (component is CPU _cpu)
             {
                 cpu = _cpu;
-            }
-            else if (component is SPU _spu)
-            {
-                spu = _spu;
             }
             else if (component is IUpdateable updateable)
             {
