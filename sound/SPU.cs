@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Hardware;
 using GB_Emulator.Sound.channels;
@@ -26,49 +23,9 @@ namespace GB_Emulator.Sound
         private readonly BufferedWaveProvider waveProvider;
         private readonly WaveFormat waveFormat;
 
-        private readonly Stopwatch stopwatch = new();
-
-        private Task runner;
-        public bool IsRunning { get; private set; } = false;
-        public void Run()
-        {
-            IsRunning = true;
-            if (runner == null)
-            {
-                runner = new Task(Loop);
-                runner.Start();
-            }
-        }
-
-        public void Pause()
-        {
-            IsRunning = false;
-            while (runner.Status != TaskStatus.RanToCompletion)
-                Thread.Sleep(1);
-            runner.Dispose();
-            runner = null;
-        }
-
-        private long samplesAdded = 0;
-
         private const float samplesPerMillisecond = SAMPLE_RATE / 1000f;
+        public const float millisecondsPerLoop = 10;
 
-        private void Loop()
-        {
-            stopwatch.Start();
-            while (IsRunning)
-            {
-                var current = stopwatch.ElapsedMilliseconds;
-                var samplesAfter = (long)(current * samplesPerMillisecond);
-                var samplesToAdd = samplesAfter - samplesAdded;
-                samplesAdded = samplesAfter;
-                if (samplesToAdd > 0)
-                    AddNextSamples((int)samplesToAdd);
-                Thread.Sleep(10);
-            }
-            samplesAdded = 0;
-            stopwatch.Reset();
-        }
 
         public SPU()
         {
@@ -102,20 +59,31 @@ namespace GB_Emulator.Sound
             waveEmitter.Play();
         }
 
-        public void AddNextSamples(int samplesPerBatch)
-        {
-            var channel1Samples = nr52.IsAllOn || nr52.IsSoundOn(0) ? channel1.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
-            var channel2Samples = nr52.IsAllOn || nr52.IsSoundOn(1) ? channel2.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
-            var channel3Samples = nr52.IsAllOn || nr52.IsSoundOn(2) ? channel3.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
-            var channel4Samples = nr52.IsAllOn || nr52.IsSoundOn(3) ? channel4.GetNextSampleBatch(samplesPerBatch) : new short[samplesPerBatch];
+        private long samplesAdded = 0;
 
-            var samples = new byte[samplesPerBatch * 4];
+        public void AddNextSampleBatch(long currentMilliseconds)
+        {
+            var samplesAfter = (long)(currentMilliseconds * samplesPerMillisecond);
+            var samplesToAdd = samplesAfter - samplesAdded;
+            samplesAdded = samplesAfter;
+            if (samplesToAdd > 0)
+                AddNextSampleBatch((int)samplesToAdd);
+        }
+
+        private void AddNextSampleBatch(int sampleCount)
+        {
+            var channel1Samples = nr52.IsAllOn || nr52.IsSoundOn(0) ? channel1.GetNextSampleBatch(sampleCount) : new short[sampleCount];
+            var channel2Samples = nr52.IsAllOn || nr52.IsSoundOn(1) ? channel2.GetNextSampleBatch(sampleCount) : new short[sampleCount];
+            var channel3Samples = nr52.IsAllOn || nr52.IsSoundOn(2) ? channel3.GetNextSampleBatch(sampleCount) : new short[sampleCount];
+            var channel4Samples = nr52.IsAllOn || nr52.IsSoundOn(3) ? channel4.GetNextSampleBatch(sampleCount) : new short[sampleCount];
+
+            var samples = new byte[sampleCount * 4];
 
             var out1volume = nr50.GetVolumeScaler(true);
             var out2volume = nr50.GetVolumeScaler(false);
 
             int index = 0;
-            for (int i = 0; i < samplesPerBatch; i++)
+            for (int i = 0; i < sampleCount; i++)
             {
                 //channel1
                 short c1Sample = 0;

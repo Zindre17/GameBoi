@@ -160,7 +160,7 @@ namespace GB_Emulator.Statics
         0x4000
     };
 
-        public static readonly uint cpuSpeed = 0x400000;
+        public const uint cpuSpeed = 0x400000;
 
         public static readonly uint[] cpuToTimerRatio = new uint[4]{
         cpuSpeed / timerSpeeds[0],

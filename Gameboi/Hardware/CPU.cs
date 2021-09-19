@@ -1,7 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using GB_Emulator.Gameboi.Memory;
 using GB_Emulator.Gameboi.Memory.Specials;
 using static GB_Emulator.Statics.ByteOperations;
@@ -95,30 +92,6 @@ namespace GB_Emulator.Gameboi.Hardware
         public override Byte Read(Address address) => bus.Read(address, true);
         public override void Write(Address address, Byte value) => bus.Write(address, value, true);
 
-        private static readonly double ratio = Stopwatch.Frequency / (double)cpuSpeed;
-
-        private Task runner;
-        public bool IsRunning { get; private set; }
-
-        public void Run()
-        {
-            IsRunning = true;
-            if (runner == null)
-            {
-                runner = new Task(Loop);
-                runner.Start();
-            }
-        }
-
-        public void Pause()
-        {
-            IsRunning = false;
-            while (runner.Status != TaskStatus.RanToCompletion)
-                Thread.Sleep(1);
-            runner.Dispose();
-            runner = null;
-        }
-
         public void Restart(bool isColorMode)
         {
             A = (byte)(isColorMode ? 0x11 : 0x01);
@@ -134,37 +107,21 @@ namespace GB_Emulator.Gameboi.Hardware
             speedMode.Reset();
         }
 
-        private static readonly double frameRate = 60d;
-        private static readonly uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
-        private static readonly double tsPerFrame = ratio * cyclesPerFrame;
-        private static readonly double tsPerMs = tsPerFrame / 16d;
+        private const float frameRate = 60;
+        private const uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
 
-        public void Loop()
+        public const float millisecondsPerBulk = 1000 / frameRate;
+        private ulong elapsed = 0;
+
+        public void ExecuteInstructionsBulk(long _)
         {
-            long elapsed = 0;
-            while (IsRunning)
+            ulong start = Cycles;
+            while (elapsed < cyclesPerFrame)
             {
-                long startTs = Stopwatch.GetTimestamp();
-                ulong start = Cycles;
-
-                while (elapsed < cyclesPerFrame)
-                {
-                    DoNextInstruction();
-                    elapsed = (uint)(Cycles - start);
-                }
-                elapsed -= cyclesPerFrame;
-                long targetTs = startTs + (long)tsPerFrame;
-                long remainingTs = targetTs - Stopwatch.GetTimestamp();
-                if (remainingTs > 0)
-                {
-                    double remainingMs = remainingTs / tsPerMs;
-                    Thread.Sleep((int)remainingMs);
-                }
-                while (Stopwatch.GetTimestamp() < targetTs)
-                {
-                    Thread.SpinWait(1);
-                }
+                DoNextInstruction();
+                elapsed = Cycles - start;
             }
+            elapsed -= cyclesPerFrame;
         }
 
         public void DoNextInstruction()

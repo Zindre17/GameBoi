@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows.Media;
 using GB_Emulator.Cartridges;
 using GB_Emulator.Gameboi.Hardware;
@@ -18,6 +19,7 @@ namespace GB_Emulator.Gameboi
 
         private Cartridge game;
 
+        private readonly List<LoopRunner> loops = new();
 
         public Gameboi()
         {
@@ -27,14 +29,19 @@ namespace GB_Emulator.Gameboi
             bus.Connect(controller);
             bus.Connect(dma);
             bus.Connect(lcd);
+
+            loops.Add(new LoopRunner(cpu.ExecuteInstructionsBulk, CPU.millisecondsPerBulk));
+            loops.Add(new LoopRunner(spu.AddNextSampleBatch, SPU.millisecondsPerLoop));
         }
 
         public void Play()
         {
             if (isOn)
             {
-                cpu.Run();
-                spu.Run();
+                foreach (var loop in loops)
+                {
+                    loop.Start();
+                }
             }
         }
 
@@ -42,8 +49,10 @@ namespace GB_Emulator.Gameboi
         {
             if (isOn)
             {
-                cpu.Pause();
-                spu.Pause();
+                foreach (var loop in loops)
+                {
+                    loop.Stop();
+                }
             }
 
         }
@@ -51,10 +60,12 @@ namespace GB_Emulator.Gameboi
         public void PausePlayToggle()
         {
             if (isOn)
-                if (cpu.IsRunning)
-                    Pause();
-                else
-                    Play();
+            {
+                foreach (var loop in loops)
+                {
+                    loop.Toggle();
+                }
+            }
         }
 
         public void ToggleBackground()
