@@ -4,8 +4,6 @@ namespace GB_Emulator.Cartridges
 {
     public class MBC3 : Mbc
     {
-        //TODO: implement internal RTC-clock
-
         public MBC3(string romPath, bool hasRam, int romBankCount, RamSize ramSize, byte[] cartridgeData) : base(romPath)
         {
             MemoryRange[] switchableBanks = new MemoryRange[romBankCount];
@@ -31,11 +29,12 @@ namespace GB_Emulator.Cartridges
             }
 
             IMemoryRange[] ramAndClock = new IMemoryRange[0xD];
+            var clock = new RTC();
             for (int i = 0; i < ramAndClock.Length; i++)
             {
                 if (i > 0x07)
                 {
-                    ramAndClock[i] = new MemoryRange(new Register());
+                    ramAndClock[i] = clock;
                 }
                 else
                 {
@@ -70,6 +69,8 @@ namespace GB_Emulator.Cartridges
         {
             if (value < 0x0D)
                 ramBanks.Switch(value);
+            if (value > 0x07)
+                ((RTC)ramBanks.GetBank(value)).SetPointer(value - 0x08);
         }
 
         protected override void OnBank0Write(Address address, Byte value)
