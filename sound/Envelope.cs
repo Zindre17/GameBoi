@@ -10,7 +10,7 @@ namespace GB_Emulator.Sound
 
         public void Initialize()
         {
-            initialVolume = (data & 0xF0) >> 4;
+            initialVolume = data >> 4;
             isIncrease = data[3];
             Byte stepLengthData = data & 7;
 

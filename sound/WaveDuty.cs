@@ -5,7 +5,7 @@ namespace GB_Emulator.Sound
 {
     public class WaveDuty : Register
     {
-        public Byte Duty => (data & 0xC0) >> 6;
+        public Byte Duty => data >> 6;
         public Byte SoundLength => data & 0x3F;
 
         public override Byte Read() => data | 0x3F;
