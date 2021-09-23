@@ -58,12 +58,13 @@ namespace GB_Emulator.Sound.channels
             }
 
             short[] samples = new short[count];
-            if (nr52.IsAllOn)
+            if (nr52.IsSoundOn(channelBit))
             {
                 for (int i = 0; i < count; i++)
                 {
-                    samples[i] = (short)(waveProvider.GetSample(samplesThisDuration) * envelope.GetVolume(samplesThisDuration));
-                    samplesThisDuration++;
+                    var sample = waveProvider.GetSample(samplesThisDuration);
+                    var volume = envelope.GetVolume(samplesThisDuration++);
+                    samples[i] = (short)(sample * volume);
                 }
             }
 
@@ -75,7 +76,7 @@ namespace GB_Emulator.Sound.channels
 
         private ushort GetFrequencyData()
         {
-            return (ushort)(frequencyHigh.HighBits << 8 | frequencyLow.LowBits);
+            return (ushort)((frequencyHigh.HighBits << 8) | frequencyLow.LowBits);
         }
 
         private static uint GetFrequency(ushort frequencyData)

@@ -73,13 +73,16 @@ namespace GB_Emulator.Sound.channels
             return 0x10000 / (0x800 - fdata);
         }
 
-        private int GetVolume()
+        private int GetVolumeShift()
         {
             Byte volumeData = (outputLevel.Read() & 0x60) >> 5;
-            if (volumeData == 0) return 0;
-            if (volumeData == 1) return 16;
-            if (volumeData == 2) return 8;
-            return 4;
+            // 0: Mute
+            // 1: 100% (no shift)
+            // 2: 50% (1 shift right)
+            // 3: 25% (2 shifts right)
+            if (volumeData == 0)
+                return 8;
+            return 2 - (3 - volumeData);
         }
 
         private int step = 0;
@@ -91,7 +94,7 @@ namespace GB_Emulator.Sound.channels
 
             short[] samples = new short[count];
 
-            if (!nr52.IsAllOn || isStopped)
+            if (!nr52.IsSoundOn(2) || isStopped)
                 return samples;
 
             byte[] wavePattern = waveRam.GetSamples();
@@ -99,7 +102,7 @@ namespace GB_Emulator.Sound.channels
             double samplesPerStep = SAMPLE_RATE / (double)currentFrequency / wavePattern.Length;
             if (samplesPerStep == 0) samplesPerStep = 1;
 
-            int volume = GetVolume();
+            int volumeShift = GetVolumeShift();
 
             for (int i = 0; i < count; i++)
             {
@@ -113,8 +116,7 @@ namespace GB_Emulator.Sound.channels
                     step = (int)(sampleNr++ / samplesPerStep);
                     step %= wavePattern.Length;
                     var data = wavePattern[step];
-                    var normalized = data / 7.5d - 1;
-                    samples[i] = (short)(normalized * volume);
+                    samples[i] = (short)(data >> volumeShift);
                 }
             }
             sampleNr %= (ulong)Math.Max(samplesPerStep * wavePattern.Length, 1);

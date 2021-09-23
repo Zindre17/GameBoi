@@ -64,7 +64,7 @@ namespace GB_Emulator.Sound.channels
                 var shifts = sampleNr / samplesPerShift;
                 while (shifts > 1)
                 {
-                    signal = (short)(currentLfsr.Tick() ? 1 : -1);
+                    signal = (short)(currentLfsr.Tick() ? 1 : 0);
                     shifts--;
                     sampleNr--;
                 }

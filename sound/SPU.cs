@@ -24,7 +24,7 @@ namespace GB_Emulator.Sound
         private readonly WaveFormat waveFormat;
 
         private const float samplesPerMillisecond = SAMPLE_RATE / 1000f;
-        public const float millisecondsPerLoop = 10;
+        public const float millisecondsPerLoop = 1;
 
 
         public SPU()
@@ -79,8 +79,8 @@ namespace GB_Emulator.Sound
 
             var samples = new byte[sampleCount * 4];
 
-            var out1volume = nr50.GetVolumeScaler(true);
-            var out2volume = nr50.GetVolumeScaler(false);
+            var out1volume = nr50.VolumeOut1;
+            var out2volume = nr50.VolumeOut2;
 
             int index = 0;
             for (int i = 0; i < sampleCount; i++)

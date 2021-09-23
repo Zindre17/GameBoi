@@ -39,10 +39,10 @@ namespace GB_Emulator.Sound
 
             var samplePoint = sampleNr % samplesPerPeriod;
 
-            if (isStopped || samplePoint == lowToHigh || samplePoint == 0)
+            if (isStopped)
                 sample = 0;
             else
-                sample = (short)(samplePoint > lowToHigh ? 1 : -1);
+                sample = (short)(samplePoint > lowToHigh ? 1 : 0);
 
             return sample;
         }
