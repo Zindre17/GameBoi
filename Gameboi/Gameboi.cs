@@ -30,8 +30,8 @@ namespace GB_Emulator.Gameboi
             bus.Connect(dma);
             bus.Connect(lcd);
 
-            loops.Add(new LoopRunner(cpu.ExecuteInstructionsBulk, CPU.millisecondsPerBulk));
-            loops.Add(new LoopRunner(spu.AddNextSampleBatch, SPU.millisecondsPerLoop));
+            loops.Add(new LoopRunner(cpu));
+            loops.Add(new LoopRunner(spu));
         }
 
         public void Play()
@@ -79,6 +79,11 @@ namespace GB_Emulator.Gameboi
         public void ToggleSprites()
         {
             lcd.ToggleSprites();
+        }
+
+        public void ChangeSpeed(bool faster)
+        {
+            cpu.ChangeSpeed(faster);
         }
 
         public string LoadGame(string path)

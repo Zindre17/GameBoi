@@ -48,6 +48,11 @@ namespace GB_Emulator
             if (args.Key == Key.D3)
                 gameboi.ToggleSprites();
 
+            if (args.Key == Key.Right)
+                gameboi.ChangeSpeed(true);
+            if (args.Key == Key.Left)
+                gameboi.ChangeSpeed(false);
+
             if (args.Key == Key.Space)
                 gameboi.PausePlayToggle();
         }

@@ -17,7 +17,7 @@ namespace GB_Emulator.Gameboi.Hardware
         Joypad
     }
 
-    public class CPU : Hardware
+    public class CPU : Hardware, ILoop
     {
         private readonly SpeedMode speedMode = new();
         private ulong Speed => speedMode.Mode;
@@ -105,12 +105,34 @@ namespace GB_Emulator.Gameboi.Hardware
             H = 1;
             L = 0x4D;
             speedMode.Reset();
+            SetFramerate(normalFramerate);
         }
 
-        private const float frameRate = 60;
-        private const uint cyclesPerFrame = (uint)(cpuSpeed / frameRate);
+        private const float normalFramerate = 60;
+        private const uint cyclesPerFrame = (uint)(cpuSpeed / normalFramerate);
 
-        public const float millisecondsPerBulk = 1000 / frameRate;
+
+        private float currentFramerate;
+        public float MillisecondsPerLoop { get; set; }
+
+        private void SetFramerate(float framerate)
+        {
+            currentFramerate = framerate;
+            MillisecondsPerLoop = 1000 / framerate;
+        }
+
+        public void ChangeSpeed(bool faster)
+        {
+            if (faster)
+            {
+                SetFramerate(Math.Min(currentFramerate * 2, normalFramerate * 8));
+            }
+            else
+            {
+                SetFramerate(Math.Max(currentFramerate / 2, normalFramerate / 4));
+            }
+        }
+
         private ulong elapsed = 0;
 
         public void ExecuteInstructionsBulk(long _)
@@ -123,6 +145,8 @@ namespace GB_Emulator.Gameboi.Hardware
             }
             elapsed -= cyclesPerFrame;
         }
+
+        public Action<long> Loop => ExecuteInstructionsBulk;
 
         public void DoNextInstruction()
         {

@@ -1,3 +1,4 @@
+using System;
 using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Hardware;
 using GB_Emulator.Sound.channels;
@@ -7,7 +8,7 @@ using static GB_Emulator.Statics.WavSettings;
 
 namespace GB_Emulator.Sound
 {
-    public class SPU : Hardware
+    public class SPU : Hardware, ILoop
     {
         private readonly NR50 nr50 = new();
         private readonly NR51 nr51 = new();
@@ -24,7 +25,7 @@ namespace GB_Emulator.Sound
         private readonly WaveFormat waveFormat;
 
         private const float samplesPerMillisecond = SAMPLE_RATE / 1000f;
-        public const float millisecondsPerLoop = 1;
+        public float MillisecondsPerLoop { get; set; } = 1;
 
 
         public SPU()
@@ -59,9 +60,11 @@ namespace GB_Emulator.Sound
             waveEmitter.Play();
         }
 
+        public Action<long> Loop => AddNextSamples;
+
         private long samplesAdded = 0;
 
-        public void AddNextSampleBatch(long currentMilliseconds)
+        public void AddNextSamples(long currentMilliseconds)
         {
             var samplesAfter = (long)(currentMilliseconds * samplesPerMillisecond);
             var samplesToAdd = samplesAfter - samplesAdded;

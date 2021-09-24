@@ -5,20 +5,24 @@ using System.Threading.Tasks;
 
 namespace GB_Emulator.Gameboi
 {
+    public interface ILoop
+    {
+        float MillisecondsPerLoop { get; set; }
+        Action<long> Loop { get; }
+    }
+
     public class LoopRunner
     {
 
         private bool isRunning = false;
         private Task runner;
-        private readonly Action<long> task;
         private readonly Stopwatch stopwatch = new();
 
-        private readonly float millisecondsPerLoop;
+        private readonly ILoop loop;
 
-        public LoopRunner(Action<long> task, float millisecondsPerLoop)
+        public LoopRunner(ILoop loop)
         {
-            this.task = task;
-            this.millisecondsPerLoop = millisecondsPerLoop;
+            this.loop = loop;
         }
 
         public void Start()
@@ -54,22 +58,19 @@ namespace GB_Emulator.Gameboi
 
         private void Loop()
         {
-            var lastMilliseconds = 0L;
-            var loopCount = 1L;
             stopwatch.Start();
             while (isRunning)
             {
                 var currentMilliseconds = stopwatch.ElapsedMilliseconds;
-                task(currentMilliseconds);
+                var millisecondsAfterCurrentLoop = currentMilliseconds + loop.MillisecondsPerLoop;
 
-                var millisecondsAfterCurrentLoop = (long)(millisecondsPerLoop * loopCount);
-                var millisecondsToSleep = millisecondsAfterCurrentLoop - currentMilliseconds;
+                loop.Loop((long)millisecondsAfterCurrentLoop);
+                var actualMillisecondsAfterLoop = stopwatch.ElapsedMilliseconds;
 
-                if (millisecondsToSleep > 0)
+                var millisecondsToSleep = millisecondsAfterCurrentLoop - actualMillisecondsAfterLoop;
+
+                if (millisecondsToSleep > 0 && millisecondsToSleep <= loop.MillisecondsPerLoop)
                     Thread.Sleep((int)millisecondsToSleep);
-
-                lastMilliseconds = currentMilliseconds;
-                loopCount++;
             }
             stopwatch.Reset();
         }

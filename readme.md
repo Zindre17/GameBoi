@@ -19,6 +19,8 @@ Some games does not function correctly. Of games tested, Pokemon Yellow have som
 * __1 -__ Toggle background on/off
 * __2 -__ Toggle window on/off
 * __3 -__ Toggle sprites on/off
+* __Right Arrow -__ Speed up (x2 per step, with a max of x8)
+* __Left Arrow -__ Slow down (/2 per step, with a min of x0.25)
 
 
 ## Future development plans
