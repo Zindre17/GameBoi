@@ -14,8 +14,9 @@ namespace GB_Emulator.Gameboi.Graphics
         private Byte palletIndex = new();
         private bool IsAutoIncrementEnabled => palletIndex[7];
         private Byte Index => palletIndex & 0x3F;
-
         public Address Size => 2;
+
+        private readonly IColorAdjustment adjustment = new GameboyColorCorrection();
 
         private readonly Byte[] dataMemory = new Byte[64];
 
@@ -34,10 +35,10 @@ namespace GB_Emulator.Gameboi.Graphics
             var lb = dataMemory[start];
             var hb = dataMemory[start + 1];
             var color = (hb << 8) | lb;
-            return (
-                (byte)((color & 0x1f) << 3),
-                (byte)(((color >> 5) & 0x1f) << 3),
-                (byte)(((color >> 10) & 0x1f) << 3)
+            return adjustment.GetAdjustedColors(
+                (byte)(color & 0x1f),
+                (byte)((color >> 5) & 0x1f),
+                (byte)((color >> 10) & 0x1f)
             );
         }
 
@@ -66,6 +67,31 @@ namespace GB_Emulator.Gameboi.Graphics
         public void Set(Address address, IMemory replacement)
         {
             throw new System.NotImplementedException();
+        }
+    }
+
+    public interface IColorAdjustment
+    {
+        (byte, byte, byte) GetAdjustedColors(byte r, byte g, byte b);
+    }
+
+    public class GameboyColorCorrection : IColorAdjustment
+    {
+        const int maxColor = 960;
+
+        private byte ConstrictColor(int color)
+        {
+            return (byte)(System.Math.Min(maxColor, color) >> 2);
+        }
+
+        public (byte, byte, byte) GetAdjustedColors(byte r, byte g, byte b)
+        {
+            var newR = (r * 26) + (g * 4) + (b * 2);
+            var newG = (g * 24) + (b * 8);
+            var newB = (r * 6) + (g * 4) + (b * 22);
+
+
+            return (ConstrictColor(newR), ConstrictColor(newG), ConstrictColor(newB));
         }
     }
 }
