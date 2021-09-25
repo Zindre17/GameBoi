@@ -39,7 +39,7 @@ namespace GB_Emulator.Cartridges
         public override void Connect(Bus bus)
         {
             bus.RouteMemory(ROM_bank_0_StartAddress, romBanks.GetBank(0));
-            bus.RouteMemory(ROM_bank_n_StartAddress, romBanks);
+            bus.RouteMemory(ROM_bank_n_StartAddress, romBanks.GetBank(1));
             bus.RouteMemory(ExtRAM_StartAddress, ramBanks, ExtRAM_EndAddress);
         }
     }
