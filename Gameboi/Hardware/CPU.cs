@@ -106,6 +106,9 @@ namespace GB_Emulator.Gameboi.Hardware
             L = 0x4D;
             speedMode.Reset();
             SetFramerate(normalFramerate);
+            IME = true;
+            shouldUpdateIME = false;
+            nextIMEValue = false;
         }
 
         private const float normalFramerate = 60;
@@ -181,7 +184,8 @@ namespace GB_Emulator.Gameboi.Hardware
             if (!IF.Any()) return;
 
             // any interrupt request should remove halt-state (even if events are not enabled)
-            isHalted = false;
+            if ((IF.Read() & IE.Read()) != 0)
+                isHalted = false;
 
             if (!IME) return;
 
