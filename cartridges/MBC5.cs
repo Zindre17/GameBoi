@@ -33,10 +33,13 @@ namespace GB_Emulator.Cartridges
         {
             if (address < QuarterBank * 2)
             {
-                if (value == 0x0A)
-                    ((MbcRam)ramBanks).isEnabled = true;
-                else if (value == 0)
-                    ((MbcRam)ramBanks).isEnabled = false;
+                if (ramBanks is MbcRam ram)
+                {
+                    if (value == 0x0A)
+                        ram.isEnabled = true;
+                    else if (value == 0)
+                        ram.isEnabled = false;
+                }
                 return;
             }
             else if (address < QuarterBank * 3)

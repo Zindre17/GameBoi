@@ -61,7 +61,7 @@ namespace GB_Emulator.Cartridges
 
             // Selecting bank 0 translates to bank 1
             if (bankNr == 0)
-                bankNr++;
+                bankNr = 1;
 
             romBanks.Switch(bankNr);
         }

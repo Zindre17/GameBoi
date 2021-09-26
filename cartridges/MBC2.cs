@@ -35,7 +35,12 @@ namespace GB_Emulator.Cartridges
         {
             Byte highByte = GetHighByte(address);
             if (highByte[0])
-                romBanks.Switch(value & 0x0F);
+            {
+                var bankNr = value & 0x0F;
+                if (bankNr == 0)
+                    bankNr = 1;
+                romBanks.Switch(bankNr);
+            }
         }
 
         protected override void OnBank0Write(Address address, Byte value)
