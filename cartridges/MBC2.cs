@@ -20,6 +20,7 @@ namespace GB_Emulator.Cartridges
             }
 
             romBanks = new Bank(switchableBanks);
+            romBanks.Switch(1);
             ramBanks = new Mbc2Ram(GetSaveFilePath());
         }
 

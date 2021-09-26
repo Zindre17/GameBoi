@@ -24,6 +24,7 @@ namespace GB_Emulator.Cartridges
                 switchableBanks[i] = new MemoryRange(bankdata, true);
             }
             romBanks = new Bank(switchableBanks);
+            romBanks.Switch(1);
 
             if (hasRam)
             {

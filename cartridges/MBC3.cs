@@ -14,6 +14,7 @@ namespace GB_Emulator.Cartridges
                 switchableBanks[i] = new MemoryRange(bankData, true);
             }
             romBanks = new Bank(switchableBanks);
+            romBanks.Switch(1);
 
             byte count;
             ushort size;
