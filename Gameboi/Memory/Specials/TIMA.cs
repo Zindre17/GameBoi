@@ -16,7 +16,7 @@ namespace GB_Emulator.Gameboi.Memory.Specials
         {
             if (hasOverflown && OnOverflow != null) OnOverflow();
             else base.Bump();
-            if (data == 0xFF) hasOverflown = true;
+            hasOverflown = data == 0xFF;
         }
     }
 }
