@@ -10,12 +10,13 @@ namespace GB_Emulator.Gameboi.Memory.Specials
         public delegate void OverflowHandler();
 
         public OverflowHandler OnOverflow;
-        private bool hasOverflown = false;
 
         public void Bump()
         {
-            hasOverflown = data == 0xFF;
-            if (hasOverflown) OnOverflow?.Invoke();
+            if (data == 0xFF)
+            {
+                OnOverflow?.Invoke();
+            }
             data++;
         }
     }
