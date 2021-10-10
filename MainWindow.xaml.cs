@@ -11,17 +11,16 @@ namespace GB_Emulator
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly Gameboi.Gameboi gameboi;
+        private Gameboi.Gameboi gameboi;
 
         public MainWindow()
         {
             InitializeComponent();
-            gameboi = new();
 
-            CompositionTarget.Rendering += Startup;
+            CompositionTarget.Rendering += FrameUpdate;
 
-            Deactivated += (_, __) => gameboi.Pause();
-            Activated += (_, __) => gameboi.Play();
+            Deactivated += (_, __) => gameboi?.Pause();
+            Activated += (_, __) => gameboi?.Play();
 
             KeyDown += CheckKeyPressed;
         }
@@ -36,45 +35,51 @@ namespace GB_Emulator
                 };
                 if (openFileDialog.ShowDialog() ?? false)
                 {
+                    if (gameboi is not null)
+                    {
+                        gameboi.Pause();
+                        gameboi.TurnOff();
+                    }
+                    gameboi = new();
                     Title = gameboi.LoadGame(openFileDialog.FileName) ?? "Gameboi";
+                    gameboi.TurnOn();
+                    gameboi.Play();
                     DataContext = gameboi.GetScreen();
                 }
             }
 
             if (args.Key == Key.D1)
-                gameboi.ToggleBackground();
+                gameboi?.ToggleBackground();
             if (args.Key == Key.D2)
-                gameboi.ToggleWindow();
+                gameboi?.ToggleWindow();
             if (args.Key == Key.D3)
-                gameboi.ToggleSprites();
+                gameboi?.ToggleSprites();
 
             if (args.Key == Key.Right)
-                gameboi.ChangeSpeed(true);
+                gameboi?.ChangeSpeed(true);
             if (args.Key == Key.Left)
-                gameboi.ChangeSpeed(false);
+                gameboi?.ChangeSpeed(false);
 
             if (args.Key == Key.Space)
-                gameboi.PausePlayToggle();
-        }
-
-        private void Startup(object _, EventArgs __)
-        {
-            gameboi.TurnOn();
-            gameboi.Play();
-            CompositionTarget.Rendering -= Startup;
-            CompositionTarget.Rendering += FrameUpdate;
+                gameboi?.PausePlayToggle();
         }
 
         private void FrameUpdate(object _, EventArgs __)
         {
-            gameboi.CheckController();
-            gameboi.Render();
+            if (gameboi is not null)
+            {
+                gameboi.CheckController();
+                gameboi.Render();
+            }
         }
 
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
-            gameboi.Pause();
-            gameboi.TurnOff();
+            if (gameboi is not null)
+            {
+                gameboi.Pause();
+                gameboi.TurnOff();
+            }
         }
     }
 }
