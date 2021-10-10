@@ -1,6 +1,6 @@
 namespace GB_Emulator.Gameboi.Memory.Specials
 {
-    public class TIMA : DIV
+    public class TIMA : Register
     {
         public TIMA(OverflowHandler handler) : base()
         {
@@ -12,11 +12,11 @@ namespace GB_Emulator.Gameboi.Memory.Specials
         public OverflowHandler OnOverflow;
         private bool hasOverflown = false;
 
-        public override void Bump()
+        public void Bump()
         {
-            if (hasOverflown && OnOverflow != null) OnOverflow();
-            else base.Bump();
             hasOverflown = data == 0xFF;
+            if (hasOverflown) OnOverflow?.Invoke();
+            data++;
         }
     }
 }

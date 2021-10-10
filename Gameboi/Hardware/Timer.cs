@@ -9,23 +9,33 @@ namespace GB_Emulator.Gameboi.Hardware
     {
 
         private readonly TAC tac = new();
-        private readonly DIV div = new();
+        private readonly DIV div;
         private readonly Register tma = new();
         private readonly TIMA tima;
 
-        public Timer() => tima = new TIMA(TimaOverflow);
+        public Timer()
+        {
+            div = new DIV(ReloadTima);
+            tima = new TIMA(TimaOverflow);
+        }
 
         private ulong cyclesSinceLastDivTick = 0;
         private ulong cyclesSinceLastTimerTick = 0;
 
+        private bool isOverflown = false;
+
         public void Update(byte cycles, ulong speed)
         {
+            if (isOverflown)
+            {
+                ReloadTima();
+            }
             cyclesSinceLastDivTick += cycles / speed;
 
-            while (cyclesSinceLastDivTick >= cpuToDivRatio)
+            while (cyclesSinceLastDivTick >= cpuToDivRatio / speed)
             {
                 div.Bump();
-                cyclesSinceLastDivTick -= cpuToDivRatio;
+                cyclesSinceLastDivTick -= cpuToDivRatio / speed;
             }
 
             if (tac.IsStarted)
@@ -36,14 +46,24 @@ namespace GB_Emulator.Gameboi.Hardware
                 {
                     tima.Bump();
                     cyclesSinceLastTimerTick -= ratio;
+                    if (isOverflown && cyclesSinceLastTimerTick > 4)
+                    {
+                        ReloadTima();
+                    }
                 }
             }
         }
 
+        private void ReloadTima()
+        {
+            isOverflown = false;
+            tima.Write(tma.Read());
+        }
+
         private void TimaOverflow()
         {
-            tima.Write(tma.Read());
             bus.RequestInterrupt(InterruptType.Timer);
+            isOverflown = true;
         }
 
         public override void Connect(Bus bus)
