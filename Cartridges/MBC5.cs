@@ -4,8 +4,11 @@ namespace GB_Emulator.Cartridges
 {
     public class MBC5 : Mbc
     {
+
+        private int romBankCount;
         public MBC5(string romPath, bool hasRam, int romBankCount, RamSize ramSize, byte[] cartridgeData) : base(romPath)
         {
+            this.romBankCount = romBankCount;
             MemoryRange[] switchableBanks = new MemoryRange[romBankCount];
             for (int i = 0; i < switchableBanks.Length; i++)
             {
@@ -48,7 +51,7 @@ namespace GB_Emulator.Cartridges
                 upperRomSelect = value & 1;
 
             var bankNr = upperRomSelect << 8 | lowerRomSelect;
-            romBanks.Switch(bankNr);
+            romBanks.Switch(bankNr % romBankCount);
         }
 
         protected override void OnBank1Write(Address address, Byte value)

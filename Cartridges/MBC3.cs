@@ -4,8 +4,10 @@ namespace GB_Emulator.Cartridges
 {
     public class MBC3 : Mbc
     {
+        private readonly int romBankCount;
         public MBC3(string romPath, bool hasRam, int romBankCount, RamSize ramSize, byte[] cartridgeData) : base(romPath)
         {
+            this.romBankCount = romBankCount;
             MemoryRange[] switchableBanks = new MemoryRange[romBankCount];
             for (int i = 0; i < romBankCount; i++)
             {
@@ -63,7 +65,7 @@ namespace GB_Emulator.Cartridges
             if (bankNr == 0)
                 bankNr = 1;
 
-            romBanks.Switch(bankNr);
+            romBanks.Switch(bankNr % romBankCount);
         }
 
         private void SetRamBankNr(Byte value)
