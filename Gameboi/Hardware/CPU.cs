@@ -179,56 +179,64 @@ namespace GB_Emulator.Gameboi.Hardware
                 return;
             }
 
-
             // if IF is 0 there are no interrupt requests => exit
             if (!IF.Any()) return;
 
             // any interrupt request should remove halt-state (even if events are not enabled)
-            if ((IF.Read() & IE.Read()) != 0)
-                isHalted = false;
+            isHalted = false;
 
             if (!IME) return;
-
             if (!IE.Any()) return;
+            if ((IF.Read() & IE.Read()) == 0xE0) return;
 
-            // type             :   prio    : address   : bit
-            //---------------------------------------------------
-            // V-Blank          :     1     : 0x0040    : 0
-            // LCDC Status      :     2     : 0x0048    : 1
-            // Timer Overflow   :     3     : 0x0050    : 2
-            // Serial Transfer  :     4     : 0x0058    : 3
-            // Hi-Lo of P10-P13 :     5     : 0x0060    : 4
-            if (IE.Vblank && IF.Vblank)
-            {
-                IF.Vblank = false;
-                Interrupt(VblankVector);
-            }
-            else if (IE.LcdStat && IF.LcdStat)
-            {
-                IF.LcdStat = false;
-                Interrupt(LcdStatVector);
-            }
-            else if (IE.Timer && IF.Timer)
-            {
-                IF.Timer = false;
-                Interrupt(TimerVector);
-            }
-            else if (IE.Serial && IF.Serial)
-            {
-                IF.Serial = false;
-                Interrupt(SerialVector);
-            }
-            else if (IE.Joypad && IF.Joypad)
-            {
-                IF.Joypad = false;
-                Interrupt(JoypadVector);
-            }
+            Interrupt();
         }
 
-        private void Interrupt(ushort interruptVector)
+        // type             :   prio    : address   : bit
+        //---------------------------------------------------
+        // V-Blank          :     1     : 0x0040    : 0
+        // LCDC Status      :     2     : 0x0048    : 1
+        // Timer Overflow   :     3     : 0x0050    : 2
+        // Serial Transfer  :     4     : 0x0058    : 3
+        // Hi-Lo of P10-P13 :     5     : 0x0060    : 4
+        private void Interrupt()
         {
+            var tempIF = new InterruptRegister();
+            var tempIE = new InterruptRegister();
             IME = false;
-            Call(interruptVector);
+            Write(--SP, PC_P);
+            // Push of high byte to stack can cancel interrupts
+            // But its too late when pushing the low byte
+            tempIF.Write(IF.Read());
+            tempIE.Write(IE.Read());
+            Write(--SP, PC_C);
+            ushort interruptVector = 0;
+            if (tempIE.Vblank && tempIF.Vblank)
+            {
+                IF.Vblank = false;
+                interruptVector = VblankVector;
+            }
+            else if (tempIE.LcdStat && tempIF.LcdStat)
+            {
+                IF.LcdStat = false;
+                interruptVector = LcdStatVector;
+            }
+            else if (tempIE.Timer && tempIF.Timer)
+            {
+                IF.Timer = false;
+                interruptVector = TimerVector;
+            }
+            else if (tempIE.Serial && tempIF.Serial)
+            {
+                IF.Serial = false;
+                interruptVector = SerialVector;
+            }
+            else if (tempIE.Joypad && tempIF.Joypad)
+            {
+                IF.Joypad = false;
+                interruptVector = JoypadVector;
+            }
+            JumpTo(interruptVector);
             bus.UpdateCycles(24, Speed);
         }
 
@@ -309,13 +317,19 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private void DisableInterrupt()
         {
-            shouldUpdateIME = true;
-            nextIMEValue = false;
+            if (IME)
+            {
+                shouldUpdateIME = true;
+                nextIMEValue = false;
+            }
         }
         private void EnableInterrupt()
         {
-            shouldUpdateIME = true;
-            nextIMEValue = true;
+            if (!IME)
+            {
+                shouldUpdateIME = true;
+                nextIMEValue = true;
+            }
         }
 
         private void Prefix_CB()
