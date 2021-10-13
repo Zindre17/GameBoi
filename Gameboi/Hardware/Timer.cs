@@ -30,7 +30,7 @@ namespace GB_Emulator.Gameboi.Hardware
             {
                 ReloadTima();
             }
-            div.AddCycles(cycles);
+            div.AddCycles((int)(cycles * speed));
 
             if (tac.IsStarted && !isWatingForCounterReset)
             {
