@@ -237,7 +237,7 @@ namespace GB_Emulator.Gameboi.Hardware
                 interruptVector = JoypadVector;
             }
             JumpTo(interruptVector);
-            bus.UpdateCycles(24, Speed);
+            bus.UpdateCycles(20, Speed);
         }
 
         public void RequestInterrupt(InterruptType type)
