@@ -1,6 +1,5 @@
 using GB_Emulator.Gameboi.Memory;
 using GB_Emulator.Gameboi.Memory.Specials;
-using static GB_Emulator.Statics.Frequencies;
 using static GB_Emulator.Statics.TimerAddresses;
 
 namespace GB_Emulator.Gameboi.Hardware
@@ -8,21 +7,22 @@ namespace GB_Emulator.Gameboi.Hardware
     public class Timer : Hardware, IUpdateable
     {
 
-        private readonly TAC tac = new();
         private readonly DIV div;
-        private readonly Register tma = new();
         private readonly TIMA tima;
+        private readonly Register tma = new();
+        private readonly TAC tac;
 
         public Timer()
         {
-            div = new DIV(ReloadTima);
+            div = new DIV(OnDivWrite);
             tima = new TIMA(TimaOverflow);
+            tac = new TAC(OnTimerDisabled, OnTimerSpeedChanged);
+            counterAtNextBump = tac.GetNextCounter(0);
         }
 
-        private ulong cyclesSinceLastDivTick = 0;
-        private ulong cyclesSinceLastTimerTick = 0;
-
         private bool isOverflown = false;
+        private int counterAtNextBump;
+        private bool isWatingForCounterReset = false;
 
         public void Update(byte cycles, ulong speed)
         {
@@ -30,28 +30,49 @@ namespace GB_Emulator.Gameboi.Hardware
             {
                 ReloadTima();
             }
-            cyclesSinceLastDivTick += cycles / speed;
+            div.AddCycles(cycles);
 
-            while (cyclesSinceLastDivTick >= cpuToDivRatio / speed)
+            if (tac.IsStarted && !isWatingForCounterReset)
             {
-                div.Bump();
-                cyclesSinceLastDivTick -= cpuToDivRatio / speed;
-            }
-
-            if (tac.IsStarted)
-            {
-                uint ratio = cpuToTimerRatio[tac.TimerSpeed];
-                cyclesSinceLastTimerTick += cycles;
-                while (cyclesSinceLastTimerTick >= ratio)
+                while (div.Counter >= counterAtNextBump)
                 {
                     tima.Bump();
-                    cyclesSinceLastTimerTick -= ratio;
-                    if (isOverflown && cyclesSinceLastTimerTick > 4)
+                    if (isOverflown && (div.Counter - counterAtNextBump) > 4)
                     {
                         ReloadTima();
                     }
+                    counterAtNextBump = tac.GetNextCounter(counterAtNextBump);
                 }
+                if (counterAtNextBump > 0xFFFF)
+                    isWatingForCounterReset = true; // next tick is after div overflows
             }
+        }
+
+        private void OnTimerSpeedChanged(TAC newTac)
+        {
+            if (newTac.IsStarted && newTac.IsTriggerBitSet(div.Counter) && !tac.IsTriggerBitSet(div.Counter))
+            {
+                tima.Bump();
+            }
+        }
+
+        private void OnTimerDisabled()
+        {
+            if (tac.IsTriggerBitSet(div.Counter))
+            {
+                tima.Bump();
+            }
+        }
+
+        private void OnDivWrite()
+        {
+            isWatingForCounterReset = false;
+            var counter = div.Counter;
+            if (tac.IsTriggerBitSet(counter))
+            {
+                tima.Bump();
+            }
+            counterAtNextBump = tac.GetNextCounter(0);
         }
 
         private void ReloadTima()
@@ -70,7 +91,7 @@ namespace GB_Emulator.Gameboi.Hardware
         {
             base.Connect(bus);
             bus.ReplaceMemory(TAC_address, tac);
-            bus.ReplaceMemory(DIV_address, div);
+            bus.RouteMemory(DIV_address, div);
             bus.ReplaceMemory(TMA_address, tma);
             bus.ReplaceMemory(TIMA_address, tima);
         }
