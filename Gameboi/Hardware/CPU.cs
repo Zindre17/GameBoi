@@ -157,15 +157,15 @@ namespace GB_Emulator.Gameboi.Hardware
 
             if (isHalted)
             {
-                NoOperation();
                 bus.UpdateCycles(4, Speed);
+                NoOperation();
             }
             else
             {
                 // Fetch, Decode, Execute
                 byte opCode = Fetch();
-                instructions[opCode]();
                 bus.UpdateCycles(durations[opCode], Speed);
+                instructions[opCode]();
             }
         }
 
