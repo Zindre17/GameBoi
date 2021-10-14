@@ -141,7 +141,7 @@ namespace GB_Emulator.Gameboi.Hardware
         public void ExecuteInstructionsBulk(long _)
         {
             ulong start = Cycles;
-            while (elapsed < cyclesPerFrame)
+            while (elapsed < cyclesPerFrame * speedMode.Mode)
             {
                 DoNextInstruction();
                 elapsed = Cycles - start;

@@ -24,13 +24,13 @@ namespace GB_Emulator.Gameboi.Hardware
         private int counterAtNextBump;
         private bool isWatingForCounterReset = false;
 
-        public void Update(byte cycles, ulong speed)
+        public void Update(byte cycles, ulong _)
         {
             if (isOverflown)
             {
                 ReloadTima();
             }
-            div.AddCycles((int)(cycles * speed));
+            div.AddCycles(cycles);
 
             if (tac.IsStarted && !isWatingForCounterReset)
             {
