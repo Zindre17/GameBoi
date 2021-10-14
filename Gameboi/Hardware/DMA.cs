@@ -21,10 +21,16 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private void StartTransfer(Byte value)
         {
+            bus.SetCpuAccessFilter(AddressLock);
             inProgress = true;
             target = OAM_StartAddress;
             source = value * 0x100;
             lastClock = Cycles;
+        }
+
+        private bool AddressLock(Address address)
+        {
+            return address == DMA_address || (address >= HRAM_StartAddress && address < HRAM_EndAddress);
         }
 
         private Address target;
@@ -48,6 +54,7 @@ namespace GB_Emulator.Gameboi.Hardware
                     if (target == OAM_EndAddress)
                     {
                         inProgress = false;
+                        bus.ClearCpuAccessFilter();
                         break;
                     }
                 }

@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using GB_Emulator.Gameboi.Hardware;
 using GB_Emulator.Gameboi.Memory;
 using GB_Emulator.Gameboi.Memory.Specials;
 using static GB_Emulator.Statics.GeneralMemoryMap;
+using Byte = GB_Emulator.Gameboi.Memory.Byte;
 
 namespace GB_Emulator.Gameboi
 {
@@ -108,9 +110,19 @@ namespace GB_Emulator.Gameboi
             cpu?.RequestInterrupt(type);
         }
 
-        public Byte Read(Address address, bool isCpu = false) => memory[address].Read(address, isCpu);
+        public Byte Read(Address address, bool isCpu = false)
+        {
+            if (!isCpu || (cpuAccessFilter?.Invoke(address) ?? true))
+                return memory[address].Read(address, isCpu);
+            return 0xFF;
 
-        public void Write(Address address, Byte value, bool isCpu = false) => memory[address].Write(address, value, isCpu);
+        }
+
+        public void Write(Address address, Byte value, bool isCpu = false)
+        {
+            if (!isCpu || (cpuAccessFilter?.Invoke(address) ?? true))
+                memory[address].Write(address, value, isCpu);
+        }
 
         public void Connect(Hardware.Hardware component)
         {
@@ -124,6 +136,11 @@ namespace GB_Emulator.Gameboi
             }
             component.Connect(this);
         }
+
+        private Predicate<Address> cpuAccessFilter = null;
+
+        public void SetCpuAccessFilter(Predicate<Address> predicate) => cpuAccessFilter = predicate;
+        public void ClearCpuAccessFilter() => cpuAccessFilter = null;
 
     }
 }
