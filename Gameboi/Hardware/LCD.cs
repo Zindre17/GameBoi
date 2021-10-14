@@ -38,14 +38,23 @@ namespace GB_Emulator.Gameboi.Hardware
             modeEnters[2] = () =>
             {
                 ppu.SetOamLock(true);
+                ppu.SetVramLock(false);
                 if (stat.IsOAMInterruptEnabled)
                     bus.RequestInterrupt(InterruptType.LCDC);
             };
 
-            modeEnters[3] = LoadLine;
+            modeEnters[3] = () =>
+            {
+                ppu.SetOamLock(true);
+                ppu.SetVramLock(true);
+                ppu.AllowBlockTransfer();
+                LoadLine();
+            };
 
             modeEnters[0] = () =>
             {
+                ppu.SetOamLock(false);
+                ppu.SetVramLock(false);
                 if (stat.IsHblankInterruptEnabled)
                     bus.RequestInterrupt(InterruptType.LCDC);
             };
@@ -53,6 +62,8 @@ namespace GB_Emulator.Gameboi.Hardware
 
             modeEnters[1] = () =>
             {
+                ppu.SetOamLock(false);
+                ppu.SetVramLock(false);
                 if (stat.IsVblankInterruptEnabled)
                     bus.RequestInterrupt(InterruptType.LCDC);
                 bus.RequestInterrupt(InterruptType.VBlank);
@@ -92,6 +103,7 @@ namespace GB_Emulator.Gameboi.Hardware
                 stat.Mode = 1;
                 modeDurations[1] = clocksPerDraw;
                 ppu.SetOamLock(false);
+                ppu.SetVramLock(false);
             }
         }
 
@@ -195,11 +207,6 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private void LoadLine()
         {
-            // hblank => open vram and oam
-            ppu.SetOamLock(false);
-
-            ppu.AllowBlockTransfer();
-
             int firstPixelIndex = ly.Y * pixelsPerLine;
             (Byte[] b, Byte[] w, Byte[] s) = ppu.GetLineLayers(ly.Y);
             for (int i = 0; i < pixelsPerLine; i++)

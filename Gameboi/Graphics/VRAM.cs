@@ -19,6 +19,8 @@ namespace GB_Emulator.Gameboi.Graphics
         private bool isColorMode = false;
         private int BankSelect => BankSelectRegister.Read() & 1;
 
+        public bool IsLocked { get; set; } = false;
+
         public IMemory BankSelectRegister { get; private set; } = new Register();
 
         public Address Size => 0x2000;
@@ -184,11 +186,13 @@ namespace GB_Emulator.Gameboi.Graphics
 
         public Byte Read(Address address, bool isCpu = false)
         {
+            if (isCpu && IsLocked) return 0xFF;
             return GetMemoryArea(address, out Address relAdr).Read(relAdr, isCpu);
         }
 
         public void Write(Address address, Byte value, bool isCpu = false)
         {
+            if (isCpu && IsLocked) return;
             GetMemoryArea(address, out Address relAdr).Write(relAdr, value, isCpu);
         }
 

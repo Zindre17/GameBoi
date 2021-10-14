@@ -114,6 +114,7 @@ namespace GB_Emulator.Gameboi.Graphics
         }
 
         public void SetOamLock(bool on) => oam.SetLock(on);
+        public void SetVramLock(bool on) => vram.IsLocked = on;
         public void AllowBlockTransfer() => vramDma.TransferIfActive();
 
         public void Connect(Bus bus)
