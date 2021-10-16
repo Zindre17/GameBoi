@@ -137,39 +137,38 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private ulong cyclesInMode = 0;
 
-        private byte prevMode;
+        private bool hasExecutedOnEnter = false;
 
         public void Update(byte cycles, ulong speed)
         {
-            cyclesInMode += cycles / speed;
-
             while (cycles != 0)
             {
-                Byte mode = stat.Mode;
-                cycles = ExecuteMode(modeEnters[mode], modeExits[mode], modeTicks[mode]);
+                cycles = ExecuteMode(stat.Mode, (byte)(cycles / speed));
             }
         }
 
-        private byte ExecuteMode(Action onEnter = null, Action onExit = null, Action onTick = null)
+        private byte ExecuteMode(Byte mode, byte cycles)
         {
-            Byte mode = stat.Mode;
-            if (prevMode != mode)
+            if (cyclesInMode == 0 && !hasExecutedOnEnter)
             {
-                onEnter?.Invoke();
+                hasExecutedOnEnter = true;
+                modeEnters[mode]?.Invoke();
             }
 
             uint endCycles = modeDurations[mode];
             if (cyclesInMode >= endCycles)
             {
-                cyclesInMode -= endCycles;
-                onExit?.Invoke();
+                hasExecutedOnEnter = false;
+                var cyclesLeft = cyclesInMode - endCycles;
+                cyclesInMode = 0;
+                modeExits[mode]?.Invoke();
                 SetNextMode();
-                return (byte)cyclesInMode;
+                return (byte)cyclesLeft;
             }
             else
             {
-                onTick?.Invoke();
-                prevMode = mode;
+                cyclesInMode += cycles;
+                modeTicks[mode]?.Invoke();
                 return 0;
             }
         }
@@ -179,14 +178,14 @@ namespace GB_Emulator.Gameboi.Hardware
             if (!lcdc.IsEnabled) return;
 
             byte mode = stat.Mode;
-            if (mode == 0 && ly.Y != pixelLines) SetMode(2);
-            else SetMode((mode + 1) % 4);
-        }
-
-        private void SetMode(Byte mode)
-        {
-            prevMode = stat.Mode;
-            stat.Mode = mode;
+            if (mode == 0 && ly.Y != pixelLines)
+            {
+                stat.Mode = 2;
+            }
+            else
+            {
+                stat.Mode = (mode + 1) % 4;
+            }
         }
 
         private bool showBackground = true;
