@@ -47,7 +47,6 @@ namespace GB_Emulator.Gameboi.Hardware
             {
                 ppu.SetOamLock(true);
                 ppu.SetVramLock(true);
-                ppu.AllowBlockTransfer();
                 LoadLine();
             };
 
@@ -57,6 +56,7 @@ namespace GB_Emulator.Gameboi.Hardware
                 ppu.SetVramLock(false);
                 if (stat.IsHblankInterruptEnabled)
                     bus.RequestInterrupt(InterruptType.LCDC);
+                ppu.AllowBlockTransfer();
             };
             modeExits[0] = ly.Increment;
 
