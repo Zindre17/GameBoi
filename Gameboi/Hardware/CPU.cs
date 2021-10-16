@@ -53,6 +53,12 @@ namespace GB_Emulator.Gameboi.Hardware
         private byte PC_C => GetLowByte(PC);
         private ushort SP = 0xFFFE; //stack pointer
         private byte SP_S => GetHighByte(SP);
+
+        internal ulong GetSpeed()
+        {
+            return speedMode.Mode;
+        }
+
         private byte SP_P => GetLowByte(SP);
 
         #endregion

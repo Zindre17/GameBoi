@@ -51,6 +51,12 @@ namespace GB_Emulator.Gameboi
         }
         private readonly IMemoryRange io;
         private readonly IMemoryRange hram;
+
+        internal ulong GetCpuSpeed()
+        {
+            return cpu.GetSpeed();
+        }
+
         private readonly IMemory ie;
 
         private readonly IMemoryRange unusable = new DummyRange();

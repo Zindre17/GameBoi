@@ -14,11 +14,11 @@ namespace GB_Emulator.Gameboi.Graphics
         private Byte HDMA4 => registers[3];
         private Byte HDMA5 => registers[4];
 
-        Address Source => (HDMA1 << 8) | HDMA2;
-        Address Destination => (HDMA3 << 8) | HDMA4;
+        Address Source => (HDMA1 << 8) | HDMA2 & 0xF0;
+        Address Destination => ((HDMA3 | 0x80) << 8) | HDMA4 & 0xF0;
 
         bool IsHblankMode => HDMA5 > 0x7f;
-        int Length => ((HDMA5 & 0x7f) + 1) * 16;
+        int Length => (Byte)((HDMA5 & 0x7f) + 1) * 16;
 
         public Address Size => size;
 
@@ -32,44 +32,68 @@ namespace GB_Emulator.Gameboi.Graphics
             throw new System.NotImplementedException();
         }
 
+        private bool isActive = false;
+        private int totalLength;
+        private int currentLength;
+        private Address sourceStart;
+        private Address destinationStart;
+
         public void Write(Address address, Byte value, bool isCpu = false)
         {
-            bool prevIsBlankMode = IsHblankMode;
-
-            if (address == 1 || address == 3)
-            {
-                value &= 0xf0;
-            }
-
             registers[address] = value;
 
             if (address == 4)
             {
-                if (!IsHblankMode && !prevIsBlankMode)
+                if (isActive && !IsHblankMode)
                 {
-                    for (int i = 0; i < Length; i++)
+                    isActive = false;
+                    registers[4] = registers[4] | 0x80;
+                    return;
+                }
+
+                if (IsHblankMode)
+                {
+                    isActive = true;
+                    totalLength = Length;
+                    currentLength = 0;
+                    sourceStart = Source;
+                    destinationStart = Destination;
+                }
+                else
+                {
+                    isActive = false;
+                    currentLength = 0;
+                    while (TransferBlock(currentLength, Length))
                     {
-                        bus.Write(Destination + i, bus.Read(Source + i));
+                        currentLength += 16;
+                        registers[4]--;
                     }
+                    registers[4] = 0xFF;
                 }
             }
         }
 
+        private bool TransferBlock(int start, int max)
+        {
+            for (int i = start; i < start + 16; i++)
+            {
+                bus.Write(destinationStart + i, bus.Read(sourceStart + i), true);
+            }
+            registers[4]--;
+            bus.UpdateCycles(8, bus.GetCpuSpeed());
+            return start < max;
+        }
+
         public void TransferIfActive()
         {
-            if (IsHblankMode)
+            if (isActive)
             {
-                for (int i = 0; i < 16; i++)
+                isActive = TransferBlock(currentLength, totalLength);
+                currentLength += 16;
+                if (!isActive)
                 {
-                    bus.Write(Destination + i, bus.Read(Source + i));
+                    registers[4] = 0xFF;
                 }
-                var newSource = Source + 16;
-                registers[0] = (newSource & 0xff00) >> 8;
-                registers[1] = newSource & 0x00ff;
-
-                var newDest = Destination + 16;
-                registers[2] = (newDest & 0xff00) >> 8;
-                registers[3] = newDest & 0x00ff;
             }
         }
 
