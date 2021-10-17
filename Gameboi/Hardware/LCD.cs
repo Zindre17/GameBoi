@@ -96,12 +96,9 @@ namespace GB_Emulator.Gameboi.Hardware
             {
                 ly.Reset();
                 stat.Mode = 2;
-                modeDurations[1] = vblankClocks;
             }
             else
             {
-                stat.Mode = 1;
-                modeDurations[1] = clocksPerDraw;
                 ppu.SetOamLock(false);
                 ppu.SetVramLock(false);
             }
@@ -139,6 +136,8 @@ namespace GB_Emulator.Gameboi.Hardware
 
         public void Update(byte cycles, ulong speed)
         {
+            if (!lcdc.IsEnabled) return;
+
             var cyclesToAdd = cycles / speed;
             cyclesInMode += cyclesToAdd;
 
