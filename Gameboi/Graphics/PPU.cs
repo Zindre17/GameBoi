@@ -35,6 +35,7 @@ namespace GB_Emulator.Gameboi.Graphics
             set
             {
                 vram.SetColorMode(value);
+                oam.IsColorMode = value;
                 isColorMode = value;
             }
         }

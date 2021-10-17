@@ -16,6 +16,8 @@ namespace GB_Emulator.Gameboi.Graphics
                 sprites[i] = new Sprite(i);
         }
 
+        public bool IsColorMode { get; set; }
+
         public Sprite[] GetSpritesOnLine(Byte ly, bool isDoubleHeight)
         {
             var result = new List<Sprite>();
@@ -28,13 +30,35 @@ namespace GB_Emulator.Gameboi.Graphics
                 if (sprite.IsIntersectWithLine(ly, isDoubleHeight))
                     result.Add(sprite);
             }
-            result.Sort((a, b) =>
+            result.Sort(SortByMemoryLocation);
+            if (!IsColorMode)
+                AdjustForEqualX(result);
+            return result.Take(10).Reverse().ToArray();
+        }
+
+        private int SortByMemoryLocation(Sprite a, Sprite b)
+        {
+            return a.Nr - b.Nr;
+        }
+
+        private void AdjustForEqualX(List<Sprite> sprites)
+        {
+            for (int i = 0; i < sprites.Count; i++)
             {
-                if (a.X == b.X)
-                    return b.Nr - a.Nr;
-                return b.X - a.X;
-            });
-            return result.TakeLast(10).Reverse().ToArray();
+                for (int j = 0; j < sprites.Count; j++)
+                {
+                    if (i == j) continue;
+                    if (System.Math.Abs(sprites[i].X - sprites[j].X) < 8)
+                    {
+                        if (i < j && sprites[i].X > sprites[j].X)
+                        {
+                            var temp = sprites[i];
+                            sprites[i] = sprites[j];
+                            sprites[j] = temp;
+                        }
+                    }
+                }
+            }
         }
 
         public void Set(Address address, IMemory replacement) => sprites[address / 4].Set(address % 4, replacement);
