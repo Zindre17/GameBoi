@@ -73,7 +73,7 @@ namespace GB_Emulator.Gameboi.Hardware
                 ly.Reset();
             };
 
-            modeTicks[1] = () => ly.Set(pixelLines + cyclesInMode / 456);
+            modeTicks[1] = () => ly.Set(pixelLines + (cyclesInMode / 456));
         }
 
         public void UseColorScreen(bool on)
@@ -137,37 +137,36 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private ulong cyclesInMode = 0;
 
-        private bool hasExecutedOnEnter = false;
-
         public void Update(byte cycles, ulong speed)
         {
-            while (cycles != 0)
+            var cyclesToAdd = cycles / speed;
+            cyclesInMode += cyclesToAdd;
+
+            var cyclesLeft = cyclesToAdd;
+            while (cyclesLeft != 0)
             {
-                cycles = ExecuteMode(stat.Mode, (byte)(cycles / speed));
+                cyclesLeft = ExecuteMode(cyclesLeft);
             }
         }
 
-        private byte ExecuteMode(Byte mode, byte cycles)
+        private byte ExecuteMode(ulong cycles)
         {
-            if (cyclesInMode == 0 && !hasExecutedOnEnter)
+            var mode = stat.Mode;
+            if (cyclesInMode == cycles)
             {
-                hasExecutedOnEnter = true;
                 modeEnters[mode]?.Invoke();
             }
 
             uint endCycles = modeDurations[mode];
             if (cyclesInMode >= endCycles)
             {
-                hasExecutedOnEnter = false;
-                var cyclesLeft = cyclesInMode - endCycles;
-                cyclesInMode = 0;
+                cyclesInMode -= endCycles;
                 modeExits[mode]?.Invoke();
                 SetNextMode();
-                return (byte)cyclesLeft;
+                return (byte)cyclesInMode;
             }
             else
             {
-                cyclesInMode += cycles;
                 modeTicks[mode]?.Invoke();
                 return 0;
             }
