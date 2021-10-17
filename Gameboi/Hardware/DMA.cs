@@ -11,7 +11,7 @@ namespace GB_Emulator.Gameboi.Hardware
         public DMA() => dma = new WriteTriggerRegister(StartTransfer);
 
         private bool inProgress = false;
-        private const byte clocksPerByte = 4;
+        private const byte clocksPerByte = 1;
 
         public override void Connect(Bus bus)
         {
@@ -25,7 +25,7 @@ namespace GB_Emulator.Gameboi.Hardware
             inProgress = true;
             target = OAM_StartAddress;
             source = value * 0x100;
-            lastClock = Cycles;
+            unusedCycles = 0;
         }
 
         private bool AddressLock(Address address)
@@ -36,20 +36,16 @@ namespace GB_Emulator.Gameboi.Hardware
         private Address target;
         private Address source;
 
-        private ulong lastClock = 0;
-
+        private byte unusedCycles;
         public void Update(byte cycles, ulong _)
         {
-            ulong newClock = Cycles;
-            ulong elapsedCpuClocks = newClock - lastClock;
-            lastClock = newClock;
-
             if (inProgress)
             {
-                while (elapsedCpuClocks >= clocksPerByte)
+                unusedCycles += cycles;
+                while (unusedCycles >= clocksPerByte)
                 {
                     Write(target++, Read(source++));
-                    elapsedCpuClocks -= clocksPerByte;
+                    unusedCycles -= clocksPerByte;
 
                     if (target == OAM_EndAddress)
                     {
