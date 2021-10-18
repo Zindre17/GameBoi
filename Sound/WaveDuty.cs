@@ -11,8 +11,8 @@ namespace GB_Emulator.Sound
         public override Byte Read() => data | 0x3F;
 
         private const double soundLengthDenominator = 1 / 256d;
-        private double GetSoundLengthInSec() => (64 - SoundLength) * soundLengthDenominator;
-        public int GetSoundLengthInSamples() => (int)(GetSoundLengthInSec() * SAMPLE_RATE);
+        private double GetSoundLengthInSeconds() => (64 - SoundLength) * soundLengthDenominator;
+        public int GetSoundLengthInSamples() => (int)(GetSoundLengthInSeconds() * SAMPLE_RATE);
 
         public double GetDuty()
         {

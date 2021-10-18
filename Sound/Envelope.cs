@@ -14,7 +14,7 @@ namespace GB_Emulator.Sound
             isIncrease = data[3];
             Byte stepLengthData = data & 7;
 
-            if (stepLengthData == 0 || isIncrease && initialVolume == 0xF || !isIncrease && initialVolume == 0)
+            if (stepLengthData == 0 || (isIncrease && initialVolume == 0xF) || (!isIncrease && initialVolume == 0))
                 isActive = false;
             else
             {

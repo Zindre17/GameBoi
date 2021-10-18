@@ -14,14 +14,14 @@ namespace GB_Emulator.Sound
         public delegate void OnSweepOverflow();
         public OnSweepOverflow OverflowListeners;
 
-        public Address GetFrequencyAfterSweep(Address frequencyData, int sampleThisDuration)
+        public Address GetFrequencyAfterSweep(Address frequencyData, int samplesThisDuration)
         {
             Address result = frequencyData;
             if (IsActive)
             {
                 var freq = 128 / SweepTime;
                 var samplesPerStep = SAMPLE_RATE / freq;
-                int steps = (int)(sampleThisDuration / samplesPerStep);
+                int steps = (int)(samplesThisDuration / samplesPerStep);
 
                 var alteration = 1 << NrSweepShift;
 

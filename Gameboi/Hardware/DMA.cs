@@ -21,7 +21,8 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private void StartTransfer(Byte value)
         {
-            bus.SetCpuAccessFilter(AddressLock);
+            bus.SetCpuReadFilter(AddressLock);
+            bus.SetCpuWriteFilter(AddressLock);
             inProgress = true;
             target = OAM_StartAddress;
             source = value * 0x100;
@@ -50,7 +51,8 @@ namespace GB_Emulator.Gameboi.Hardware
                     if (target == OAM_EndAddress)
                     {
                         inProgress = false;
-                        bus.ClearCpuAccessFilter();
+                        bus.ClearCpuReadFilter();
+                        bus.ClearCpuWriteFilter();
                         break;
                     }
                 }

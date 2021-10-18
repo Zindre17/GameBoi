@@ -10,7 +10,7 @@ namespace GB_Emulator.Sound.channels
     public class Channel3 : SoundChannel
     {
         private readonly Register state = new MaskedRegister(0x7F);
-        private readonly Register soundLength = new();
+        private readonly Register soundLength = new ReadMaskedRegister(0xFF, 0);
         private readonly Register outputLevel = new MaskedRegister(0x9F);
         private readonly FrequencyLow frequencyLow = new();
         private readonly FrequencyHigh frequencyHigh = new();
@@ -26,7 +26,7 @@ namespace GB_Emulator.Sound.channels
             bus.ReplaceMemory(NR32_address, outputLevel);
             bus.ReplaceMemory(NR33_address, frequencyLow);
             bus.ReplaceMemory(NR34_address, frequencyHigh);
-
+            bus.RouteMemory(NR52_address + 1, new DummyRange(), WaveRam_address_start);
             bus.RouteMemory(WaveRam_address_start, waveRam, WaveRam_address_end);
         }
 

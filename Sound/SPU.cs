@@ -12,12 +12,12 @@ namespace GB_Emulator.Sound
     {
         private readonly NR50 nr50 = new();
         private readonly NR51 nr51 = new();
-        private readonly NR52 nr52 = new();
+        private NR52 nr52;
 
-        private readonly Channel1 channel1;
-        private readonly Channel2 channel2;
-        private readonly Channel3 channel3;
-        private readonly Channel4 channel4;
+        private Channel1 channel1;
+        private Channel2 channel2;
+        private Channel3 channel3;
+        private Channel4 channel4;
 
         private readonly WaveOut waveEmitter = new();
 
@@ -36,20 +36,21 @@ namespace GB_Emulator.Sound
                 BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate,
                 DiscardOnBufferOverflow = true
             };
-
-            channel1 = new Channel1(nr52);
-            channel2 = new Channel2(nr52);
-            channel3 = new Channel3(nr52);
-            channel4 = new Channel4(nr52);
         }
 
         public override void Connect(Bus bus)
         {
             this.bus = bus;
+            nr52 = new(bus);
 
             bus.ReplaceMemory(NR50_address, nr50);
             bus.ReplaceMemory(NR51_address, nr51);
             bus.ReplaceMemory(NR52_address, nr52);
+
+            channel1 = new Channel1(nr52);
+            channel2 = new Channel2(nr52);
+            channel3 = new Channel3(nr52);
+            channel4 = new Channel4(nr52);
 
             channel1.Connect(bus);
             channel2.Connect(bus);

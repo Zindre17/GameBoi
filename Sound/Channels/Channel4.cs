@@ -11,7 +11,7 @@ namespace GB_Emulator.Sound.channels
     {
 
         private readonly Envelope envelope = new();
-        private readonly Register soundLength = new MaskedRegister(0xC0);
+        private readonly Register soundLength = new ReadMaskedRegister(0xFF, 0);
         private readonly NR43 nr43 = new();
         private readonly ModeRegister mode = new();
 
@@ -37,6 +37,7 @@ namespace GB_Emulator.Sound.channels
         {
             this.bus = bus;
 
+            bus.RouteMemory(NR41_address - 1, new Dummy());
             bus.ReplaceMemory(NR41_address, soundLength);
             bus.ReplaceMemory(NR42_address, envelope);
             bus.ReplaceMemory(NR43_address, nr43);

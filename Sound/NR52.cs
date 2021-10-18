@@ -1,10 +1,15 @@
+using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Memory;
 
 namespace GB_Emulator.Sound
 {
     public class NR52 : MaskedRegister
     {
-        public NR52() : base(0x70) { }
+        private readonly Bus bus;
+        public NR52(Bus bus) : base(0x70)
+        {
+            this.bus = bus;
+        }
 
         public bool IsAllOn => data[7];
 
@@ -16,7 +21,30 @@ namespace GB_Emulator.Sound
 
         public override void Write(Byte value)
         {
-            base.Write(value | data & 0x0F);
+            if (!value[7])
+            {
+                base.Write(0);
+                ResetAllSoundRegs();
+                bus.SetCpuWriteFilter(BlockWritesWhenOff);
+            }
+            else
+            {
+                bus.ClearCpuWriteFilter();
+                base.Write(0x80 | data);
+            }
+        }
+
+        private bool BlockWritesWhenOff(Address address)
+        {
+            return address < Statics.SoundRegisters.NR10_address || Statics.SoundRegisters.NR52_address <= address;
+        }
+
+        private void ResetAllSoundRegs()
+        {
+            for (int i = Statics.SoundRegisters.NR10_address; i < Statics.SoundRegisters.NR52_address; i++)
+            {
+                bus.Write(i, 0);
+            }
         }
 
         public void TurnAllOn() => data |= 0x80;

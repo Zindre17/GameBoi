@@ -118,7 +118,7 @@ namespace GB_Emulator.Gameboi
 
         public Byte Read(Address address, bool isCpu = false)
         {
-            if (!isCpu || (cpuAccessFilter?.Invoke(address) ?? true))
+            if (!isCpu || (cpuReadFilter?.Invoke(address) ?? true))
                 return memory[address].Read(address, isCpu);
             return 0xFF;
 
@@ -126,7 +126,7 @@ namespace GB_Emulator.Gameboi
 
         public void Write(Address address, Byte value, bool isCpu = false)
         {
-            if (!isCpu || (cpuAccessFilter?.Invoke(address) ?? true))
+            if (!isCpu || (cpuWriteFilter?.Invoke(address) ?? true))
                 memory[address].Write(address, value, isCpu);
         }
 
@@ -143,10 +143,12 @@ namespace GB_Emulator.Gameboi
             component.Connect(this);
         }
 
-        private Predicate<Address> cpuAccessFilter = null;
-
-        public void SetCpuAccessFilter(Predicate<Address> predicate) => cpuAccessFilter = predicate;
-        public void ClearCpuAccessFilter() => cpuAccessFilter = null;
+        private Predicate<Address> cpuReadFilter = null;
+        private Predicate<Address> cpuWriteFilter = null;
+        public void SetCpuReadFilter(Predicate<Address> predicate) => cpuReadFilter = predicate;
+        public void SetCpuWriteFilter(Predicate<Address> predicate) => cpuWriteFilter = predicate;
+        public void ClearCpuReadFilter() => cpuReadFilter = null;
+        public void ClearCpuWriteFilter() => cpuWriteFilter = null;
 
     }
 }
