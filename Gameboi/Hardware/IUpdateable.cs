@@ -1,4 +1,7 @@
-interface IUpdateable
+namespace GB_Emulator.Gameboi.Hardware
 {
-    void Update(byte cycles, ulong speed);
+    public interface IUpdatable
+    {
+        void Update(byte cycles, ulong speed);
+    }
 }

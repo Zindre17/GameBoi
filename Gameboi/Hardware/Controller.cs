@@ -4,7 +4,7 @@ using GB_Emulator.Gameboi.Memory.Specials;
 
 namespace GB_Emulator.Gameboi.Hardware
 {
-    public class Controller : Hardware, IUpdateable
+    public class Controller : Hardware, IUpdatable
     {
 
         const ushort P1_address = 0xFF00;

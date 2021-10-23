@@ -4,7 +4,7 @@ using static GB_Emulator.Statics.MiscSpecialAddresses;
 
 namespace GB_Emulator.Gameboi.Hardware
 {
-    public class DMA : Hardware, IUpdateable
+    public class DMA : Hardware, IUpdatable
     {
         private readonly Register dma;
 

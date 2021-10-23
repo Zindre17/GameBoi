@@ -12,7 +12,7 @@ using Byte = GB_Emulator.Gameboi.Memory.Byte;
 
 namespace GB_Emulator.Gameboi.Hardware
 {
-    public class LCD : Hardware, IUpdateable
+    public class LCD : Hardware, IUpdatable
 
     {
         private readonly PPU ppu;

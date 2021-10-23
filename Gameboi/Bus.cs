@@ -17,11 +17,11 @@ namespace GB_Emulator.Gameboi
         private byte cyclesSinceLast = 0;
         public ulong Cycles => cycles;
 
-        private readonly List<IUpdateable> updateables = new();
+        private readonly List<IUpdatable> updatables = new();
 
         public void UpdateAll(ulong speed)
         {
-            foreach (var component in updateables)
+            foreach (var component in updatables)
                 component.Update(cyclesSinceLast, speed);
         }
 
@@ -136,9 +136,9 @@ namespace GB_Emulator.Gameboi
             {
                 cpu = _cpu;
             }
-            else if (component is IUpdateable updateable)
+            else if (component is IUpdatable updatable)
             {
-                updateables.Add(updateable);
+                updatables.Add(updatable);
             }
             component.Connect(this);
         }
