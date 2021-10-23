@@ -12,7 +12,8 @@ namespace GB_Emulator.Sound.channels
 
         public override void Connect(Bus bus)
         {
-            this.bus = bus;
+            base.Connect(bus);
+
             bus.RouteMemory(NR21_address - 1, new Dummy());
             bus.ReplaceMemory(NR21_address, waveDuty);
             bus.ReplaceMemory(NR22_address, envelope);

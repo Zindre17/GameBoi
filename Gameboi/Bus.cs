@@ -143,6 +143,14 @@ namespace GB_Emulator.Gameboi
             component.Connect(this);
         }
 
+        public void RegisterUpdatable(IUpdatable updateable)
+        {
+            if (!updatables.Contains(updateable))
+            {
+                updatables.Add(updateable);
+            }
+        }
+
         private Predicate<Address> cpuReadFilter = null;
         private Predicate<Address> cpuWriteFilter = null;
         public void SetCpuReadFilter(Predicate<Address> predicate) => cpuReadFilter = predicate;

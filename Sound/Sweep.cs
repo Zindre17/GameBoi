@@ -1,5 +1,4 @@
 using GB_Emulator.Gameboi.Memory;
-using static GB_Emulator.Statics.WavSettings;
 
 namespace GB_Emulator.Sound
 {
@@ -14,33 +13,39 @@ namespace GB_Emulator.Sound
         public delegate void OnSweepOverflow();
         public OnSweepOverflow OverflowListeners;
 
-        public Address GetFrequencyAfterSweep(Address frequencyData, int samplesThisDuration)
+        public Address GetFrequencyAfterSweep(Address frequencyData, int cyclesElapsed)
         {
-            Address result = frequencyData;
+            int result = frequencyData;
             if (IsActive)
             {
-                var freq = 128 / SweepTime;
-                var samplesPerStep = SAMPLE_RATE / freq;
-                int steps = (int)(samplesThisDuration / samplesPerStep);
+                var secondsPerStep = SweepTime / 128d;
+                var cyclesPerStep = secondsPerStep * Statics.Frequencies.cpuSpeed;
 
-                var alteration = 1 << NrSweepShift;
+                var divisor = 1 << NrSweepShift;
 
+                var steps = cyclesElapsed / cyclesPerStep;
                 for (int i = 0; i < steps; i++)
                 {
-
                     if (IsSubtraction)
-                        result -= result / alteration;
+                    {
+                        var prev = result;
+                        result -= result / divisor;
+                        if (result < 0)
+                        {
+                            result = prev;
+                            break;
+                        }
+                    }
                     else
-                        result += result / alteration;
+                    {
+                        result += result / divisor;
+                        if (result >= 0x7FF)
+                        {
+                            OverflowListeners?.Invoke();
+                            break;
+                        }
+                    }
                 }
-            }
-
-            if (result >= 0x7FF)
-            {
-                if (IsSubtraction)
-                    result = 0;
-                else
-                    OverflowListeners?.Invoke();
             }
 
             return result & 0x7FF;

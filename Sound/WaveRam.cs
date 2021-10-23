@@ -10,16 +10,15 @@ namespace GB_Emulator.Sound
                 ram[i] = new WaveRegister();
         }
 
-        public byte[] GetSamples()
+        public byte GetSample(int index)
         {
-            byte[] samples = new byte[Size * 2];
-            int index = 0;
-            foreach (var samplePair in ram)
+            index %= Size * 2;
+            var pair = ram[index / 2];
+            if ((index % 2) == 0)
             {
-                samples[index++] = samplePair.First;
-                samples[index++] = samplePair.Second;
+                return pair.First;
             }
-            return samples;
+            return pair.Second;
         }
 
         private readonly WaveRegister[] ram = new WaveRegister[0x10];

@@ -1,18 +1,17 @@
 using GB_Emulator.Gameboi.Memory;
-using static GB_Emulator.Statics.WavSettings;
 
 namespace GB_Emulator.Sound
 {
     public class WaveDuty : Register
     {
-        public Byte Duty => data >> 6;
-        public Byte SoundLength => data & 0x3F;
+        private Byte Duty => data >> 6;
+        private Byte SoundLength => data & 0x3F;
 
         public override Byte Read() => data | 0x3F;
 
         private const double soundLengthDenominator = 1 / 256d;
-        private double GetSoundLengthInSeconds() => (64 - SoundLength) * soundLengthDenominator;
-        public int GetSoundLengthInSamples() => (int)(GetSoundLengthInSeconds() * SAMPLE_RATE);
+
+        public double GetSoundLengthInSeconds() => (64 - SoundLength) * soundLengthDenominator;
 
         public double GetDuty()
         {

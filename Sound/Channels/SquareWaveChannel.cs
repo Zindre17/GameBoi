@@ -1,4 +1,4 @@
-using GB_Emulator.Gameboi;
+using GB_Emulator.Gameboi.Memory;
 
 namespace GB_Emulator.Sound.channels
 {
@@ -9,70 +9,43 @@ namespace GB_Emulator.Sound.channels
         protected Envelope envelope = new();
         protected FrequencyLow frequencyLow = new();
         protected FrequencyHigh frequencyHigh = new();
-
-        protected byte channelBit;
-
         private readonly SquareWaveProvider waveProvider = new();
 
-        public SquareWaveChannel(NR52 nr52, byte channelBit, bool hasSweep) : base(nr52)
+        public SquareWaveChannel(NR52 nr52, byte channelNr, bool hasSweep) : base(nr52, channelNr)
         {
-            this.channelBit = channelBit;
-
-            if (hasSweep) sweep = new Sweep();
-
-            waveProvider.OnDurationCompleted += () => nr52.TurnOff(channelBit);
+            mode = frequencyHigh;
+            if (hasSweep)
+            {
+                sweep = new Sweep();
+                sweep.OverflowListeners += () => nr52.TurnOff(channelNr);
+            }
         }
 
-        private int samplesThisDuration = 0;
         public short[] GetNextSampleBatch(int count)
         {
-            ushort frequencyData = GetFrequencyData();
-            if (frequencyHigh.IsInitial)
+            var frequencyData = GetFrequencyData();
+            if (sweep is not null)
             {
-                frequencyHigh.IsInitial = false;
-                nr52.TurnOn(channelBit);
-
-                samplesThisDuration = 0;
-
-                envelope.Initialize();
-
-                int newDuration = frequencyHigh.HasDuration ? waveDuty.GetSoundLengthInSamples() : -1;
-
-                waveProvider.UpdateSound(
-                    GetFrequency(frequencyData),
-                    waveDuty.GetDuty(),
-                    true,
-                    newDuration
-                );
+                frequencyData = sweep.GetFrequencyAfterSweep(frequencyData, elapsedDurationInCycles);
             }
-            else
-            {
-                if (sweep != null)
-                    frequencyData = sweep.GetFrequencyAfterSweep(frequencyData, samplesThisDuration);
 
-                waveProvider.UpdateSound(
-                    GetFrequency(frequencyData),
-                    waveDuty.GetDuty(),
-                    false
-                );
-            }
+            var frequency = GetFrequency(frequencyData);
+            waveProvider.UpdateSound(frequency, waveDuty.GetDuty());
+
+            volume = envelope.GetVolume(elapsedDurationInCycles);
 
             short[] samples = new short[count];
-            if (nr52.IsSoundOn(channelBit))
+            if (nr52.IsSoundOn(channelNr))
             {
                 for (int i = 0; i < count; i++)
                 {
-                    var sample = waveProvider.GetSample(samplesThisDuration);
-                    var volume = envelope.GetVolume(samplesThisDuration++);
+                    var sample = waveProvider.GetSample();
                     samples[i] = (short)(sample * volume);
                 }
             }
 
             return samples;
         }
-
-        public abstract override void Connect(Bus bus);
-
 
         private ushort GetFrequencyData()
         {
@@ -84,5 +57,16 @@ namespace GB_Emulator.Sound.channels
             return (uint)(0x20000 / (0x800 - frequencyData));
         }
 
+        protected override int GetDurationInCycles()
+        {
+            return (int)(waveDuty.GetSoundLengthInSeconds() * Statics.Frequencies.cpuSpeed);
+        }
+
+        private Address volume = 0;
+
+        protected override void OnInit()
+        {
+            envelope.Initialize();
+        }
     }
 }

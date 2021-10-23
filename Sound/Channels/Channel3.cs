@@ -1,9 +1,7 @@
-using System;
 using GB_Emulator.Gameboi;
 using GB_Emulator.Gameboi.Memory;
 using static GB_Emulator.Statics.SoundRegisters;
 using static GB_Emulator.Statics.WavSettings;
-using Byte = GB_Emulator.Gameboi.Memory.Byte;
 
 namespace GB_Emulator.Sound.channels
 {
@@ -16,10 +14,13 @@ namespace GB_Emulator.Sound.channels
         private readonly FrequencyHigh frequencyHigh = new();
 
         private readonly WaveRam waveRam = new();
-        public Channel3(NR52 nr52) : base(nr52) { }
+        public Channel3(NR52 nr52) : base(nr52, 2)
+        {
+            mode = frequencyHigh;
+        }
         public override void Connect(Bus bus)
         {
-            this.bus = bus;
+            base.Connect(bus);
 
             bus.ReplaceMemory(NR30_address, state);
             bus.ReplaceMemory(NR31_address, soundLength);
@@ -30,40 +31,16 @@ namespace GB_Emulator.Sound.channels
             bus.RouteMemory(WaveRam_address_start, waveRam, WaveRam_address_end);
         }
 
-        private int currentFrequency = 1;
-        private long currentLength;
-        private long samplesThisLength;
-        private bool isStopped = true;
-        public void Update()
+        protected override void OnInit()
         {
-            if (frequencyHigh.IsInitial)
-            {
-                nr52.TurnOn(2);
-                frequencyHigh.IsInitial = false;
-                if (frequencyHigh.HasDuration)
-                    currentLength = GetLengthInSamples();
-                else
-                    currentLength = -1;
-                samplesThisLength = 0;
-                currentFrequency = GetFrequency();
-                isStopped = false;
-            }
-            else
-            {
-                if (!GetState())
-                    isStopped = true;
-
-                var newFrequency = GetFrequency();
-                if (currentFrequency != newFrequency)
-                    currentFrequency = newFrequency;
-            }
+            sampleNr = 0;
         }
 
-        private bool GetState() => state.Read()[7];
-        private long GetLengthInSamples()
+        private bool IsPlaying() => state.Read()[7];
+        protected override int GetDurationInCycles()
         {
             var seconds = (0x100 - soundLength.Read()) * (1d / 0x100);
-            return (long)(seconds * SAMPLE_RATE);
+            return (int)(seconds * Statics.Frequencies.cpuSpeed);
         }
         private int GetFrequency()
         {
@@ -85,42 +62,26 @@ namespace GB_Emulator.Sound.channels
             return 2 - (3 - volumeData);
         }
 
-        private int step = 0;
-        private ulong sampleNr = 0;
+        private int sampleNr = 0;
 
         public short[] GetNextSampleBatch(int count)
         {
-            Update();
+            var samples = new short[count];
 
-            short[] samples = new short[count];
-
-            if (!nr52.IsSoundOn(2) || isStopped)
+            if (!nr52.IsSoundOn(2) || !IsPlaying())
                 return samples;
 
-            byte[] wavePattern = waveRam.GetSamples();
+            var currentFrequency = GetFrequency();
+            var volumeShift = GetVolumeShift();
 
-            double samplesPerStep = SAMPLE_RATE / (double)currentFrequency / wavePattern.Length;
-            if (samplesPerStep == 0) samplesPerStep = 1;
-
-            int volumeShift = GetVolumeShift();
+            double samplesPerWaveRamSample = SAMPLE_RATE / (double)currentFrequency / (waveRam.Size * 2);
 
             for (int i = 0; i < count; i++)
             {
-                if (currentLength != -1 && i + samplesThisLength >= currentLength)
-                {
-                    nr52.TurnOff(2);
-                    return samples;
-                }
-                else
-                {
-                    step = (int)(sampleNr++ / samplesPerStep);
-                    step %= wavePattern.Length;
-                    var data = wavePattern[step];
-                    samples[i] = (short)(data >> volumeShift);
-                }
+                var data = waveRam.GetSample((int)(sampleNr++ / samplesPerWaveRamSample));
+                var volumeAdjustedSample = (short)(data >> volumeShift);
+                samples[i] = volumeAdjustedSample;
             }
-            sampleNr %= (ulong)Math.Max(samplesPerStep * wavePattern.Length, 1);
-            samplesThisLength += count;
             return samples;
         }
     }

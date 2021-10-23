@@ -13,18 +13,11 @@ namespace GB_Emulator.Sound.channels
             envelope.Write(0x00);
             frequencyLow.Write(0xFF);
             frequencyHigh.Write(0xBF);
-
-            sweep.OverflowListeners += OnSweepOverflow;
-        }
-
-        private void OnSweepOverflow()
-        {
-            nr52.TurnOff(channelBit);
         }
 
         public override void Connect(Bus bus)
         {
-            this.bus = bus;
+            base.Connect(bus);
 
             bus.ReplaceMemory(NR10_address, sweep);
             bus.ReplaceMemory(NR11_address, waveDuty);

@@ -1,6 +1,5 @@
 using System;
 using GB_Emulator.Gameboi.Memory;
-using static GB_Emulator.Statics.WavSettings;
 using Byte = GB_Emulator.Gameboi.Memory.Byte;
 
 namespace GB_Emulator.Sound
@@ -18,27 +17,27 @@ namespace GB_Emulator.Sound
                 isActive = false;
             else
             {
-                var frequency = 64d / stepLengthData;
-                samplesPerStep = (int)(SAMPLE_RATE / frequency);
+                var secondsPerStep = stepLengthData / 64d;
+                cyclesPerStep = (int)(secondsPerStep * Statics.Frequencies.cpuSpeed);
                 isActive = true;
             }
         }
 
         private Byte initialVolume;
-        private int samplesPerStep;
+        private int cyclesPerStep;
         private bool isActive;
         private bool isIncrease;
 
-        public Address GetVolume(int samplesThisDuration)
+        public Address GetVolume(int elapsedCycles)
         {
             Byte currentVolume = initialVolume;
             if (isActive)
             {
-                int step = samplesThisDuration / samplesPerStep;
+                int steps = elapsedCycles / cyclesPerStep;
                 if (isIncrease)
-                    currentVolume = Math.Min(0x0F, initialVolume + step);
+                    currentVolume = Math.Min(0x0F, initialVolume + steps);
                 else
-                    currentVolume = Math.Max(0, initialVolume - step);
+                    currentVolume = Math.Max(0, initialVolume - steps);
             }
             return ScaleVolume(currentVolume);
         }

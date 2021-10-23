@@ -5,46 +5,22 @@ namespace GB_Emulator.Sound
 {
     public class SquareWaveProvider
     {
-        private bool isStopped = true;
-        public int lowToHigh;
-        public int durationInSamples = -1;
-        public int samplesPerPeriod;
+        public int lowToHigh = 1;
+        public int samplesPerPeriod = 2;
 
-        public void UpdateSound(uint frequency, double duty, bool isInitial, int duration = -1)
+        private int sampleCounter = 0;
+
+        public void UpdateSound(uint frequency, double duty)
         {
-            durationInSamples = isInitial ? duration : durationInSamples;
             samplesPerPeriod = Math.Max((int)(SAMPLE_RATE / frequency), 2);
             lowToHigh = (int)(samplesPerPeriod * duty);
-
-            if (isInitial)
-            {
-                isStopped = false;
-            }
         }
 
-        private bool HasDuration => durationInSamples != -1;
-
-        public delegate void DurationCompleteAction();
-        public DurationCompleteAction OnDurationCompleted;
-
-        public int GetSample(int sampleNr)
+        public int GetSample()
         {
-            if (HasDuration && sampleNr >= durationInSamples)
-            {
-                isStopped = true;
-                OnDurationCompleted?.Invoke();
-            }
-
-            short sample;
-
-            var samplePoint = sampleNr % samplesPerPeriod;
-
-            if (isStopped)
-                sample = 0;
-            else
-                sample = (short)(samplePoint > lowToHigh ? 1 : 0);
-
-            return sample;
+            sampleCounter++;
+            sampleCounter %= samplesPerPeriod;
+            return (short)(sampleCounter > lowToHigh ? 1 : 0);
         }
 
     }
