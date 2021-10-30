@@ -86,6 +86,20 @@ namespace GB_Emulator.Gameboi
             cpu.ChangeSpeed(faster);
         }
 
+        public void ChangeVolume(bool up)
+        {
+            if (up)
+            {
+                spu.VolumeUp();
+            }
+            else
+            {
+                spu.VolumeDown();
+            }
+        }
+
+        public void ToggleMute() => spu.ToggleMute();
+
         public string LoadGame(string path)
         {
             if (game != null)

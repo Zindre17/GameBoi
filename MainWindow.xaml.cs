@@ -60,6 +60,13 @@ namespace GB_Emulator
             if (args.Key == Key.Left)
                 gameboi?.ChangeSpeed(false);
 
+            if (args.Key == Key.Up)
+                gameboi?.ChangeVolume(true);
+            if (args.Key == Key.Down)
+                gameboi?.ChangeVolume(false);
+            if (args.Key == Key.M)
+                gameboi?.ToggleMute();
+
             if (args.Key == Key.Space)
                 gameboi?.PausePlayToggle();
         }

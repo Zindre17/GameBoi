@@ -28,6 +28,10 @@ namespace GB_Emulator.Sound
         public float MillisecondsPerLoop { get; set; } = 1;
 
 
+        private double masterVolume = 1d;
+        private bool isMuted = false;
+        private const double masterVolumeIncrement = .1d;
+
         public SPU()
         {
             waveFormat = new WaveFormat();
@@ -61,6 +65,31 @@ namespace GB_Emulator.Sound
             waveEmitter.Play();
         }
 
+        public void VolumeUp()
+        {
+            masterVolume += masterVolumeIncrement;
+            if (masterVolume > 1)
+            {
+                masterVolume = 1d;
+            }
+            if (isMuted) ToggleMute();
+        }
+
+        public void VolumeDown()
+        {
+            masterVolume -= masterVolumeIncrement;
+            if (masterVolume < 0)
+            {
+                masterVolume = 0d;
+            }
+            if (isMuted) ToggleMute();
+        }
+
+        public void ToggleMute()
+        {
+            isMuted = !isMuted;
+        }
+
         public Action<long> Loop => AddNextSamples;
 
         private long samplesAdded = 0;
@@ -76,6 +105,7 @@ namespace GB_Emulator.Sound
 
         private void AddNextSampleBatch(int sampleCount)
         {
+            if (isMuted) return;
             var channel1Samples = nr52.IsAllOn || nr52.IsSoundOn(0) ? channel1.GetNextSampleBatch(sampleCount) : new short[sampleCount];
             var channel2Samples = nr52.IsAllOn || nr52.IsSoundOn(1) ? channel2.GetNextSampleBatch(sampleCount) : new short[sampleCount];
             var channel3Samples = nr52.IsAllOn || nr52.IsSoundOn(2) ? channel3.GetNextSampleBatch(sampleCount) : new short[sampleCount];
@@ -101,7 +131,7 @@ namespace GB_Emulator.Sound
                 if (nr51.Is4Out1)
                     c1Sample += (short)(channel4Samples[i] / 4);
 
-                c1Sample = (short)(c1Sample * out1volume);
+                c1Sample = (short)(c1Sample * out1volume * masterVolume);
 
                 samples[index++] = (byte)(c1Sample >> 8);
                 samples[index++] = (byte)c1Sample;
@@ -118,7 +148,7 @@ namespace GB_Emulator.Sound
                 if (nr51.Is4Out2)
                     c2Sample += (short)(channel4Samples[i] / 4);
 
-                c2Sample = (short)(c2Sample * out2volume);
+                c2Sample = (short)(c2Sample * out2volume * masterVolume);
 
                 samples[index++] = (byte)(c2Sample >> 8);
                 samples[index++] = (byte)c2Sample;
