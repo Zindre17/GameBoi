@@ -23,6 +23,12 @@ namespace GB_Emulator.Sound.channels
 
         public short[] GetNextSampleBatch(int count)
         {
+            short[] samples = new short[count];
+            if (!nr52.IsChannelOn(channelNr))
+            {
+                return samples;
+            }
+
             var frequencyData = GetFrequencyData();
             if (sweep is not null)
             {
@@ -34,16 +40,11 @@ namespace GB_Emulator.Sound.channels
 
             volume = envelope.GetVolume(elapsedDurationInCycles);
 
-            short[] samples = new short[count];
-            if (nr52.IsSoundOn(channelNr))
+            for (int i = 0; i < count; i++)
             {
-                for (int i = 0; i < count; i++)
-                {
-                    var sample = waveProvider.GetSample();
-                    samples[i] = (short)(sample * volume);
-                }
+                var sample = waveProvider.GetSample();
+                samples[i] = (short)(sample * volume);
             }
-
             return samples;
         }
 

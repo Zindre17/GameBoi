@@ -60,7 +60,7 @@ namespace GB_Emulator.Sound.channels
         {
             short[] samples = new short[count];
 
-            if (!nr52.IsSoundOn(3))
+            if (!nr52.IsChannelOn(3))
                 return samples;
 
             currentLfsr = nr43.GetStepsSelector() ? lfsr7 : lfsr15;

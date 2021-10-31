@@ -105,11 +105,15 @@ namespace GB_Emulator.Sound
 
         private void AddNextSampleBatch(int sampleCount)
         {
-            if (isMuted) return;
-            var channel1Samples = nr52.IsAllOn || nr52.IsSoundOn(0) ? channel1.GetNextSampleBatch(sampleCount) : new short[sampleCount];
-            var channel2Samples = nr52.IsAllOn || nr52.IsSoundOn(1) ? channel2.GetNextSampleBatch(sampleCount) : new short[sampleCount];
-            var channel3Samples = nr52.IsAllOn || nr52.IsSoundOn(2) ? channel3.GetNextSampleBatch(sampleCount) : new short[sampleCount];
-            var channel4Samples = nr52.IsAllOn || nr52.IsSoundOn(3) ? channel4.GetNextSampleBatch(sampleCount) : new short[sampleCount];
+            if (isMuted || !nr52.IsSoundOn)
+            {
+                return;
+            }
+
+            var channel1Samples = channel1.GetNextSampleBatch(sampleCount);
+            var channel2Samples = channel2.GetNextSampleBatch(sampleCount);
+            var channel3Samples = channel3.GetNextSampleBatch(sampleCount);
+            var channel4Samples = channel4.GetNextSampleBatch(sampleCount);
 
             var samples = new byte[sampleCount * 4];
 

@@ -11,9 +11,9 @@ namespace GB_Emulator.Sound
             this.bus = bus;
         }
 
-        public bool IsAllOn => data[7];
+        public bool IsSoundOn => data[7];
 
-        public bool IsSoundOn(int channel)
+        public bool IsChannelOn(int channel)
         {
             if (channel > 3) throw new System.Exception();
             return data[channel];

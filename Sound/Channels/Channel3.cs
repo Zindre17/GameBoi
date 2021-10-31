@@ -68,7 +68,7 @@ namespace GB_Emulator.Sound.channels
         {
             var samples = new short[count];
 
-            if (!nr52.IsSoundOn(2) || !IsPlaying())
+            if (!nr52.IsChannelOn(2) || !IsPlaying())
                 return samples;
 
             var currentFrequency = GetFrequency();
