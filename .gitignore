@@ -1,5 +1,7 @@
 bin
 obj
+*.gb
+*.gbcode
 /roms
 /saves
 /snapshots

@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Decompiler",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Tools/bin/Debug/net6.0/Tools.dll",
+            "args": [
+                "./Pokemon Red.gb"
+            ],
+            "cwd": "${workspaceFolder}/Tools",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
             "name": "Debug",
             "type": "coreclr",
             "request": "launch",
