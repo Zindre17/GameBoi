@@ -1,7 +1,4 @@
 using System;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using GB_Emulator.Gameboi.Graphics;
 using GB_Emulator.Gameboi.Memory;
 using GB_Emulator.Gameboi.Memory.Specials;
@@ -16,9 +13,6 @@ namespace GB_Emulator.Gameboi.Hardware
 
     {
         private readonly PPU ppu;
-
-        private WriteableBitmap screen;
-        public ImageSource Screen => screen;
 
         private readonly STAT stat = new();
         private readonly LCDC lcdc;
@@ -79,14 +73,6 @@ namespace GB_Emulator.Gameboi.Hardware
         public void UseColorScreen(bool on)
         {
             ppu.IsColorMode = on;
-            screen = new WriteableBitmap(
-                pixelsPerLine,
-                pixelLines,
-                1,
-                1,
-                on ? PixelFormats.Rgb24 : PixelFormats.Gray2,
-                null
-            );
         }
 
         private void OnScreenToggled(bool on)
@@ -221,30 +207,40 @@ namespace GB_Emulator.Gameboi.Hardware
         private readonly Byte[] spriteLayer = new Byte[pixelsPerLine * pixelLines];
 
 
-        private byte[] PreparePixels()
+        public record struct Rgba(byte R, byte G, byte B, byte A);
+
+        private static readonly Rgba black = new(0, 0, 0, 0xff);
+        private static readonly Rgba darkGray = new(85, 85, 85, 0xff);
+        private static readonly Rgba lightGray = new(170, 170, 170, 0xff);
+        private static readonly Rgba white = new(0xff, 0xff, 0xff, 0xff);
+
+        private static readonly Rgba[] balckWhiteColors = new[] { black, darkGray, lightGray, white };
+
+        public Rgba[] PreparePixels()
         {
-            byte[] pixels = new byte[backgroundLayer.Length * screen.Format.BitsPerPixel / 8];
+            Rgba[] pixels = new Rgba[backgroundLayer.Length];
             //grayscale
-            if (screen.Format.BitsPerPixel == 2)
+            if (!ppu.IsColorMode)
             {
                 Palette[] sps = new Palette[2] { ppu.Obp0, ppu.Obp1 };
                 byte colorsPerPalette = 4;
                 for (int i = 0; i < backgroundLayer.Length; i++)
                 {
-                    var position = (3 - i % 4) * 2;
-
-                    Byte pixel = spriteLayer[i];
-                    if (pixel != 0)
+                    byte pixel = spriteLayer[i];
+                    byte color;
+                    if (pixel is not 0)
                     {
-                        pixels[i / 4] |= (byte)(sps[pixel / 4].DecodeColorNumber((byte)(pixel % colorsPerPalette)) << position);
+                        color = sps[pixel / 4].DecodeColorNumber((byte)(pixel % colorsPerPalette));
+                        pixels[i] = balckWhiteColors[color];
                         continue;
                     }
 
                     pixel = windowLayer[i];
-                    if (pixel-- == 0) // Shift window color back or use background instead
+                    if (pixel-- is 0) // Shift window color back or use background instead
                         pixel = backgroundLayer[i];
 
-                    pixels[i / 4] |= (byte)(ppu.Bgp.DecodeColorNumber(pixel) << position);
+                    color = ppu.Bgp.DecodeColorNumber(pixel);
+                    pixels[i] = balckWhiteColors[color];
                 }
             }
             //color
@@ -252,45 +248,24 @@ namespace GB_Emulator.Gameboi.Hardware
             {
                 for (int i = 0; i < backgroundLayer.Length; i++)
                 {
-                    int start = i * 3;
-
-                    Byte pixel = spriteLayer[i];
-                    if (pixel != 0)
+                    byte pixel = spriteLayer[i];
+                    if (pixel is not 0)
                     {
                         var (sr, sg, sb) = cobp.DecodeColorNumber(pixel);
-                        pixels[start] = sr;
-                        pixels[start + 1] = sg;
-                        pixels[start + 2] = sb;
+                        pixels[i] = new(sr, sg, sb, 0xff);
                         continue;
                     }
 
                     pixel = windowLayer[i];
-                    if (pixel-- == 0) // Shift window color back or use background instead
+                    if (pixel-- is 0) // Shift window color back or use background instead
                         pixel = backgroundLayer[i];
 
                     var (r, g, b) = cbgp.DecodeColorNumber(pixel);
-                    pixels[start] = r;
-                    pixels[start + 1] = g;
-                    pixels[start + 2] = b;
+
+                    pixels[i] = new(r, g, b, 0xff);
                 }
             }
             return pixels;
-        }
-
-        private static readonly Int32Rect rect = new(0, 0, pixelsPerLine, pixelLines);
-
-        public void DrawFrame()
-        {
-            if (screen is not null)
-            {
-                byte[] pixels = PreparePixels();
-                if (lcdc.IsEnabled)
-                {
-                    screen.WritePixels(rect, pixels, pixels.Length / rect.Height, 0);
-                    return;
-                }
-                screen.WritePixels(rect, new byte[pixels.Length], pixels.Length / rect.Height, 0);
-            }
         }
     }
 }

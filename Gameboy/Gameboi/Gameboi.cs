@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Windows.Media;
 using GB_Emulator.Cartridges;
 using GB_Emulator.Gameboi.Hardware;
 using GB_Emulator.Sound;
@@ -17,7 +16,7 @@ namespace GB_Emulator.Gameboi
         private readonly Bus bus = new();
         private readonly Timer timer = new();
 
-        private Cartridge game;
+        private Cartridge? game;
 
         private readonly List<LoopRunner> loops = new();
 
@@ -42,6 +41,7 @@ namespace GB_Emulator.Gameboi
                 {
                     loop.Start();
                 }
+                isPaused = false;
             }
         }
 
@@ -53,6 +53,7 @@ namespace GB_Emulator.Gameboi
                 {
                     loop.Stop();
                 }
+                isPaused = true;
             }
 
         }
@@ -100,9 +101,9 @@ namespace GB_Emulator.Gameboi
 
         public void ToggleMute() => spu.ToggleMute();
 
-        public string LoadGame(string path)
+        public string? LoadGame(string path)
         {
-            if (game != null)
+            if (game is not null)
             {
                 Pause();
                 TurnOff();
@@ -121,19 +122,19 @@ namespace GB_Emulator.Gameboi
             return null;
         }
 
-        public ImageSource GetScreen() => lcd.Screen;
-
-        public void CheckController() => controller.RegisterInputs();
-        public void Render() => lcd.DrawFrame();
+        public LCD Screen => lcd;
+        public Controller Controller => controller;
 
         private bool isOn = false;
+        private bool isPaused = false;
+        public bool IsPlaying => isOn && !isPaused;
         public void TurnOn() => isOn = game != null;
         public void TurnOff()
         {
             if (isOn)
             {
                 isOn = false;
-                game.CloseFileStream();
+                game?.CloseFileStream();
             }
         }
 

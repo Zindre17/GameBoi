@@ -1,6 +1,6 @@
-using System.Windows.Input;
 using GB_Emulator.Gameboi.Memory;
 using GB_Emulator.Gameboi.Memory.Specials;
+using Silk.NET.Input;
 
 namespace GB_Emulator.Gameboi.Hardware
 {
@@ -14,30 +14,47 @@ namespace GB_Emulator.Gameboi.Hardware
         const Key A = Key.K;
         const Key B = Key.J;
         const Key Start = Key.Enter;
-        const Key Select = Key.RightShift;
+        const Key Select = Key.ShiftRight;
         const Key Up = Key.W;
         const Key Left = Key.A;
         const Key Down = Key.S;
         const Key Right = Key.D;
 
-        Byte pad;
-        Byte buttons;
+        Byte pad = 0xff;
+        Byte buttons = 0xff;
 
-        public void RegisterInputs()
+
+        public void KeyUp(Key key)
         {
-            buttons = 0xF;
-            if (Keyboard.IsKeyDown(A)) buttons ^= 1 << 0;
-            if (Keyboard.IsKeyDown(B)) buttons ^= 1 << 1;
-            if (Keyboard.IsKeyDown(Select)) buttons ^= 1 << 2;
-            if (Keyboard.IsKeyDown(Start)) buttons ^= 1 << 3;
+            switch (key)
+            {
+                case A: buttons |= 1 << 0; break;
+                case B: buttons |= 1 << 1; break;
+                case Select: buttons |= 1 << 2; break;
+                case Start: buttons |= 1 << 3; break;
 
-            pad = 0xF;
-            if (Keyboard.IsKeyDown(Right)) pad ^= 1 << 0;
-            if (Keyboard.IsKeyDown(Left)) pad ^= 1 << 1;
-            if (Keyboard.IsKeyDown(Up)) pad ^= 1 << 2;
-            if (Keyboard.IsKeyDown(Down)) pad ^= 1 << 3;
+                case Right: pad |= 1 << 0; break;
+                case Left: pad |= 1 << 1; break;
+                case Up: pad |= 1 << 2; break;
+                case Down: pad |= 1 << 3; break;
+            }
         }
 
+        public void KeyDown(Key key)
+        {
+            switch (key)
+            {
+                case A: buttons &= 0b1110; break;
+                case B: buttons &= 0b1101; break;
+                case Select: buttons &= 0b1011; break;
+                case Start: buttons &= 0b0111; break;
+
+                case Right: pad &= 0b1110; break;
+                case Left: pad &= 0b1101; break;
+                case Up: pad &= 0b1011; break;
+                case Down: pad &= 0b0111; break;
+            }
+        }
 
         public void CheckInputs()
         {

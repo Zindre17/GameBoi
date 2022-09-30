@@ -19,7 +19,7 @@ namespace GB_Emulator.Sound
         private Channel3 channel3;
         private Channel4 channel4;
 
-        private readonly WaveOut waveEmitter = new();
+        private readonly WaveOutEvent waveEmitter = new();
 
         private readonly BufferedWaveProvider waveProvider;
         private readonly WaveFormat waveFormat;
