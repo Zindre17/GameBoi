@@ -28,9 +28,6 @@ namespace GB_Emulator.Gameboi
             bus.Connect(controller);
             bus.Connect(dma);
             bus.Connect(lcd);
-
-            loops.Add(new LoopRunner(cpu));
-            loops.Add(new LoopRunner(spu));
         }
 
         public void Play()
@@ -124,6 +121,8 @@ namespace GB_Emulator.Gameboi
 
         public LCD Screen => lcd;
         public Controller Controller => controller;
+        public CPU Cpu => cpu;
+        public SPU Spu => spu;
 
         private bool isOn = false;
         private bool isPaused = false;

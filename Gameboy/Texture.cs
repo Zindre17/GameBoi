@@ -32,6 +32,13 @@ public class Texture : IDisposable
         {
             gl.TexImage2D(target, 0, (int)GLEnum.Rgba8, width, height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, null);
         }
+        else
+        {
+            fixed (void* data = textureData)
+            {
+                gl.TexImage2D(target, 0, (int)GLEnum.Rgba8, width, height, 0, GLEnum.Rgba, GLEnum.UnsignedByte, data);
+            }
+        }
     }
 
     unsafe public void FeedData<T>(T[] textureData) where T : unmanaged

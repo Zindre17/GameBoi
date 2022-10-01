@@ -96,11 +96,11 @@ namespace GB_Emulator.Sound
 
         public void AddNextSamples(long currentMilliseconds)
         {
-            var samplesAfter = (long)(currentMilliseconds * samplesPerMillisecond);
-            var samplesToAdd = samplesAfter - samplesAdded;
-            samplesAdded = samplesAfter;
-            if (samplesToAdd > 0)
-                AddNextSampleBatch((int)samplesToAdd);
+            // var samplesAfter = (long)(currentMilliseconds * samplesPerMillisecond);
+            // var samplesToAdd = samplesAfter - samplesAdded;
+            // samplesAdded = samplesAfter;
+            // if (samplesToAdd > 0)
+            AddNextSampleBatch((int)(44.1 * 16.667));
         }
 
         private void AddNextSampleBatch(int sampleCount)

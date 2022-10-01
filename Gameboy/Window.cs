@@ -1,4 +1,3 @@
-using System;
 using GB_Emulator.Gameboi;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -37,6 +36,9 @@ public class Window
     public Window()
     {
         var options = WindowOptions.Default;
+        options.VSync = false; // if true the fps is ignored.
+        options.FramesPerSecond = 60;
+        options.UpdatesPerSecond = 60;
         options.Size = new Vector2D<int>(800, 600);
         options.Title = "Gameboi";
         window = Silk.NET.Windowing.Window.Create(options);
@@ -52,7 +54,6 @@ public class Window
 
     private void OnLoad()
     {
-        // window.Center();
         gl = GL.GetApi(window);
 
         var input = window.CreateInput();
@@ -94,7 +95,8 @@ public class Window
         }
         if (key is Key.Escape)
         {
-            gameboy.LoadGame("C:/Users/zindr/Documents/Code/Gameboi/roms/Pokemon Red.gb");
+            //TODO add file picker.
+            gameboy.LoadGame("./roms/Pokemon Red.gb");
         }
     }
 
@@ -102,6 +104,8 @@ public class Window
     {
         if (gameboy.IsPlaying)
         {
+            gameboy.Cpu.Loop(0);
+            gameboy.Spu.Loop(0);
             backgroundTexture?.FeedData(gameboy.Screen.PreparePixels());
         }
     }
@@ -112,7 +116,6 @@ public class Window
         vertexArray!.Bind();
         indexBuffer!.Bind();
         shaders!.Bind();
-        // backgroundTexture!.Bind();
         gl!.DrawElements(GLEnum.Triangles, indexBuffer!.Count, GLEnum.UnsignedInt, null);
     }
 

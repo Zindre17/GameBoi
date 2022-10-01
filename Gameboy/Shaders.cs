@@ -15,7 +15,7 @@ public class Shaders : IDisposable
     public Shaders(GL gl)
     {
         this.gl = gl;
-        var shaders = FindShaders("C:\\Users\\zindr\\Documents\\Code\\Gameboi\\Gameboy\\Basic.shader");
+        var shaders = FindShaders("./Gameboy/Basic.shader");
 
         program = gl.CreateProgram();
         var vert = gl.CreateShader(ShaderType.VertexShader);
