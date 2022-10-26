@@ -17,7 +17,7 @@ namespace GB_Emulator.Gameboi.Graphics
                 data[i] = new Register();
         }
 
-        public Byte GetColorCode(Byte x, Byte y)
+        public byte GetColorCode(Byte x, Byte y)
         {
             if (x > 7)
                 throw new ArgumentOutOfRangeException(nameof(x), "x must be between 0 and 7");

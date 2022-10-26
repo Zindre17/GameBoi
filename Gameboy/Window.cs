@@ -1,4 +1,5 @@
 using GB_Emulator.Gameboi;
+using GB_Emulator.Gameboi.Graphics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
@@ -79,6 +80,13 @@ public class Window
         shaders.SetUniform("Background", 0);
         shaders.SetUniform("Window", 1);
         shaders.SetUniform("Sprites", 2);
+
+        gameboy.OnPixelRowReady += UploadPixelRow;
+    }
+
+    private void UploadPixelRow(byte line, Rgba[] pixelRow)
+    {
+        backgroundTexture?.FeedData<Rgba>(pixelRow, 0, line, (uint)(pixelRow.Length), 1);
     }
 
     private void OnKeyReleased(IKeyboard _, Key key, int __)
@@ -104,9 +112,7 @@ public class Window
     {
         if (gameboy.IsPlaying)
         {
-            gameboy.Cpu.Loop(0);
-            gameboy.Spu.Loop(0);
-            backgroundTexture?.FeedData(gameboy.Screen.PreparePixels());
+            gameboy.PlayForOneFrame();
         }
     }
 

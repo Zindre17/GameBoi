@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using GB_Emulator.Cartridges;
+using GB_Emulator.Gameboi.Graphics;
 using GB_Emulator.Gameboi.Hardware;
 using GB_Emulator.Sound;
 
@@ -22,6 +23,10 @@ namespace GB_Emulator.Gameboi
 
         public Gameboi()
         {
+            lcd.OnLineLoaded += (line, data) =>
+            {
+                OnPixelRowReady?.Invoke(line, data);
+            };
             bus.Connect(cpu);
             bus.Connect(spu);
             bus.Connect(timer);
@@ -34,10 +39,6 @@ namespace GB_Emulator.Gameboi
         {
             if (isOn)
             {
-                foreach (var loop in loops)
-                {
-                    loop.Start();
-                }
                 isPaused = false;
             }
         }
@@ -46,10 +47,6 @@ namespace GB_Emulator.Gameboi
         {
             if (isOn)
             {
-                foreach (var loop in loops)
-                {
-                    loop.Stop();
-                }
                 isPaused = true;
             }
 
@@ -59,24 +56,8 @@ namespace GB_Emulator.Gameboi
         {
             if (isOn)
             {
-                foreach (var loop in loops)
-                {
-                    loop.Toggle();
-                }
+                isPaused = !isPaused;
             }
-        }
-
-        public void ToggleBackground()
-        {
-            lcd.ToggleBackground();
-        }
-        public void ToggleWindow()
-        {
-            lcd.ToggleWindow();
-        }
-        public void ToggleSprites()
-        {
-            lcd.ToggleSprites();
         }
 
         public void ChangeSpeed(bool faster)
@@ -119,10 +100,13 @@ namespace GB_Emulator.Gameboi
             return null;
         }
 
-        public LCD Screen => lcd;
         public Controller Controller => controller;
-        public CPU Cpu => cpu;
-        public SPU Spu => spu;
+
+        public void PlayForOneFrame()
+        {
+            cpu.Loop(0);
+            spu.Loop(0);
+        }
 
         private bool isOn = false;
         private bool isPaused = false;
@@ -137,5 +121,6 @@ namespace GB_Emulator.Gameboi
             }
         }
 
+        public Action<byte, Rgba[]>? OnPixelRowReady;
     }
 }

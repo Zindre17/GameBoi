@@ -172,100 +172,59 @@ namespace GB_Emulator.Gameboi.Hardware
             }
         }
 
-        private bool showBackground = true;
-        private bool showWindow = true;
-        private bool showSprites = true;
-        public void ToggleBackground()
-        {
-            showBackground = !showBackground;
-        }
-        public void ToggleWindow()
-        {
-            showWindow = !showWindow;
-        }
-        public void ToggleSprites()
-        {
-            showSprites = !showSprites;
-        }
-
         private void LoadLine()
         {
-            int firstPixelIndex = ly.Y * pixelsPerLine;
-            (Byte[] b, Byte[] w, Byte[] s) = ppu.GetLineLayers(ly.Y);
+            var (backgroundLine, windowLine, spriteLine) = ppu.GetLineLayers(ly.Y);
+            var pixels = new Rgba[pixelsPerLine];
+            IPallete pallet = ppu.IsColorMode ? cbgp : ppu.Bgp;
+
             for (int i = 0; i < pixelsPerLine; i++)
             {
-                backgroundLayer[firstPixelIndex + i] = showBackground ? b[i] : 0;
-                windowLayer[firstPixelIndex + i] = showWindow ? w[i] : 0;
-                spriteLayer[firstPixelIndex + i] = showSprites ? s[i] : 0;
+                byte colorCode = backgroundLine[i];
+                pixels[i] = new(pallet.GetColor(colorCode));
             }
-        }
 
-
-
-        private readonly Byte[] backgroundLayer = new Byte[pixelsPerLine * pixelLines];
-        private readonly Byte[] windowLayer = new Byte[pixelsPerLine * pixelLines];
-        private readonly Byte[] spriteLayer = new Byte[pixelsPerLine * pixelLines];
-
-
-        public record struct Rgba(byte R, byte G, byte B, byte A);
-
-        private static readonly Rgba black = new(0, 0, 0, 0xff);
-        private static readonly Rgba darkGray = new(85, 85, 85, 0xff);
-        private static readonly Rgba lightGray = new(170, 170, 170, 0xff);
-        private static readonly Rgba white = new(0xff, 0xff, 0xff, 0xff);
-
-        private static readonly Rgba[] balckWhiteColors = new[] { black, darkGray, lightGray, white };
-
-        public Rgba[] PreparePixels()
-        {
-            Rgba[] pixels = new Rgba[backgroundLayer.Length];
-            //grayscale
-            if (!ppu.IsColorMode)
+            for (int i = 0; i < pixelsPerLine; i++)
             {
-                Palette[] sps = new Palette[2] { ppu.Obp0, ppu.Obp1 };
-                byte colorsPerPalette = 4;
-                for (int i = 0; i < backgroundLayer.Length; i++)
+                byte colorCode = windowLine[i];
+                if (colorCode is 0)
                 {
-                    byte pixel = spriteLayer[i];
-                    byte color;
-                    if (pixel is not 0)
+                    continue;
+                }
+                // For now window pixels are in range 1-4 instead of 0-3
+                pixels[i] = new(pallet.GetColor((byte)(colorCode - 1)));
+            }
+
+            if (ppu.IsColorMode)
+            {
+                for (int i = 0; i < pixelsPerLine; i++)
+                {
+                    byte colorCode = spriteLine[i];
+                    if (colorCode is 0)
                     {
-                        color = sps[pixel / 4].DecodeColorNumber((byte)(pixel % colorsPerPalette));
-                        pixels[i] = balckWhiteColors[color];
                         continue;
                     }
-
-                    pixel = windowLayer[i];
-                    if (pixel-- is 0) // Shift window color back or use background instead
-                        pixel = backgroundLayer[i];
-
-                    color = ppu.Bgp.DecodeColorNumber(pixel);
-                    pixels[i] = balckWhiteColors[color];
+                    pixels[i] = new(cobp.GetColor(colorCode));
                 }
             }
-            //color
             else
             {
-                for (int i = 0; i < backgroundLayer.Length; i++)
+                var pallets = new[] { ppu.Obp0, ppu.Obp1 };
+                for (int i = 0; i < pixelsPerLine; i++)
                 {
-                    byte pixel = spriteLayer[i];
-                    if (pixel is not 0)
+                    byte colorCode = spriteLine[i];
+                    if (colorCode is 0)
                     {
-                        var (sr, sg, sb) = cobp.DecodeColorNumber(pixel);
-                        pixels[i] = new(sr, sg, sb, 0xff);
                         continue;
                     }
-
-                    pixel = windowLayer[i];
-                    if (pixel-- is 0) // Shift window color back or use background instead
-                        pixel = backgroundLayer[i];
-
-                    var (r, g, b) = cbgp.DecodeColorNumber(pixel);
-
-                    pixels[i] = new(r, g, b, 0xff);
+                    // 4 colors per pallete
+                    pixels[i] = new(pallets[colorCode / 4].GetColor((byte)(colorCode % 4)));
                 }
             }
-            return pixels;
+
+            OnLineLoaded?.Invoke(ly.Y, pixels);
         }
+
+        public Action<byte, Rgba[]>? OnLineLoaded;
     }
 }
