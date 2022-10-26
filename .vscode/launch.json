@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Gameboy/bin/Debug/net6.0-windows/GB_Emulator.dll",
+            "program": "${workspaceFolder}/Gameboy/bin/Debug/net6.0/GB_Emulator.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/Gameboy",
+            "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "logging": {
@@ -26,9 +26,9 @@
             "request": "launch",
             "preLaunchTask": "build release",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Gameboy/bin/Release/net6.0-windows/GB_Emulator.dll",
+            "program": "${workspaceFolder}/Gameboy/bin/Release/net6.0/GB_Emulator.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/Gameboy",
+            "cwd": "${workspaceFolder}",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "logging": {
