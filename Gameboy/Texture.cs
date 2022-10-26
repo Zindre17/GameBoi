@@ -41,12 +41,15 @@ public class Texture : IDisposable
         }
     }
 
-    unsafe public void FeedData<T>(T[] textureData) where T : unmanaged
+    public void FeedData<T>(T[] textureData) where T : unmanaged
+        => FeedData<T>(textureData, 0, 0, width, height);
+
+    unsafe public void FeedData<T>(Span<T> subTextureData, int xOffset, int yOffset, uint width, uint height) where T : unmanaged
     {
         Bind();
-        fixed (void* data = textureData)
+        fixed (void* data = subTextureData)
         {
-            gl.TexSubImage2D(target, 0, 0, 0, width, height, GLEnum.Rgba, GLEnum.UnsignedByte, data);
+            gl.TexSubImage2D(target, 0, xOffset, yOffset, width, height, GLEnum.Rgba, GLEnum.UnsignedByte, data);
         }
     }
 
