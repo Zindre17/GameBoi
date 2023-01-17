@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 using System.Text;
-using GB_Emulator.Gameboi;
-using GB_Emulator.Gameboi.Memory;
-using Byte = GB_Emulator.Gameboi.Memory.Byte;
+using GB_Emulator;
+using GB_Emulator.Memory;
+using Byte = GB_Emulator.Memory.Byte;
 
 namespace GB_Emulator.Cartridges
 {

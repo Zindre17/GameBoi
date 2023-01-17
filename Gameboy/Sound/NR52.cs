@@ -1,5 +1,5 @@
-using GB_Emulator.Gameboi;
-using GB_Emulator.Gameboi.Memory;
+using GB_Emulator;
+using GB_Emulator.Memory;
 
 namespace GB_Emulator.Sound
 {

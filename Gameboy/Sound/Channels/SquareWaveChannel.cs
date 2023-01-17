@@ -1,4 +1,4 @@
-using GB_Emulator.Gameboi.Memory;
+using GB_Emulator.Memory;
 
 namespace GB_Emulator.Sound.channels
 {

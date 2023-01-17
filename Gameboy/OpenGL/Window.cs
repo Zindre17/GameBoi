@@ -1,5 +1,5 @@
-using GB_Emulator.Gameboi;
-using GB_Emulator.Gameboi.Graphics;
+using GB_Emulator;
+using GB_Emulator.Graphics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;

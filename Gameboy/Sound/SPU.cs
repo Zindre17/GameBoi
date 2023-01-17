@@ -1,6 +1,6 @@
 using System;
-using GB_Emulator.Gameboi;
-using GB_Emulator.Gameboi.Hardware;
+using GB_Emulator;
+using GB_Emulator.Hardware;
 using GB_Emulator.Sound.channels;
 using NAudio.Wave;
 using static GB_Emulator.Statics.SoundRegisters;
@@ -8,7 +8,7 @@ using static GB_Emulator.Statics.WavSettings;
 
 namespace GB_Emulator.Sound
 {
-    public class SPU : Hardware
+    public class SPU : Hardware.Hardware
     {
         private readonly NR50 nr50 = new();
         private readonly NR51 nr51 = new();

@@ -1,5 +1,5 @@
-using GB_Emulator.Gameboi;
-using GB_Emulator.Gameboi.Memory;
+using GB_Emulator;
+using GB_Emulator.Memory;
 using static GB_Emulator.Statics.SoundRegisters;
 
 namespace GB_Emulator.Sound.channels

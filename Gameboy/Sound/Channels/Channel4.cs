@@ -1,9 +1,9 @@
 using System;
-using GB_Emulator.Gameboi;
-using GB_Emulator.Gameboi.Memory;
+using GB_Emulator;
+using GB_Emulator.Memory;
 using static GB_Emulator.Statics.SoundRegisters;
 using static GB_Emulator.Statics.WavSettings;
-using Byte = GB_Emulator.Gameboi.Memory.Byte;
+using Byte = GB_Emulator.Memory.Byte;
 
 namespace GB_Emulator.Sound.channels
 {

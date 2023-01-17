@@ -1,6 +1,6 @@
 using System;
-using GB_Emulator.Gameboi.Memory;
-using Byte = GB_Emulator.Gameboi.Memory.Byte;
+using GB_Emulator.Memory;
+using Byte = GB_Emulator.Memory.Byte;
 
 namespace GB_Emulator.Sound
 {

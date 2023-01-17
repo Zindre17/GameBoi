@@ -1,7 +1,7 @@
 using System;
-using GB_Emulator.Gameboi.Memory;
+using GB_Emulator.Memory;
 using static GB_Emulator.Statics.ByteOperations;
-using Byte = GB_Emulator.Gameboi.Memory.Byte;
+using Byte = GB_Emulator.Memory.Byte;
 
 namespace GB_Emulator.Cartridges
 {

@@ -1,9 +1,9 @@
-using GB_Emulator.Gameboi;
-using GB_Emulator.Gameboi.Hardware;
+using GB_Emulator;
+using GB_Emulator.Hardware;
 
 namespace GB_Emulator.Sound.channels
 {
-    public abstract class SoundChannel : Hardware, IUpdatable
+    public abstract class SoundChannel : Hardware.Hardware, IUpdatable
     {
         protected NR52 nr52;
         protected int channelNr;
