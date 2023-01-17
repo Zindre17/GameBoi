@@ -4,7 +4,7 @@ using Silk.NET.Input;
 
 namespace GB_Emulator.Hardware
 {
-    public class Controller : Hardware, IUpdatable
+    public class Controller : BusComponent, IUpdatable
     {
 
         const ushort P1_address = 0xFF00;

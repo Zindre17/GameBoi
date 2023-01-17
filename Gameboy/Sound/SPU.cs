@@ -1,14 +1,12 @@
 using System;
-using GB_Emulator;
 using GB_Emulator.Hardware;
 using GB_Emulator.Sound.channels;
 using NAudio.Wave;
 using static GB_Emulator.Statics.SoundRegisters;
-using static GB_Emulator.Statics.WavSettings;
 
 namespace GB_Emulator.Sound
 {
-    public class SPU : Hardware.Hardware
+    public class SPU : BusComponent
     {
         private readonly NR50 nr50 = new();
         private readonly NR51 nr51 = new();
@@ -88,14 +86,8 @@ namespace GB_Emulator.Sound
 
         public Action<long> Loop => AddNextSamples;
 
-        private long samplesAdded = 0;
-
         public void AddNextSamples(long currentMilliseconds)
         {
-            // var samplesAfter = (long)(currentMilliseconds * samplesPerMillisecond);
-            // var samplesToAdd = samplesAfter - samplesAdded;
-            // samplesAdded = samplesAfter;
-            // if (samplesToAdd > 0)
             AddNextSampleBatch((int)(44.1 * 16.667));
         }
 

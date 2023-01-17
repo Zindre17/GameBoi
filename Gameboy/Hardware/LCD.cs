@@ -9,7 +9,7 @@ using Byte = GB_Emulator.Memory.Byte;
 
 namespace GB_Emulator.Hardware
 {
-    public class LCD : Hardware, IUpdatable
+    public class LCD : BusComponent, IUpdatable
 
     {
         private readonly PPU ppu;

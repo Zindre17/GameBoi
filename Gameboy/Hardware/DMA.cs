@@ -4,7 +4,7 @@ using static GB_Emulator.Statics.MiscSpecialAddresses;
 
 namespace GB_Emulator.Hardware
 {
-    public class DMA : Hardware, IUpdatable
+    public class DMA : BusComponent, IUpdatable
     {
         private readonly Register dma;
 

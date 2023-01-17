@@ -4,7 +4,7 @@ using static GB_Emulator.Statics.TimerAddresses;
 
 namespace GB_Emulator.Hardware
 {
-    public class Timer : Hardware, IUpdatable
+    public class Timer : BusComponent, IUpdatable
     {
 
         private readonly DIV div;

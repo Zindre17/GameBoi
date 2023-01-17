@@ -130,7 +130,7 @@ namespace GB_Emulator
                 memory[address].Write(address, value, isCpu);
         }
 
-        public void Connect(Hardware.Hardware component)
+        public void Connect(Hardware.BusComponent component)
         {
             if (component is CPU _cpu)
             {

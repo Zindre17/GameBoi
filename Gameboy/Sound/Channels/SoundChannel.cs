@@ -1,9 +1,8 @@
-using GB_Emulator;
 using GB_Emulator.Hardware;
 
 namespace GB_Emulator.Sound.channels
 {
-    public abstract class SoundChannel : Hardware.Hardware, IUpdatable
+    public abstract class SoundChannel : BusComponent, IUpdatable
     {
         protected NR52 nr52;
         protected int channelNr;

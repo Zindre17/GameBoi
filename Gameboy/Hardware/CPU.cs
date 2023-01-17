@@ -17,7 +17,7 @@ namespace GB_Emulator.Hardware
         Joypad
     }
 
-    public class CPU : Hardware
+    public class CPU : BusComponent
     {
         private readonly SpeedMode speedMode = new();
         private ulong Speed => speedMode.Mode;

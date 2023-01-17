@@ -1,9 +1,8 @@
-using GB_Emulator;
 using GB_Emulator.Memory;
 
 namespace GB_Emulator.Hardware
 {
-    public abstract class Hardware
+    public abstract class BusComponent
     {
         protected Bus bus;
 
