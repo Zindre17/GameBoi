@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GB_Emulator", "Gameboy\GB_Emulator.csproj", "{69C7ED44-A9D8-4A20-B308-93BEEF62D06F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gameboi", "Gameboi\Gameboi.csproj", "{69C7ED44-A9D8-4A20-B308-93BEEF62D06F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CFC6D5F0-A5BB-4755-B84A-C38BE7E0B901}"
 EndProject

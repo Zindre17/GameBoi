@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Gameboy\GB_Emulator.csproj" />
+    <ProjectReference Include="..\..\Gameboi\Gameboi.csproj" />
   </ItemGroup>
 
 </Project>

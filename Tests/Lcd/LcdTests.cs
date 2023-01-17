@@ -1,4 +1,4 @@
-using GB_Emulator.Hardware;
+using Gameboi.Hardware;
 
 namespace LcdTests;
 
