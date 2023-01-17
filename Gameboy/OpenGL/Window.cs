@@ -5,7 +5,7 @@ using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 
-namespace Gameboy;
+namespace Gameboy.OpenGL;
 
 public class Window
 {

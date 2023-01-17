@@ -1,7 +1,7 @@
 using System;
 using Silk.NET.OpenGL;
 
-namespace Gameboy;
+namespace Gameboy.OpenGL;
 
 public class VertexArray : IDisposable
 {

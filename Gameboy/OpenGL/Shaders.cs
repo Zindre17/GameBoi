@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using Silk.NET.OpenGL;
 
-namespace Gameboy;
+namespace Gameboy.OpenGL;
 public class Shaders : IDisposable
 {
     readonly uint program;
@@ -15,7 +15,7 @@ public class Shaders : IDisposable
     public Shaders(GL gl)
     {
         this.gl = gl;
-        var shaders = FindShaders("./Gameboy/Basic.shader");
+        var shaders = FindShaders("./Gameboy/OpenGL/Basic.shader");
 
         program = gl.CreateProgram();
         var vert = gl.CreateShader(ShaderType.VertexShader);

@@ -1,3 +1,3 @@
-using Gameboy;
+using Gameboy.OpenGL;
 
 new Window().Run();
