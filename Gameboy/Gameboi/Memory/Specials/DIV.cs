@@ -27,7 +27,7 @@ namespace GB_Emulator.Gameboi.Memory.Specials
             counter = 0;
         }
 
-        public void AddCycles(int cycles)
+        public void AddCycles(uint cycles)
         {
             var prev = counter;
             counter += cycles;

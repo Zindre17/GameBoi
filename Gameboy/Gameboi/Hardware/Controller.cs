@@ -79,7 +79,7 @@ namespace GB_Emulator.Gameboi.Hardware
             bus.ReplaceMemory(P1_address, p1);
         }
 
-        public void Update(byte _, ulong __)
+        public void Update(uint _, ulong __)
         {
             CheckInputs();
         }

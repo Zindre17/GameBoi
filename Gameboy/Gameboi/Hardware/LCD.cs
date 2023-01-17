@@ -70,6 +70,9 @@ namespace GB_Emulator.Gameboi.Hardware
             modeTicks[1] = () => ly.Set(pixelLines + (cyclesInMode / 456));
         }
 
+        public byte Mode { get => stat.Mode; set => stat.Mode = value; }
+        public LCDC Controller => lcdc;
+
         public void UseColorScreen(bool on)
         {
             ppu.IsColorMode = on;
@@ -120,7 +123,7 @@ namespace GB_Emulator.Gameboi.Hardware
 
         private ulong cyclesInMode = 0;
 
-        public void Update(byte cycles, ulong speed)
+        public void Update(uint cycles, ulong speed)
         {
             if (!lcdc.IsEnabled) return;
 

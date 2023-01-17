@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using GB_Emulator.Cartridges;
 using GB_Emulator.Gameboi.Graphics;
 using GB_Emulator.Gameboi.Hardware;
@@ -18,8 +17,6 @@ namespace GB_Emulator.Gameboi
         private readonly Timer timer = new();
 
         private Cartridge? game;
-
-        private readonly List<LoopRunner> loops = new();
 
         public Gameboi()
         {

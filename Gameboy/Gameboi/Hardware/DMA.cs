@@ -37,8 +37,8 @@ namespace GB_Emulator.Gameboi.Hardware
         private Address target;
         private Address source;
 
-        private byte unusedCycles;
-        public void Update(byte cycles, ulong _)
+        private uint unusedCycles;
+        public void Update(uint cycles, ulong _)
         {
             if (inProgress)
             {

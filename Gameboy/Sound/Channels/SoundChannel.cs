@@ -23,7 +23,7 @@ namespace GB_Emulator.Sound.channels
             bus.RegisterUpdatable(this);
         }
 
-        public virtual void Update(byte cycles, ulong speed)
+        public virtual void Update(uint cycles, ulong speed)
         {
             var elapsed = (int)(cycles / speed);
             elapsedDurationInCycles += elapsed;

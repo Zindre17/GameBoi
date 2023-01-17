@@ -24,7 +24,7 @@ namespace GB_Emulator.Gameboi.Hardware
         private int counterAtNextBump;
         private bool isWatingForCounterReset = false;
 
-        public void Update(byte cycles, ulong _)
+        public void Update(uint cycles, ulong _)
         {
             if (isOverflown)
             {

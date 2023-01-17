@@ -15,7 +15,7 @@ namespace GB_Emulator.Gameboi
     {
 
         private bool isRunning = false;
-        private Task runner;
+        private Task? runner;
         private readonly Stopwatch stopwatch = new();
 
         private readonly ILoop loop;
@@ -42,7 +42,7 @@ namespace GB_Emulator.Gameboi
             if (!isRunning) return;
 
             isRunning = false;
-            while (runner.Status != TaskStatus.RanToCompletion)
+            while (runner?.Status != TaskStatus.RanToCompletion)
                 Thread.Sleep(1);
             runner.Dispose();
             runner = null;
