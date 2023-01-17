@@ -8,7 +8,7 @@ using static GB_Emulator.Statics.WavSettings;
 
 namespace GB_Emulator.Sound
 {
-    public class SPU : Hardware, ILoop
+    public class SPU : Hardware
     {
         private readonly NR50 nr50 = new();
         private readonly NR51 nr51 = new();
@@ -23,10 +23,6 @@ namespace GB_Emulator.Sound
 
         private readonly BufferedWaveProvider waveProvider;
         private readonly WaveFormat waveFormat;
-
-        private const float samplesPerMillisecond = SAMPLE_RATE / 1000f;
-        public float MillisecondsPerLoop { get; set; } = 1;
-
 
         private double masterVolume = 1d;
         private bool isMuted = false;

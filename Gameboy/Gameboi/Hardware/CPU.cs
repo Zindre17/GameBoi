@@ -17,7 +17,7 @@ namespace GB_Emulator.Gameboi.Hardware
         Joypad
     }
 
-    public class CPU : Hardware, ILoop
+    public class CPU : Hardware
     {
         private readonly SpeedMode speedMode = new();
         private ulong Speed => speedMode.Mode;
