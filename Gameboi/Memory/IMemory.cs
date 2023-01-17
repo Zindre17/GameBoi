@@ -1,8 +1,8 @@
-namespace Gameboi.Memory
+namespace Gameboi.Memory;
+
+public interface IMemory
 {
-    public interface IMemory
-    {
-        Byte Read();
-        void Write(Byte value);
-    }
+    Byte Read();
+    void Write(Byte value);
 }
+

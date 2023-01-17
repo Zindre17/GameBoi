@@ -1,38 +1,36 @@
-namespace Gameboi.Sound
+namespace Gameboi.Sound;
+
+public class LFSR
 {
-    public class LFSR
+    private readonly int size;
+    private int state;
+
+    public LFSR(int size)
     {
-        private readonly int size;
-        private int state;
+        this.size = size;
+        Reset();
+    }
 
-        public LFSR(int size)
+    public void Reset()
+    {
+        for (int i = 0; i < size; i++)
         {
-            this.size = size;
-            Reset();
+            int bit = 1 << i;
+            state |= bit;
         }
+    }
 
-        public void Reset()
-        {
-            for (int i = 0; i < size; i++)
-            {
-                int bit = 1 << i;
-                state |= bit;
-            }
-        }
+    public bool Tick()
+    {
+        int bit0 = state & 1;
+        int next = bit0 ^ (state & 2) >> 1;
 
-        public bool Tick()
-        {
-            int bit0 = state & 1;
-            int next = bit0 ^ (state & 2) >> 1;
+        state >>= 1;
 
-            state >>= 1;
+        if (next != 0)
+            state |= 1 << size - 1;
 
-            if (next != 0)
-                state |= 1 << size - 1;
-
-            if (state == 0) throw new System.Exception();
-            return bit0 != 0;
-        }
-
+        if (state == 0) throw new System.Exception();
+        return bit0 != 0;
     }
 }

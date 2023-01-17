@@ -1,12 +1,12 @@
 using Gameboi.Memory;
 
-namespace Gameboi.Sound
+namespace Gameboi.Sound;
+
+public class FrequencyHigh : ModeRegister
 {
-    public class FrequencyHigh : ModeRegister
-    {
-        public FrequencyHigh() : base(0x38) { }
+    public FrequencyHigh() : base(0x38) { }
 
-        public Byte HighBits => data & 7;
+    public Byte HighBits => data & 7;
 
-    }
 }
+

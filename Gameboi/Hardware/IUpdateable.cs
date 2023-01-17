@@ -1,7 +1,7 @@
-namespace Gameboi.Hardware
+namespace Gameboi.Hardware;
+
+public interface IUpdatable
 {
-    public interface IUpdatable
-    {
-        void Update(uint cycles, ulong speed);
-    }
+    void Update(uint cycles, ulong speed);
 }
+

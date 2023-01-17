@@ -6,771 +6,771 @@ using static Gameboi.Statics.Frequencies;
 using static Gameboi.Statics.InterruptAddresses;
 using Byte = Gameboi.Memory.Byte;
 
-namespace Gameboi.Hardware
+namespace Gameboi.Hardware;
+
+public enum InterruptType
 {
-    public enum InterruptType
+    VBlank,
+    LCDC,
+    Timer,
+    Link,
+    Joypad
+}
+
+public class CPU : BusComponent
+{
+    private readonly SpeedMode speedMode = new();
+    private ulong Speed => speedMode.Mode;
+
+    private bool IME = true; // Interrupt Master Enable
+
+    private bool shouldUpdateIME = false;
+    private bool nextIMEValue = false;
+
+    private readonly InterruptRegister IE = new();
+    private readonly InterruptRegister IF = new();
+
+    private bool isHalted = false;
+
+    private readonly Action[] instructions;
+    private readonly byte[] durations;
+    private readonly Action[] cbInstructions;
+
+    #region Registers
+    private byte A; // accumulator
+    private byte F; // flag register
+    private byte B;
+    private byte C;
+    private Address BC => ConcatBytes(B, C);
+    private byte D;
+    private byte E;
+    private Address DE => ConcatBytes(D, E);
+    private byte H;
+    private byte L;
+    private Address HL => ConcatBytes(H, L);
+    private ushort PC; //progarm counter
+    private byte PC_P => GetHighByte(PC);
+    private byte PC_C => GetLowByte(PC);
+    private ushort SP = 0xFFFE; //stack pointer
+    private byte SP_S => GetHighByte(SP);
+
+    internal ulong GetSpeed()
     {
-        VBlank,
-        LCDC,
-        Timer,
-        Link,
-        Joypad
+        return speedMode.Mode;
     }
 
-    public class CPU : BusComponent
+    private byte SP_P => GetLowByte(SP);
+
+    #endregion
+
+
+    #region Flags
+    const byte zero_bit = 7;
+    const byte subtract_bit = 6;
+    const byte halfCarry_bit = 5;
+    const byte carry_bit = 4;
+    public bool ZeroFlag => TestBit(zero_bit, F);
+    public bool SubtractFlag => TestBit(subtract_bit, F);
+    public bool HalfCarryFlag => TestBit(halfCarry_bit, F);
+    public bool CarryFlag => TestBit(carry_bit, F);
+
+    private void SetFlags(bool Z, bool S, bool H, bool C)
     {
-        private readonly SpeedMode speedMode = new();
-        private ulong Speed => speedMode.Mode;
+        SetZeroFlag(Z);
+        SetSubtractFlag(S);
+        SetHalfCarryFlag(H);
+        SetCarryFlag(C);
+    }
 
-        private bool IME = true; // Interrupt Master Enable
+    private void SetZeroFlag(bool Z) => SetFlag(zero_bit, Z);
+    private void SetSubtractFlag(bool S) => SetFlag(subtract_bit, S);
+    private void SetHalfCarryFlag(bool H) => SetFlag(halfCarry_bit, H);
+    private void SetCarryFlag(bool C) => SetFlag(carry_bit, C);
 
-        private bool shouldUpdateIME = false;
-        private bool nextIMEValue = false;
 
-        private readonly InterruptRegister IE = new();
-        private readonly InterruptRegister IF = new();
+    private void SetFlag(int bit, bool on)
+    {
+        if (on) F = SetBit(bit, F);
+        else F = ResetBit(bit, F);
+    }
+    #endregion
 
-        private bool isHalted = false;
+    public override Byte Read(Address address) => bus.Read(address, true);
+    public override void Write(Address address, Byte value) => bus.Write(address, value, true);
 
-        private readonly Action[] instructions;
-        private readonly byte[] durations;
-        private readonly Action[] cbInstructions;
+    public void Restart(bool isColorMode)
+    {
+        A = (byte)(isColorMode ? 0x11 : 0x01);
+        PC = 0x100;
+        SP = 0xFFFE;
+        F = 0xB0;
+        B = 0;
+        C = 0x13;
+        D = 0;
+        E = 0xD8;
+        H = 1;
+        L = 0x4D;
+        speedMode.Reset();
+        SetFramerate(normalFramerate);
+        IME = true;
+        shouldUpdateIME = false;
+        nextIMEValue = false;
+    }
 
-        #region Registers
-        private byte A; // accumulator
-        private byte F; // flag register
-        private byte B;
-        private byte C;
-        private Address BC => ConcatBytes(B, C);
-        private byte D;
-        private byte E;
-        private Address DE => ConcatBytes(D, E);
-        private byte H;
-        private byte L;
-        private Address HL => ConcatBytes(H, L);
-        private ushort PC; //progarm counter
-        private byte PC_P => GetHighByte(PC);
-        private byte PC_C => GetLowByte(PC);
-        private ushort SP = 0xFFFE; //stack pointer
-        private byte SP_S => GetHighByte(SP);
+    private const float normalFramerate = 60;
+    private const uint cyclesPerFrame = (uint)(cpuSpeed / normalFramerate);
 
-        internal ulong GetSpeed()
+
+    private float currentFramerate;
+    public float MillisecondsPerLoop { get; set; }
+
+    private void SetFramerate(float framerate)
+    {
+        currentFramerate = framerate;
+        MillisecondsPerLoop = 1000 / framerate;
+    }
+
+    public void ChangeSpeed(bool faster)
+    {
+        if (faster)
         {
-            return speedMode.Mode;
+            SetFramerate(Math.Min(currentFramerate * 2, normalFramerate * 8));
         }
-
-        private byte SP_P => GetLowByte(SP);
-
-        #endregion
-
-
-        #region Flags
-        const byte zero_bit = 7;
-        const byte subtract_bit = 6;
-        const byte halfCarry_bit = 5;
-        const byte carry_bit = 4;
-        public bool ZeroFlag => TestBit(zero_bit, F);
-        public bool SubtractFlag => TestBit(subtract_bit, F);
-        public bool HalfCarryFlag => TestBit(halfCarry_bit, F);
-        public bool CarryFlag => TestBit(carry_bit, F);
-
-        private void SetFlags(bool Z, bool S, bool H, bool C)
+        else
         {
-            SetZeroFlag(Z);
-            SetSubtractFlag(S);
-            SetHalfCarryFlag(H);
-            SetCarryFlag(C);
+            SetFramerate(Math.Max(currentFramerate / 2, normalFramerate / 4));
         }
+    }
 
-        private void SetZeroFlag(bool Z) => SetFlag(zero_bit, Z);
-        private void SetSubtractFlag(bool S) => SetFlag(subtract_bit, S);
-        private void SetHalfCarryFlag(bool H) => SetFlag(halfCarry_bit, H);
-        private void SetCarryFlag(bool C) => SetFlag(carry_bit, C);
+    private ulong elapsed = 0;
 
-
-        private void SetFlag(int bit, bool on)
+    public void ExecuteInstructionsBulk(long _)
+    {
+        ulong start = Cycles;
+        while (elapsed < cyclesPerFrame * speedMode.Mode)
         {
-            if (on) F = SetBit(bit, F);
-            else F = ResetBit(bit, F);
+            DoNextInstruction();
+            elapsed = Cycles - start;
         }
-        #endregion
+        elapsed -= cyclesPerFrame;
+    }
 
-        public override Byte Read(Address address) => bus.Read(address, true);
-        public override void Write(Address address, Byte value) => bus.Write(address, value, true);
+    public Action<long> Loop => ExecuteInstructionsBulk;
 
-        public void Restart(bool isColorMode)
+    public void DoNextInstruction()
+    {
+        HandleInterrupts();
+
+        if (isHalted)
         {
-            A = (byte)(isColorMode ? 0x11 : 0x01);
-            PC = 0x100;
-            SP = 0xFFFE;
-            F = 0xB0;
-            B = 0;
-            C = 0x13;
-            D = 0;
-            E = 0xD8;
-            H = 1;
-            L = 0x4D;
-            speedMode.Reset();
-            SetFramerate(normalFramerate);
-            IME = true;
+            bus.UpdateCycles(4, Speed);
+            NoOperation();
+        }
+        else
+        {
+            // Fetch, Decode, Execute
+            byte opCode = Fetch();
+            bus.UpdateCycles(durations[opCode], Speed);
+            instructions[opCode]();
+        }
+    }
+
+    #region Interrupts
+    private void HandleInterrupts()
+    {
+        if (shouldUpdateIME)
+        {
+            IME = nextIMEValue;
             shouldUpdateIME = false;
+            return;
+        }
+
+        // if IF is 0 there are no interrupt requests => exit
+        if (!IF.Any()) return;
+
+        // any interrupt request should remove halt-state (even if events are not enabled)
+        isHalted = false;
+
+        if (!IME) return;
+        if (!IE.Any()) return;
+        if ((IF.Read() & IE.Read()) == 0xE0) return;
+
+        Interrupt();
+    }
+
+    // type             :   prio    : address   : bit
+    //---------------------------------------------------
+    // V-Blank          :     1     : 0x0040    : 0
+    // LCDC Status      :     2     : 0x0048    : 1
+    // Timer Overflow   :     3     : 0x0050    : 2
+    // Serial Transfer  :     4     : 0x0058    : 3
+    // Hi-Lo of P10-P13 :     5     : 0x0060    : 4
+    private void Interrupt()
+    {
+        var tempIF = new InterruptRegister();
+        var tempIE = new InterruptRegister();
+        IME = false;
+        Write(--SP, PC_P);
+        // Push of high byte to stack can cancel interrupts
+        // But its too late when pushing the low byte
+        tempIF.Write(IF.Read());
+        tempIE.Write(IE.Read());
+        Write(--SP, PC_C);
+        ushort interruptVector = 0;
+        if (tempIE.Vblank && tempIF.Vblank)
+        {
+            IF.Vblank = false;
+            interruptVector = VblankVector;
+        }
+        else if (tempIE.LcdStat && tempIF.LcdStat)
+        {
+            IF.LcdStat = false;
+            interruptVector = LcdStatVector;
+        }
+        else if (tempIE.Timer && tempIF.Timer)
+        {
+            IF.Timer = false;
+            interruptVector = TimerVector;
+        }
+        else if (tempIE.Serial && tempIF.Serial)
+        {
+            IF.Serial = false;
+            interruptVector = SerialVector;
+        }
+        else if (tempIE.Joypad && tempIF.Joypad)
+        {
+            IF.Joypad = false;
+            interruptVector = JoypadVector;
+        }
+        JumpTo(interruptVector);
+        bus.UpdateCycles(20, Speed);
+    }
+
+    public void RequestInterrupt(InterruptType type)
+    {
+        switch (type)
+        {
+            case InterruptType.VBlank:
+                {
+                    IF.Vblank = true;
+                    break;
+                }
+            case InterruptType.LCDC:
+                {
+                    IF.LcdStat = true;
+                    break;
+                }
+            case InterruptType.Timer:
+                {
+                    IF.Timer = true;
+                    break;
+                }
+            case InterruptType.Link:
+                {
+                    IF.Serial = true;
+                    break;
+                }
+            case InterruptType.Joypad:
+                {
+                    IF.Joypad = true;
+                    break;
+                }
+        }
+    }
+
+    #endregion
+
+
+    #region Helpers
+
+    public override void Connect(Bus bus)
+    {
+        base.Connect(bus);
+        bus.ReplaceMemory(IE_address, IE);
+        bus.ReplaceMemory(IF_address, IF);
+        bus.ReplaceMemory(0xFF4D, speedMode);
+    }
+
+    private byte Fetch()
+    {
+        //Fetch instruction and increment PC after
+        return Read(PC++);
+    }
+
+    private ushort GetDirectAddress()
+    {
+        byte lowByte = Fetch();
+        return ConcatBytes(Fetch(), lowByte);
+    }
+    #endregion
+
+
+    #region Instructions
+
+    #region Misc
+    private void Empty() { }
+    private void NoOperation() { }
+    private void Stop(byte _)
+    {
+        if (speedMode.ShouldSwapSpeed) speedMode.SwapSpeed();
+        //TODO: display white line in center and do nothing untill any button is pressed. 
+    }
+    private void Halt()
+    {
+        // Halts CPU until interrupt happens => Perform NOPs meanwhile to not fuck up memory
+        isHalted = true;
+    }
+
+    private void DisableInterrupt()
+    {
+        if (IME)
+        {
+            shouldUpdateIME = true;
             nextIMEValue = false;
         }
-
-        private const float normalFramerate = 60;
-        private const uint cyclesPerFrame = (uint)(cpuSpeed / normalFramerate);
-
-
-        private float currentFramerate;
-        public float MillisecondsPerLoop { get; set; }
-
-        private void SetFramerate(float framerate)
+    }
+    private void EnableInterrupt()
+    {
+        if (!IME)
         {
-            currentFramerate = framerate;
-            MillisecondsPerLoop = 1000 / framerate;
+            shouldUpdateIME = true;
+            nextIMEValue = true;
         }
+    }
 
-        public void ChangeSpeed(bool faster)
+    private void Prefix_CB()
+    {
+        byte opCode = Fetch();
+        cbInstructions[opCode]();
+        Byte modded = opCode % 8;
+        Byte duration = modded == 6 ? 16 : 8;
+        bus.UpdateCycles(duration, Speed);
+    }
+
+    private void SetCarryFlagInstruction()
+    {
+        SetCarryFlag(true);
+        SetHalfCarryFlag(false);
+        SetSubtractFlag(false);
+    }
+    private void ComplementCarryFlag()
+    {
+        SetSubtractFlag(false);
+        SetHalfCarryFlag(false);
+        SetCarryFlag(!CarryFlag);
+    }
+    #endregion
+
+    #region Loads
+    private static void Load(ref byte target, byte source)
+    {
+        target = source;
+    }
+    private static void Load(ref byte targetHigh, ref byte targetLow, ushort value)
+    {
+        targetLow = GetLowByte(value);
+        targetHigh = GetHighByte(value);
+    }
+    private static void Load(ref ushort target, ushort value)
+    {
+        target = value;
+    }
+    private void LoadToMem(ushort address, byte source)
+    {
+        Write(address, source);
+    }
+    private void LoadToMem(ushort address, ushort source)
+    {
+        Write(address, GetLowByte(source));
+        Write((ushort)(address + 1), GetHighByte(source));
+    }
+    #endregion
+
+    #region Aritmetic
+    private void DAA()
+    {
+        bool setC = CarryFlag;
+
+        if (SubtractFlag)
         {
-            if (faster)
-            {
-                SetFramerate(Math.Min(currentFramerate * 2, normalFramerate * 8));
-            }
-            else
-            {
-                SetFramerate(Math.Max(currentFramerate / 2, normalFramerate / 4));
-            }
+            if (CarryFlag)
+                A -= 0x60;
+            if (HalfCarryFlag)
+                A -= 0x6;
         }
-
-        private ulong elapsed = 0;
-
-        public void ExecuteInstructionsBulk(long _)
+        else
         {
-            ulong start = Cycles;
-            while (elapsed < cyclesPerFrame * speedMode.Mode)
+            if (CarryFlag || A > 0x99)
             {
-                DoNextInstruction();
-                elapsed = Cycles - start;
+                A += 0x60;
+                setC = true;
             }
-            elapsed -= cyclesPerFrame;
-        }
-
-        public Action<long> Loop => ExecuteInstructionsBulk;
-
-        public void DoNextInstruction()
-        {
-            HandleInterrupts();
-
-            if (isHalted)
+            if (HalfCarryFlag || (A & 0xF) > 0x09)
             {
-                bus.UpdateCycles(4, Speed);
-                NoOperation();
-            }
-            else
-            {
-                // Fetch, Decode, Execute
-                byte opCode = Fetch();
-                bus.UpdateCycles(durations[opCode], Speed);
-                instructions[opCode]();
-            }
-        }
-
-        #region Interrupts
-        private void HandleInterrupts()
-        {
-            if (shouldUpdateIME)
-            {
-                IME = nextIMEValue;
-                shouldUpdateIME = false;
-                return;
-            }
-
-            // if IF is 0 there are no interrupt requests => exit
-            if (!IF.Any()) return;
-
-            // any interrupt request should remove halt-state (even if events are not enabled)
-            isHalted = false;
-
-            if (!IME) return;
-            if (!IE.Any()) return;
-            if ((IF.Read() & IE.Read()) == 0xE0) return;
-
-            Interrupt();
-        }
-
-        // type             :   prio    : address   : bit
-        //---------------------------------------------------
-        // V-Blank          :     1     : 0x0040    : 0
-        // LCDC Status      :     2     : 0x0048    : 1
-        // Timer Overflow   :     3     : 0x0050    : 2
-        // Serial Transfer  :     4     : 0x0058    : 3
-        // Hi-Lo of P10-P13 :     5     : 0x0060    : 4
-        private void Interrupt()
-        {
-            var tempIF = new InterruptRegister();
-            var tempIE = new InterruptRegister();
-            IME = false;
-            Write(--SP, PC_P);
-            // Push of high byte to stack can cancel interrupts
-            // But its too late when pushing the low byte
-            tempIF.Write(IF.Read());
-            tempIE.Write(IE.Read());
-            Write(--SP, PC_C);
-            ushort interruptVector = 0;
-            if (tempIE.Vblank && tempIF.Vblank)
-            {
-                IF.Vblank = false;
-                interruptVector = VblankVector;
-            }
-            else if (tempIE.LcdStat && tempIF.LcdStat)
-            {
-                IF.LcdStat = false;
-                interruptVector = LcdStatVector;
-            }
-            else if (tempIE.Timer && tempIF.Timer)
-            {
-                IF.Timer = false;
-                interruptVector = TimerVector;
-            }
-            else if (tempIE.Serial && tempIF.Serial)
-            {
-                IF.Serial = false;
-                interruptVector = SerialVector;
-            }
-            else if (tempIE.Joypad && tempIF.Joypad)
-            {
-                IF.Joypad = false;
-                interruptVector = JoypadVector;
-            }
-            JumpTo(interruptVector);
-            bus.UpdateCycles(20, Speed);
-        }
-
-        public void RequestInterrupt(InterruptType type)
-        {
-            switch (type)
-            {
-                case InterruptType.VBlank:
-                    {
-                        IF.Vblank = true;
-                        break;
-                    }
-                case InterruptType.LCDC:
-                    {
-                        IF.LcdStat = true;
-                        break;
-                    }
-                case InterruptType.Timer:
-                    {
-                        IF.Timer = true;
-                        break;
-                    }
-                case InterruptType.Link:
-                    {
-                        IF.Serial = true;
-                        break;
-                    }
-                case InterruptType.Joypad:
-                    {
-                        IF.Joypad = true;
-                        break;
-                    }
+                A += 0x6;
             }
         }
 
-        #endregion
+        SetCarryFlag(setC);
+        SetZeroFlag(A == 0);
+        SetHalfCarryFlag(false);
+    }
 
+    private void Add(ref byte target, byte operand, bool withCarry = false)
+    {
+        target = Add8(target, operand, out bool C, out bool H, withCarry);
+        SetFlags(target == 0, false, H, C);
+    }
+    private void Add(ref byte targetHigh, ref byte targetLow, byte operandHigh, byte operandLow)
+    {
+        ushort target = ConcatBytes(targetHigh, targetLow);
+        ushort operand = ConcatBytes(operandHigh, operandLow);
+        ushort result = Add16(target, operand, out bool C, out bool H);
+        targetHigh = GetHighByte(result);
+        targetLow = GetLowByte(result);
+        SetSubtractFlag(false);
+        SetCarryFlag(C);
+        SetHalfCarryFlag(H);
+    }
 
-        #region Helpers
+    private void Subtract(ref byte target, byte operand, bool withCarry = false)
+    {
+        target = Sub8(target, operand, out bool C, out bool H, withCarry);
+        SetFlags(target == 0, true, H, C);
+    }
 
-        public override void Connect(Bus bus)
+    private void Increment(ref byte target)
+    {
+        Byte low4 = target & 0xF;
+        SetHalfCarryFlag(low4 == 0xF); // set if carry from bit 3
+        target++;
+        SetZeroFlag(target == 0);
+        SetSubtractFlag(false);
+    }
+    private static void Increment(ref byte targetHigh, ref byte targetLow)
+    {
+        int newLowByte = targetLow + 1;
+        if (newLowByte > 0xFF)
         {
-            base.Connect(bus);
-            bus.ReplaceMemory(IE_address, IE);
-            bus.ReplaceMemory(IF_address, IF);
-            bus.ReplaceMemory(0xFF4D, speedMode);
+            targetHigh++;
         }
+        targetLow = (byte)newLowByte;
+    }
+    private static void Increment(ref ushort target)
+    {
+        target++;
+    }
+    private void IncrementInMemory(byte addressHigh, byte addressLow)
+    {
+        ushort address = ConcatBytes(addressHigh, addressLow);
+        byte value = Read(address);
+        Increment(ref value);
+        Write(address, value);
+    }
 
-        private byte Fetch()
+    private void Decrement(ref byte target)
+    {
+        Byte low4 = target & 0xF;
+        SetHalfCarryFlag(low4 == 0); // set if borrow from bit 4
+        target--;
+        SetZeroFlag(target == 0);
+        SetSubtractFlag(true);
+    }
+    private static void Decrement(ref byte targetHigh, ref byte targetLow)
+    {
+        int newLowByte = targetLow - 1;
+        if (newLowByte < 0)
         {
-            //Fetch instruction and increment PC after
-            return Read(PC++);
+            targetHigh--;
         }
+        targetLow = (byte)newLowByte;
+    }
+    private static void Decrement(ref ushort target)
+    {
+        target--;
+    }
+    private void DecrementInMemory(byte addresshigh, byte addressLow)
+    {
+        ushort address = ConcatBytes(addresshigh, addressLow);
+        byte value = Read(address);
+        Decrement(ref value);
+        Write(address, value);
+    }
 
-        private ushort GetDirectAddress()
-        {
-            byte lowByte = Fetch();
-            return ConcatBytes(Fetch(), lowByte);
-        }
-        #endregion
+    private void RotateLeftWithCarry(ref byte target, bool cb_mode = true)
+    {
+        int rotated = target << 1;
+        bool isCarry = rotated > 0xFF;
+        if (isCarry)
+            target = (byte)(rotated | 1); //wrap around carry bit
+        else
+            target = (byte)rotated; //no need for wrap around
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
+    }
+    private void RotateRightWithCarry(ref byte target, bool cb_mode = true)
+    {
+        bool isCarry = (target & 1) != 0;
+        int rotated = target >> 1;
+        if (isCarry)
+            target = (byte)(rotated | 0x80);
+        else
+            target = (byte)rotated;
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
+    }
+    private void RotateLeft(ref byte target, bool cb_mode = true)
+    {
+        int rotated = target << 1;
+        bool oldIsCarry = CarryFlag;
+        bool isCarry = rotated > 0xFF;
+        if (oldIsCarry)
+            target = (byte)(rotated | 1);
+        else
+            target = (byte)rotated;
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
+    }
+    private void RotateRight(ref byte target, bool cb_mode = true)
+    {
+        bool oldIsCarry = CarryFlag;
+        bool isCarry = (target & 1) != 0;
+        int rotated = target >> 1;
+        if (oldIsCarry)
+            target = (byte)(rotated | 0x80);
+        else
+            target = (byte)rotated;
+        SetFlags(cb_mode && target == 0, false, false, isCarry);
+    }
 
+    private void Set(int bit, ushort address)
+    {
+        byte value = Read(address);
+        Set(bit, ref value);
+        Write(address, value);
+    }
+    private static void Set(int bit, ref byte target)
+    {
+        target = SetBit(bit, target);
+    }
 
-        #region Instructions
+    private void Reset(int bit, ushort address)
+    {
+        byte value = Read(address);
+        Reset(bit, ref value);
+        Write(address, value);
+    }
+    private static void Reset(int bit, ref byte target)
+    {
+        target = ResetBit(bit, target);
+    }
 
-        #region Misc
-        private void Empty() { }
-        private void NoOperation() { }
-        private void Stop(byte _)
-        {
-            if (speedMode.ShouldSwapSpeed) speedMode.SwapSpeed();
-            //TODO: display white line in center and do nothing untill any button is pressed. 
-        }
-        private void Halt()
-        {
-            // Halts CPU until interrupt happens => Perform NOPs meanwhile to not fuck up memory
-            isHalted = true;
-        }
+    private void Bit(int bit, byte source)
+    {
+        SetZeroFlag(!TestBit(bit, source));
+        SetSubtractFlag(false);
+        SetHalfCarryFlag(true);
+    }
 
-        private void DisableInterrupt()
-        {
-            if (IME)
-            {
-                shouldUpdateIME = true;
-                nextIMEValue = false;
-            }
-        }
-        private void EnableInterrupt()
-        {
-            if (!IME)
-            {
-                shouldUpdateIME = true;
-                nextIMEValue = true;
-            }
-        }
+    private void Swap(ushort address)
+    {
+        byte value = Read(address);
+        Swap(ref value);
+        Write(address, value);
+    }
+    private void Swap(ref byte target)
+    {
+        target = SwapNibbles(target);
+        SetFlags(target == 0, false, false, false);
+    }
 
-        private void Prefix_CB()
-        {
-            byte opCode = Fetch();
-            cbInstructions[opCode]();
-            Byte modded = opCode % 8;
-            Byte duration = modded == 6 ? 16 : 8;
-            bus.UpdateCycles(duration, Speed);
-        }
+    private void ShiftLeftA(ushort address)
+    {
+        byte value = Read(address);
+        ShiftLeftA(ref value);
+        Write(address, value);
+    }
+    private void ShiftLeftA(ref byte target)
+    {
+        int shifted = target << 1;
+        target = (byte)shifted;
+        SetFlags(target == 0, false, false, shifted > 0xFF);
+    }
+    private void ShiftRightA(ushort address)
+    {
+        byte value = Read(address);
+        ShiftRightA(ref value);
+        Write(address, value);
+    }
+    private void ShiftRightA(ref byte target)
+    {
+        bool isCarry = (target & 1) == 1;
+        int shifted = target >> 1;
+        target = (byte)(shifted | target & 0x80);
+        SetFlags(target == 0, false, false, isCarry);
+    }
+    private void ShiftRightL(ushort address)
+    {
+        byte value = Read(address);
+        ShiftRightL(ref value);
+        Write(address, value);
+    }
+    private void ShiftRightL(ref byte target)
+    {
+        bool isCarry = (target & 1) == 1;
+        int shifted = target >> 1;
+        target = (byte)shifted;
+        SetFlags(target == 0, false, false, isCarry);
+    }
 
-        private void SetCarryFlagInstruction()
-        {
-            SetCarryFlag(true);
-            SetHalfCarryFlag(false);
-            SetSubtractFlag(false);
-        }
-        private void ComplementCarryFlag()
-        {
-            SetSubtractFlag(false);
-            SetHalfCarryFlag(false);
-            SetCarryFlag(!CarryFlag);
-        }
-        #endregion
+    private void RotateLeft(ushort address)
+    {
+        byte value = Read(address);
+        RotateLeft(ref value);
+        Write(address, value);
+    }
+    private void RotateRight(ushort address)
+    {
+        byte value = Read(address);
+        RotateRight(ref value);
+        Write(address, value);
+    }
+    private void RotateRightWithCarry(ushort address)
+    {
+        byte value = Read(address);
+        RotateRightWithCarry(ref value);
+        Write(address, value);
+    }
+    private void RotateLeftWithCarry(ushort address)
+    {
+        byte value = Read(address);
+        RotateLeftWithCarry(ref value);
+        Write(address, value);
+    }
+    #endregion
 
-        #region Loads
-        private static void Load(ref byte target, byte source)
+    #region Jumps
+    private void ConditionalJumpBy(bool condition, byte increment)
+    {
+        if (condition)
         {
-            target = source;
+            bus.UpdateCycles(4, Speed);
+            JumpBy(increment);
         }
-        private static void Load(ref byte targetHigh, ref byte targetLow, ushort value)
-        {
-            targetLow = GetLowByte(value);
-            targetHigh = GetHighByte(value);
-        }
-        private static void Load(ref ushort target, ushort value)
-        {
-            target = value;
-        }
-        private void LoadToMem(ushort address, byte source)
-        {
-            Write(address, source);
-        }
-        private void LoadToMem(ushort address, ushort source)
-        {
-            Write(address, GetLowByte(source));
-            Write((ushort)(address + 1), GetHighByte(source));
-        }
-        #endregion
+    }
+    private void JumpBy(byte increment) //actually signed
+    {
+        PC = (ushort)(PC + (sbyte)increment);
+    }
 
-        #region Aritmetic
-        private void DAA()
+    private void ConditionalJumpTo(bool condition, ushort address)
+    {
+        if (condition)
         {
-            bool setC = CarryFlag;
-
-            if (SubtractFlag)
-            {
-                if (CarryFlag)
-                    A -= 0x60;
-                if (HalfCarryFlag)
-                    A -= 0x6;
-            }
-            else
-            {
-                if (CarryFlag || A > 0x99)
-                {
-                    A += 0x60;
-                    setC = true;
-                }
-                if (HalfCarryFlag || (A & 0xF) > 0x09)
-                {
-                    A += 0x6;
-                }
-            }
-
-            SetCarryFlag(setC);
-            SetZeroFlag(A == 0);
-            SetHalfCarryFlag(false);
-        }
-
-        private void Add(ref byte target, byte operand, bool withCarry = false)
-        {
-            target = Add8(target, operand, out bool C, out bool H, withCarry);
-            SetFlags(target == 0, false, H, C);
-        }
-        private void Add(ref byte targetHigh, ref byte targetLow, byte operandHigh, byte operandLow)
-        {
-            ushort target = ConcatBytes(targetHigh, targetLow);
-            ushort operand = ConcatBytes(operandHigh, operandLow);
-            ushort result = Add16(target, operand, out bool C, out bool H);
-            targetHigh = GetHighByte(result);
-            targetLow = GetLowByte(result);
-            SetSubtractFlag(false);
-            SetCarryFlag(C);
-            SetHalfCarryFlag(H);
-        }
-
-        private void Subtract(ref byte target, byte operand, bool withCarry = false)
-        {
-            target = Sub8(target, operand, out bool C, out bool H, withCarry);
-            SetFlags(target == 0, true, H, C);
-        }
-
-        private void Increment(ref byte target)
-        {
-            Byte low4 = target & 0xF;
-            SetHalfCarryFlag(low4 == 0xF); // set if carry from bit 3
-            target++;
-            SetZeroFlag(target == 0);
-            SetSubtractFlag(false);
-        }
-        private static void Increment(ref byte targetHigh, ref byte targetLow)
-        {
-            int newLowByte = targetLow + 1;
-            if (newLowByte > 0xFF)
-            {
-                targetHigh++;
-            }
-            targetLow = (byte)newLowByte;
-        }
-        private static void Increment(ref ushort target)
-        {
-            target++;
-        }
-        private void IncrementInMemory(byte addressHigh, byte addressLow)
-        {
-            ushort address = ConcatBytes(addressHigh, addressLow);
-            byte value = Read(address);
-            Increment(ref value);
-            Write(address, value);
-        }
-
-        private void Decrement(ref byte target)
-        {
-            Byte low4 = target & 0xF;
-            SetHalfCarryFlag(low4 == 0); // set if borrow from bit 4
-            target--;
-            SetZeroFlag(target == 0);
-            SetSubtractFlag(true);
-        }
-        private static void Decrement(ref byte targetHigh, ref byte targetLow)
-        {
-            int newLowByte = targetLow - 1;
-            if (newLowByte < 0)
-            {
-                targetHigh--;
-            }
-            targetLow = (byte)newLowByte;
-        }
-        private static void Decrement(ref ushort target)
-        {
-            target--;
-        }
-        private void DecrementInMemory(byte addresshigh, byte addressLow)
-        {
-            ushort address = ConcatBytes(addresshigh, addressLow);
-            byte value = Read(address);
-            Decrement(ref value);
-            Write(address, value);
-        }
-
-        private void RotateLeftWithCarry(ref byte target, bool cb_mode = true)
-        {
-            int rotated = target << 1;
-            bool isCarry = rotated > 0xFF;
-            if (isCarry)
-                target = (byte)(rotated | 1); //wrap around carry bit
-            else
-                target = (byte)rotated; //no need for wrap around
-            SetFlags(cb_mode && target == 0, false, false, isCarry);
-        }
-        private void RotateRightWithCarry(ref byte target, bool cb_mode = true)
-        {
-            bool isCarry = (target & 1) != 0;
-            int rotated = target >> 1;
-            if (isCarry)
-                target = (byte)(rotated | 0x80);
-            else
-                target = (byte)rotated;
-            SetFlags(cb_mode && target == 0, false, false, isCarry);
-        }
-        private void RotateLeft(ref byte target, bool cb_mode = true)
-        {
-            int rotated = target << 1;
-            bool oldIsCarry = CarryFlag;
-            bool isCarry = rotated > 0xFF;
-            if (oldIsCarry)
-                target = (byte)(rotated | 1);
-            else
-                target = (byte)rotated;
-            SetFlags(cb_mode && target == 0, false, false, isCarry);
-        }
-        private void RotateRight(ref byte target, bool cb_mode = true)
-        {
-            bool oldIsCarry = CarryFlag;
-            bool isCarry = (target & 1) != 0;
-            int rotated = target >> 1;
-            if (oldIsCarry)
-                target = (byte)(rotated | 0x80);
-            else
-                target = (byte)rotated;
-            SetFlags(cb_mode && target == 0, false, false, isCarry);
-        }
-
-        private void Set(int bit, ushort address)
-        {
-            byte value = Read(address);
-            Set(bit, ref value);
-            Write(address, value);
-        }
-        private static void Set(int bit, ref byte target)
-        {
-            target = SetBit(bit, target);
-        }
-
-        private void Reset(int bit, ushort address)
-        {
-            byte value = Read(address);
-            Reset(bit, ref value);
-            Write(address, value);
-        }
-        private static void Reset(int bit, ref byte target)
-        {
-            target = ResetBit(bit, target);
-        }
-
-        private void Bit(int bit, byte source)
-        {
-            SetZeroFlag(!TestBit(bit, source));
-            SetSubtractFlag(false);
-            SetHalfCarryFlag(true);
-        }
-
-        private void Swap(ushort address)
-        {
-            byte value = Read(address);
-            Swap(ref value);
-            Write(address, value);
-        }
-        private void Swap(ref byte target)
-        {
-            target = SwapNibbles(target);
-            SetFlags(target == 0, false, false, false);
-        }
-
-        private void ShiftLeftA(ushort address)
-        {
-            byte value = Read(address);
-            ShiftLeftA(ref value);
-            Write(address, value);
-        }
-        private void ShiftLeftA(ref byte target)
-        {
-            int shifted = target << 1;
-            target = (byte)shifted;
-            SetFlags(target == 0, false, false, shifted > 0xFF);
-        }
-        private void ShiftRightA(ushort address)
-        {
-            byte value = Read(address);
-            ShiftRightA(ref value);
-            Write(address, value);
-        }
-        private void ShiftRightA(ref byte target)
-        {
-            bool isCarry = (target & 1) == 1;
-            int shifted = target >> 1;
-            target = (byte)(shifted | target & 0x80);
-            SetFlags(target == 0, false, false, isCarry);
-        }
-        private void ShiftRightL(ushort address)
-        {
-            byte value = Read(address);
-            ShiftRightL(ref value);
-            Write(address, value);
-        }
-        private void ShiftRightL(ref byte target)
-        {
-            bool isCarry = (target & 1) == 1;
-            int shifted = target >> 1;
-            target = (byte)shifted;
-            SetFlags(target == 0, false, false, isCarry);
-        }
-
-        private void RotateLeft(ushort address)
-        {
-            byte value = Read(address);
-            RotateLeft(ref value);
-            Write(address, value);
-        }
-        private void RotateRight(ushort address)
-        {
-            byte value = Read(address);
-            RotateRight(ref value);
-            Write(address, value);
-        }
-        private void RotateRightWithCarry(ushort address)
-        {
-            byte value = Read(address);
-            RotateRightWithCarry(ref value);
-            Write(address, value);
-        }
-        private void RotateLeftWithCarry(ushort address)
-        {
-            byte value = Read(address);
-            RotateLeftWithCarry(ref value);
-            Write(address, value);
-        }
-        #endregion
-
-        #region Jumps
-        private void ConditionalJumpBy(bool condition, byte increment)
-        {
-            if (condition)
-            {
-                bus.UpdateCycles(4, Speed);
-                JumpBy(increment);
-            }
-        }
-        private void JumpBy(byte increment) //actually signed
-        {
-            PC = (ushort)(PC + (sbyte)increment);
-        }
-
-        private void ConditionalJumpTo(bool condition, ushort address)
-        {
-            if (condition)
-            {
-                bus.UpdateCycles(4, Speed);
-                JumpTo(address);
-            }
-        }
-        private void JumpTo(ushort newPC)
-        {
-            PC = newPC;
-        }
-        private void ConditionalReturn(bool condition)
-        {
-            if (condition)
-            {
-                bus.UpdateCycles(12, Speed);
-                Return();
-            }
-        }
-        private void Return()
-        {
-            byte newPCLow = Read(SP++);
-            byte newPCHigh = Read(SP++);
-            PC = ConcatBytes(newPCHigh, newPCLow);
-        }
-        private void ReturnAndEnableInterrupt()
-        {
-            Return();
-            EnableInterrupt();
-        }
-        private void ConditionalCall(bool condition, ushort address)
-        {
-            if (condition)
-            {
-                bus.UpdateCycles(12, Speed);
-                Call(address);
-            }
-        }
-        private void Call(ushort address)
-        {
-            Push(PC_P, PC_C);
+            bus.UpdateCycles(4, Speed);
             JumpTo(address);
         }
-        private void Restart(byte newPC)
+    }
+    private void JumpTo(ushort newPC)
+    {
+        PC = newPC;
+    }
+    private void ConditionalReturn(bool condition)
+    {
+        if (condition)
         {
-            Push(PC_P, PC_C);
-            JumpTo(newPC);
+            bus.UpdateCycles(12, Speed);
+            Return();
         }
-        #endregion
+    }
+    private void Return()
+    {
+        byte newPCLow = Read(SP++);
+        byte newPCHigh = Read(SP++);
+        PC = ConcatBytes(newPCHigh, newPCLow);
+    }
+    private void ReturnAndEnableInterrupt()
+    {
+        Return();
+        EnableInterrupt();
+    }
+    private void ConditionalCall(bool condition, ushort address)
+    {
+        if (condition)
+        {
+            bus.UpdateCycles(12, Speed);
+            Call(address);
+        }
+    }
+    private void Call(ushort address)
+    {
+        Push(PC_P, PC_C);
+        JumpTo(address);
+    }
+    private void Restart(byte newPC)
+    {
+        Push(PC_P, PC_C);
+        JumpTo(newPC);
+    }
+    #endregion
 
-        #region Logic
-        private void Complement(ref byte target)
-        {
-            SetHalfCarryFlag(true);
-            SetSubtractFlag(true);
-            target = Invert(target);
-        }
-        private void And(ref byte target, byte operand)
-        {
-            target &= operand;
-            SetFlags(target == 0, false, true, false);
-        }
-        private void Xor(ref byte target, byte operand)
-        {
-            target ^= operand;
-            SetFlags(target == 0, false, false, false);
-        }
-        private void Or(ref byte target, byte operand)
-        {
-            target |= operand;
-            SetFlags(target == 0, false, false, false);
-        }
-        private void Compare(byte target, byte operand)
-        {
-            byte result = Sub8(target, operand, out bool C, out bool H);
-            SetFlags(result == 0, true, H, C);
-        }
-        #endregion
+    #region Logic
+    private void Complement(ref byte target)
+    {
+        SetHalfCarryFlag(true);
+        SetSubtractFlag(true);
+        target = Invert(target);
+    }
+    private void And(ref byte target, byte operand)
+    {
+        target &= operand;
+        SetFlags(target == 0, false, true, false);
+    }
+    private void Xor(ref byte target, byte operand)
+    {
+        target ^= operand;
+        SetFlags(target == 0, false, false, false);
+    }
+    private void Or(ref byte target, byte operand)
+    {
+        target |= operand;
+        SetFlags(target == 0, false, false, false);
+    }
+    private void Compare(byte target, byte operand)
+    {
+        byte result = Sub8(target, operand, out bool C, out bool H);
+        SetFlags(result == 0, true, H, C);
+    }
+    #endregion
 
-        #region Stack Interaction
-        private void Push(byte high, byte low)
-        {
-            Write(--SP, high);
-            Write(--SP, low);
-        }
-        private void Pop(ref byte targetHigh, ref byte targetLow, bool isFlagRegister = false)
-        {
-            targetLow = Read(SP++);
-            if (isFlagRegister)
-                targetLow &= 0xF0;
-            targetHigh = Read(SP++);
-        }
-        private void AddToStackPointer(byte operand)
-        {
-            //Set flags by add8 and unsigned operand
-            Add8(SP_P, operand, out bool C, out bool H);
-            //treat operand as signed when adding to SP
-            SP = (ushort)(SP + (sbyte)operand);
-            SetFlags(false, false, H, C);
-        }
-        #endregion
+    #region Stack Interaction
+    private void Push(byte high, byte low)
+    {
+        Write(--SP, high);
+        Write(--SP, low);
+    }
+    private void Pop(ref byte targetHigh, ref byte targetLow, bool isFlagRegister = false)
+    {
+        targetLow = Read(SP++);
+        if (isFlagRegister)
+            targetLow &= 0xF0;
+        targetHigh = Read(SP++);
+    }
+    private void AddToStackPointer(byte operand)
+    {
+        //Set flags by add8 and unsigned operand
+        Add8(SP_P, operand, out bool C, out bool H);
+        //treat operand as signed when adding to SP
+        SP = (ushort)(SP + (sbyte)operand);
+        SetFlags(false, false, H, C);
+    }
+    #endregion
 
-        #endregion
+    #endregion
 
 
-        public CPU()
+    public CPU()
+    {
+        //setup normal instructions
+        instructions = new Action[0x100]
         {
-            //setup normal instructions
-            instructions = new Action[0x100]
-            {
             // 0x0X
             NoOperation,
             () => Load(ref B, ref C, GetDirectAddress()),
@@ -1088,9 +1088,9 @@ namespace Gameboi.Hardware
             Empty,
             () => Compare(A, Fetch()),
             () => Restart(0x38)
-            };
+        };
 
-            durations = new byte[0x100]{
+        durations = new byte[0x100]{
              4,12, 8, 8, 4, 4, 8, 4,  20, 8, 8, 8, 4, 4, 8, 4,
              4,12, 8, 8, 4, 4, 8, 4,  12, 8, 8, 8, 4, 4, 8, 4,
              8,12, 8, 8, 4, 4, 8, 4,   8, 8, 8, 8, 4, 4, 8, 4,
@@ -1112,9 +1112,9 @@ namespace Gameboi.Hardware
             12,12, 8, 4, 0,16, 8,16,  12, 8,16, 4, 0, 0, 8,16,
             };
 
-            //setup cb instructions
-            cbInstructions = new Action[0x100]
-            {
+        //setup cb instructions
+        cbInstructions = new Action[0x100]
+        {
             // 0x0X
             () => RotateLeftWithCarry(ref B),
             () => RotateLeftWithCarry(ref C),
@@ -1432,11 +1432,10 @@ namespace Gameboi.Hardware
             () => Set(7, ref L),
             () => Set(7, HL),
             () => Set(7, ref A),
-            };
-        }
-
-        // GB-docs source: http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
-        // Instructions matrix: https://pastraiser.com/cpu/gameboy/gameboy_opcodes.html 
-
+        };
     }
+
+    // GB-docs source: http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
+    // Instructions matrix: https://pastraiser.com/cpu/gameboy/gameboy_opcodes.html 
+
 }

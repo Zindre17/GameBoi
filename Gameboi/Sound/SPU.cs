@@ -4,149 +4,149 @@ using Gameboi.Sound.channels;
 using NAudio.Wave;
 using static Gameboi.Statics.SoundRegisters;
 
-namespace Gameboi.Sound
+namespace Gameboi.Sound;
+
+public class SPU : BusComponent
 {
-    public class SPU : BusComponent
+    private readonly NR50 nr50 = new();
+    private readonly NR51 nr51 = new();
+    private NR52 nr52;
+
+    private Channel1 channel1;
+    private Channel2 channel2;
+    private Channel3 channel3;
+    private Channel4 channel4;
+
+    private readonly WaveOutEvent waveEmitter = new();
+
+    private readonly BufferedWaveProvider waveProvider;
+    private readonly WaveFormat waveFormat;
+
+    private double masterVolume = 1d;
+    private bool isMuted = false;
+    private const double masterVolumeIncrement = .1d;
+
+    public SPU()
     {
-        private readonly NR50 nr50 = new();
-        private readonly NR51 nr51 = new();
-        private NR52 nr52;
-
-        private Channel1 channel1;
-        private Channel2 channel2;
-        private Channel3 channel3;
-        private Channel4 channel4;
-
-        private readonly WaveOutEvent waveEmitter = new();
-
-        private readonly BufferedWaveProvider waveProvider;
-        private readonly WaveFormat waveFormat;
-
-        private double masterVolume = 1d;
-        private bool isMuted = false;
-        private const double masterVolumeIncrement = .1d;
-
-        public SPU()
+        waveFormat = new WaveFormat();
+        waveProvider = new BufferedWaveProvider(waveFormat)
         {
-            waveFormat = new WaveFormat();
-            waveProvider = new BufferedWaveProvider(waveFormat)
-            {
-                BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate,
-                DiscardOnBufferOverflow = true
-            };
+            BufferLength = waveFormat.BlockAlign * waveFormat.SampleRate,
+            DiscardOnBufferOverflow = true
+        };
+    }
+
+    public override void Connect(Bus bus)
+    {
+        this.bus = bus;
+        nr52 = new(bus);
+
+        bus.ReplaceMemory(NR50_address, nr50);
+        bus.ReplaceMemory(NR51_address, nr51);
+        bus.ReplaceMemory(NR52_address, nr52);
+
+        channel1 = new Channel1(nr52);
+        channel2 = new Channel2(nr52);
+        channel3 = new Channel3(nr52);
+        channel4 = new Channel4(nr52);
+
+        channel1.Connect(bus);
+        channel2.Connect(bus);
+        channel3.Connect(bus);
+        channel4.Connect(bus);
+
+        waveEmitter.Init(waveProvider);
+        waveEmitter.Play();
+    }
+
+    public void VolumeUp()
+    {
+        masterVolume += masterVolumeIncrement;
+        if (masterVolume > 1)
+        {
+            masterVolume = 1d;
+        }
+        if (isMuted) ToggleMute();
+    }
+
+    public void VolumeDown()
+    {
+        masterVolume -= masterVolumeIncrement;
+        if (masterVolume < 0)
+        {
+            masterVolume = 0d;
+        }
+        if (isMuted) ToggleMute();
+    }
+
+    public void ToggleMute()
+    {
+        isMuted = !isMuted;
+    }
+
+    public Action<long> Loop => AddNextSamples;
+
+    public void AddNextSamples(long currentMilliseconds)
+    {
+        AddNextSampleBatch((int)(44.1 * 16.667));
+    }
+
+    private void AddNextSampleBatch(int sampleCount)
+    {
+        if (isMuted || !nr52.IsSoundOn)
+        {
+            return;
         }
 
-        public override void Connect(Bus bus)
+        var channel1Samples = channel1.GetNextSampleBatch(sampleCount);
+        var channel2Samples = channel2.GetNextSampleBatch(sampleCount);
+        var channel3Samples = channel3.GetNextSampleBatch(sampleCount);
+        var channel4Samples = channel4.GetNextSampleBatch(sampleCount);
+
+        var samples = new byte[sampleCount * 4];
+
+        var out1volume = nr50.VolumeOut1;
+        var out2volume = nr50.VolumeOut2;
+
+        int index = 0;
+        for (int i = 0; i < sampleCount; i++)
         {
-            this.bus = bus;
-            nr52 = new(bus);
+            //channel1
+            short c1Sample = 0;
 
-            bus.ReplaceMemory(NR50_address, nr50);
-            bus.ReplaceMemory(NR51_address, nr51);
-            bus.ReplaceMemory(NR52_address, nr52);
+            if (nr51.Is1Out1)
+                c1Sample += (short)(channel1Samples[i] / 4);
+            if (nr51.Is2Out1)
+                c1Sample += (short)(channel2Samples[i] / 4);
+            if (nr51.Is3Out1)
+                c1Sample += (short)(channel3Samples[i] / 4);
+            if (nr51.Is4Out1)
+                c1Sample += (short)(channel4Samples[i] / 4);
 
-            channel1 = new Channel1(nr52);
-            channel2 = new Channel2(nr52);
-            channel3 = new Channel3(nr52);
-            channel4 = new Channel4(nr52);
+            c1Sample = (short)(c1Sample * out1volume * masterVolume);
 
-            channel1.Connect(bus);
-            channel2.Connect(bus);
-            channel3.Connect(bus);
-            channel4.Connect(bus);
+            samples[index++] = (byte)(c1Sample >> 8);
+            samples[index++] = (byte)c1Sample;
 
-            waveEmitter.Init(waveProvider);
-            waveEmitter.Play();
+            //channel2
+            short c2Sample = 0;
+
+            if (nr51.Is1Out2)
+                c2Sample += (short)(channel1Samples[i] / 4);
+            if (nr51.Is2Out2)
+                c2Sample += (short)(channel2Samples[i] / 4);
+            if (nr51.Is3Out2)
+                c2Sample += (short)(channel3Samples[i] / 4);
+            if (nr51.Is4Out2)
+                c2Sample += (short)(channel4Samples[i] / 4);
+
+            c2Sample = (short)(c2Sample * out2volume * masterVolume);
+
+            samples[index++] = (byte)(c2Sample >> 8);
+            samples[index++] = (byte)c2Sample;
         }
 
-        public void VolumeUp()
-        {
-            masterVolume += masterVolumeIncrement;
-            if (masterVolume > 1)
-            {
-                masterVolume = 1d;
-            }
-            if (isMuted) ToggleMute();
-        }
-
-        public void VolumeDown()
-        {
-            masterVolume -= masterVolumeIncrement;
-            if (masterVolume < 0)
-            {
-                masterVolume = 0d;
-            }
-            if (isMuted) ToggleMute();
-        }
-
-        public void ToggleMute()
-        {
-            isMuted = !isMuted;
-        }
-
-        public Action<long> Loop => AddNextSamples;
-
-        public void AddNextSamples(long currentMilliseconds)
-        {
-            AddNextSampleBatch((int)(44.1 * 16.667));
-        }
-
-        private void AddNextSampleBatch(int sampleCount)
-        {
-            if (isMuted || !nr52.IsSoundOn)
-            {
-                return;
-            }
-
-            var channel1Samples = channel1.GetNextSampleBatch(sampleCount);
-            var channel2Samples = channel2.GetNextSampleBatch(sampleCount);
-            var channel3Samples = channel3.GetNextSampleBatch(sampleCount);
-            var channel4Samples = channel4.GetNextSampleBatch(sampleCount);
-
-            var samples = new byte[sampleCount * 4];
-
-            var out1volume = nr50.VolumeOut1;
-            var out2volume = nr50.VolumeOut2;
-
-            int index = 0;
-            for (int i = 0; i < sampleCount; i++)
-            {
-                //channel1
-                short c1Sample = 0;
-
-                if (nr51.Is1Out1)
-                    c1Sample += (short)(channel1Samples[i] / 4);
-                if (nr51.Is2Out1)
-                    c1Sample += (short)(channel2Samples[i] / 4);
-                if (nr51.Is3Out1)
-                    c1Sample += (short)(channel3Samples[i] / 4);
-                if (nr51.Is4Out1)
-                    c1Sample += (short)(channel4Samples[i] / 4);
-
-                c1Sample = (short)(c1Sample * out1volume * masterVolume);
-
-                samples[index++] = (byte)(c1Sample >> 8);
-                samples[index++] = (byte)c1Sample;
-
-                //channel2
-                short c2Sample = 0;
-
-                if (nr51.Is1Out2)
-                    c2Sample += (short)(channel1Samples[i] / 4);
-                if (nr51.Is2Out2)
-                    c2Sample += (short)(channel2Samples[i] / 4);
-                if (nr51.Is3Out2)
-                    c2Sample += (short)(channel3Samples[i] / 4);
-                if (nr51.Is4Out2)
-                    c2Sample += (short)(channel4Samples[i] / 4);
-
-                c2Sample = (short)(c2Sample * out2volume * masterVolume);
-
-                samples[index++] = (byte)(c2Sample >> 8);
-                samples[index++] = (byte)c2Sample;
-            }
-
-            waveProvider.AddSamples(samples, 0, samples.Length);
-        }
+        waveProvider.AddSamples(samples, 0, samples.Length);
     }
 }
+

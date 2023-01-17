@@ -1,12 +1,12 @@
 using Gameboi.Memory;
 
-namespace Gameboi.Sound
+namespace Gameboi.Sound;
+
+public class FrequencyLow : Register
 {
-    public class FrequencyLow : Register
-    {
-        public override Byte Read() => 0xFF;
+    public override Byte Read() => 0xFF;
 
-        public Byte LowBits => data;
+    public Byte LowBits => data;
 
-    }
 }
+
