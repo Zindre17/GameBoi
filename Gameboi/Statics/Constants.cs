@@ -162,7 +162,7 @@ public static class Frequencies
 
     public const uint cpuSpeed = 0x400000;
 
-    public static readonly uint[] cpuToTimerRatio = new uint[4]{
+    public static readonly uint[] ticksPerIncrementPerTimerSpeed = new uint[4]{
         cpuSpeed / timerSpeeds[0],
         cpuSpeed / timerSpeeds[1],
         cpuSpeed / timerSpeeds[2],
@@ -170,7 +170,7 @@ public static class Frequencies
     };
 
     // DIV is incremented at 16384Hz = 0x4000Hz
-    public static readonly uint cpuToDivRatio = cpuToTimerRatio[3];
+    public static readonly uint ticksPerDivIncrement = ticksPerIncrementPerTimerSpeed[3];
 }
 
 public static class WavSettings

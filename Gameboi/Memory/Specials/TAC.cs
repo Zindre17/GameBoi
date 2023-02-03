@@ -21,12 +21,12 @@ public class TAC : MaskedRegister
 
     public int GetNextCounter(int current)
     {
-        return current + (int)cpuToTimerRatio[TimerSpeed];
+        return current + (int)ticksPerIncrementPerTimerSpeed[TimerSpeed];
     }
 
     public bool IsTriggerBitSet(Address counter)
     {
-        return (counter & cpuToTimerRatio[TimerSpeed]) > 0;
+        return (counter & ticksPerIncrementPerTimerSpeed[TimerSpeed]) > 0;
     }
 
     public override void Write(Byte value)

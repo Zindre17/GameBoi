@@ -120,6 +120,17 @@ public class SystemState
 
     public ref byte InterruptFlags => ref IoPorts[IF_index];
 
+    private const byte VerticalBlankInterruptBit = 0;
+    private const byte LcdStatusInterruptBit = 1;
+    private const byte TimerInterruptBit = 2;
+    private const byte SerialInterruptBit = 3;
+    private const byte JoypadInterruptBit = 4;
+
+    public void SetTimerInterruptFlag()
+    {
+        InterruptFlags = InterruptFlags.SetBit(TimerInterruptBit);
+    }
+
     public ref byte NR10 => ref IoPorts[NR10_index];
     public ref byte NR11 => ref IoPorts[NR11_index];
     public ref byte NR12 => ref IoPorts[NR12_index];
