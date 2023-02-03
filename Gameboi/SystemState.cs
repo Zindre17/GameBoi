@@ -162,7 +162,7 @@ public class SystemState
     public ref byte ScrollY => ref IoPorts[SCY_index];
     public ref byte ScrollX => ref IoPorts[SCX_index];
     public ref byte LineY => ref IoPorts[LY_index];
-    public ref byte LineYCoincidence => ref IoPorts[LYC_index];
+    public ref byte LineYCompare => ref IoPorts[LYC_index];
     public ref byte Dma => ref IoPorts[DMA_index];
     public ref byte BackgroundPalette => ref IoPorts[BGP_index];
     public ref byte ObjectPalette0 => ref IoPorts[OBP_0_index];

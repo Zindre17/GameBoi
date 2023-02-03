@@ -76,7 +76,7 @@ internal class IoLogic
         if (value == state.LineY)
         {
             // set Stat coincident flag
-            Stat stat = state.LcdStatus;
+            LcdStatus stat = state.LcdStatus;
             state.LcdStatus = stat.WithCoincidenceFlag(true);
         }
         return value;

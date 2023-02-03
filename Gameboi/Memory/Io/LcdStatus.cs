@@ -2,11 +2,11 @@ using Gameboi.Extensions;
 
 namespace Gameboi.Memory.Io;
 
-public readonly struct Stat
+public readonly struct LcdStatus
 {
     private readonly byte value;
 
-    public Stat(byte value) => this.value = value;
+    public LcdStatus(byte value) => this.value = value;
 
     public bool IsCoincidenceInterruptEnabled => value.IsBitSet(6);
     public bool IsOAMInterruptEnabled => value.IsBitSet(5);
@@ -25,6 +25,6 @@ public readonly struct Stat
 
     public byte WithCoincidenceFlag(bool on) => value.SetBit(2, on);
 
-    public static implicit operator byte(Stat stat) => stat.value;
-    public static implicit operator Stat(byte value) => new(value);
+    public static implicit operator byte(LcdStatus stat) => stat.value;
+    public static implicit operator LcdStatus(byte value) => new(value);
 }
