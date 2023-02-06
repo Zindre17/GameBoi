@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Gameboi.Graphics;
 using Gameboi.Memory.Io;
 
 namespace Gameboi.Hardware;
@@ -54,9 +56,42 @@ public class ImprovedLcd : IClocked
         remainingTicksInMode = modeDurations[nextMode];
     }
 
+    private readonly List<ImprovedSprite> spritesOnScanLine = new();
     private void SearchOam()
     {
-        // TODO find sprites that intersect with current line Y
+        spritesOnScanLine.Clear();
+
+        foreach (var sprite in state.GetSprites())
+        {
+            if (!SpriteShowsOnScanLine(sprite))
+            {
+                continue;
+            }
+
+            spritesOnScanLine.Add(sprite);
+            if (spritesOnScanLine.Count is 10)
+            {
+                break;
+            }
+        }
+    }
+
+    private const byte NormalSpriteHeight = 8;
+    private const byte DoublelSpriteHeight = NormalSpriteHeight * 2;
+
+    private bool SpriteShowsOnScanLine(ImprovedSprite sprite)
+    {
+        var spriteEnd = sprite.Y - NormalSpriteHeight;
+        var spriteHeight = NormalSpriteHeight;
+
+        LcdControl lcdControl = state.LcdControl;
+        if (lcdControl.IsDoubleSpriteSize)
+        {
+            spriteEnd = sprite.Y;
+            spriteHeight = DoublelSpriteHeight;
+        }
+
+        return spriteEnd <= state.LineY && (state.LineY - spriteEnd) < spriteHeight;
     }
 
     private void GeneratePixelLine()

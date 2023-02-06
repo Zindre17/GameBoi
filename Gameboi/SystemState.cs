@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Gameboi.Extensions;
+using Gameboi.Graphics;
 using static Gameboi.IoIndices;
 
 namespace Gameboi;
@@ -169,6 +171,15 @@ public class SystemState
     public ref byte ObjectPalette1 => ref IoPorts[OBP_1_index];
     public ref byte WindowY => ref IoPorts[WY_index];
     public ref byte WindowX => ref IoPorts[WX_index];
+
+
+    public IEnumerable<ImprovedSprite> GetSprites()
+    {
+        for (var i = 0; i < 40; i++)
+        {
+            yield return new(Oam, i);
+        }
+    }
 }
 
 public static class IoIndices
