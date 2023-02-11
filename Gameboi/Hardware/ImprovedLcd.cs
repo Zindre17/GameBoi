@@ -61,7 +61,7 @@ public class ImprovedLcd : IClocked
     {
         spritesOnScanLine.Clear();
 
-        foreach (var sprite in state.GetSprites())
+        foreach (var sprite in ImprovedOam.GetSprites(state.Oam))
         {
             if (!SpriteShowsOnScanLine(sprite))
             {
