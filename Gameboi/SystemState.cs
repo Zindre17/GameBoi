@@ -35,6 +35,7 @@ public class SystemState
     // etc
     public bool InterruptMasterEnable { get; set; } = true;
     public int TicksElapsedThisFrame { get; set; } = 0;
+    public bool IsHalted { get; set; } = false;
 
     public SystemState(bool color, byte[] cartridgeRom, byte[] cartridgeRam)
     {
