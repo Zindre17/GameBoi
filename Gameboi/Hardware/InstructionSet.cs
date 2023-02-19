@@ -1,3 +1,5 @@
+using System;
+using Gameboi.Extensions;
 using Gameboi.Memory.Specials;
 
 namespace Gameboi.Hardware;
@@ -16,6 +18,17 @@ public class InstructionSet
     private byte ReadNextInstructionByte()
     {
         return bus.Read(state.ProgramCounter++);
+    }
+
+    private ushort ReadImmediateAddress()
+    {
+        var low = ReadNextInstructionByte();
+        return (ushort)((ReadNextInstructionByte() << 8) | low);
+    }
+
+    private byte ReadImmediateByte()
+    {
+        return ReadNextInstructionByte();
     }
 
     public byte ExecuteInstruction(byte opCode)
@@ -70,7 +83,7 @@ public class InstructionSet
     {
         // TODO: emulate stop.
         // TODO: emulate stop bug.
-        ReadNextInstructionByte();
+        ReadImmediateByte();
         return StopDuration;
     }
 
@@ -103,14 +116,18 @@ public class InstructionSet
         var currentFlags = new CpuFlagRegister(state.Flags);
         var setCarry = currentFlags.IsSet(CpuFlags.Carry);
 
-        var acc = state.Accumulator;
+        ref var acc = ref state.Accumulator;
 
         if (currentFlags.IsSet(CpuFlags.Subtract))
         {
             if (setCarry)
+            {
                 acc -= 0x60;
+            }
             if (currentFlags.IsSet(CpuFlags.HalfCarry))
+            {
                 acc -= 0x6;
+            }
         }
         else
         {
@@ -124,8 +141,6 @@ public class InstructionSet
                 acc += 0x6;
             }
         }
-
-        state.Accumulator = acc;
 
         state.Flags = currentFlags
             .SetTo(CpuFlags.Carry, setCarry)
@@ -203,7 +218,58 @@ public class InstructionSet
 
     private byte Load8(byte opCode)
     {
-        return 0;
+        var value = GetSourceValue(opCode, out var didReadFromMemory);
+        var duration = didReadFromMemory ? 8 : 4;
+
+        switch (opCode)
+        {
+            case < 0x48:
+                state.B = value;
+                break;
+            case < 0x50:
+                state.C = value;
+                break;
+            case < 0x58:
+                state.D = value;
+                break;
+            case < 0x60:
+                state.E = value;
+                break;
+            case < 0x68:
+                state.High = value;
+                break;
+            case < 0x70:
+                state.Low = value;
+                break;
+            case < 0x78:
+                bus.Write(state.HL, value);
+                duration += 4;
+                break;
+            case < 0x80:
+                state.Accumulator = value;
+                break;
+        }
+
+        return (byte)duration;
+    }
+
+    private byte GetSourceValue(byte opCode, out bool didReadFromMemory)
+    {
+        var moddedOpCode = opCode % 8;
+
+        didReadFromMemory = moddedOpCode is 6;
+        return moddedOpCode switch
+        {
+            0 => state.B,
+            1 => state.C,
+            2 => state.D,
+            3 => state.E,
+            4 => state.High,
+            5 => state.Low,
+            6 => bus.Read(state.HL),
+            7 => state.Accumulator,
+            _ => throw new NotImplementedException(),
+        };
     }
 
     private static bool IsLoad16Operation(byte opCode)
@@ -221,7 +287,51 @@ public class InstructionSet
 
     private byte Load16(byte opCode)
     {
-        return 0;
+        if (opCode is 0x08)
+        {
+            var startAddress = ReadImmediateAddress();
+            var sp = state.StackPointer;
+            bus.Write(startAddress, sp.GetLowByte());
+            bus.Write((ushort)(startAddress + 1), sp.GetHighByte());
+            return 20;
+        }
+
+        if (opCode is 0xf8)
+        {
+            var result = (ushort)(state.StackPointer + ReadImmediateByte());
+            state.High = result.GetHighByte();
+            state.Low = result.GetLowByte();
+            return 12;
+        }
+
+        if (opCode is 0xf9)
+        {
+            state.StackPointer = state.HL;
+            return 8;
+        }
+
+        var value = ReadImmediateAddress();
+        var high = value.GetHighByte();
+        var low = value.GetLowByte();
+        switch (opCode & 0xf0)
+        {
+            case 0:
+                state.B = high;
+                state.C = low;
+                break;
+            case 1:
+                state.D = high;
+                state.E = high;
+                break;
+            case 2:
+                state.High = high;
+                state.Low = low;
+                break;
+            case 3:
+                state.StackPointer = value;
+                break;
+        }
+        return 12;
     }
 
     private static bool IsPopOperation(byte opCode)
