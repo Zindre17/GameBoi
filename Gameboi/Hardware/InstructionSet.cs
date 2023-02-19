@@ -342,9 +342,32 @@ public class InstructionSet
         return (opCode & mask) is result;
     }
 
-    private static byte Pop(byte opCode)
+    private byte Pop(byte opCode)
     {
-        return 0;
+        var low = bus.Read(state.StackPointer++);
+        var high = bus.Read(state.StackPointer++);
+
+        switch (opCode & 0xf0)
+        {
+            case 0xc0:
+                state.B = high;
+                state.C = low;
+                break;
+            case 0xd0:
+                state.D = high;
+                state.E = low;
+                break;
+            case 0xe0:
+                state.High = high;
+                state.Low = low;
+                break;
+            case 0xf0:
+                state.Accumulator = high;
+                state.Flags = low; // & 0xF0 ??
+                break;
+        }
+
+        return 12;
     }
 
     private static bool IsPushOperation(byte opCode)
