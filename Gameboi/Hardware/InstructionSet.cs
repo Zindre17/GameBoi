@@ -378,9 +378,34 @@ public class InstructionSet
         return (opCode & mask) is result;
     }
 
-    private static byte Push(byte opCode)
+    private byte Push(byte opCode)
     {
-        return 0;
+        byte low = 0;
+        byte high = 0;
+
+        switch (opCode & 0xf0)
+        {
+            case 0xc0:
+                high = state.B;
+                low = state.C;
+                break;
+            case 0xd0:
+                high = state.D;
+                low = state.E;
+                break;
+            case 0xe0:
+                high = state.High;
+                low = state.Low;
+                break;
+            case 0xf0:
+                high = state.Accumulator;
+                low = state.Flags;
+                break;
+        }
+
+        bus.Write(--state.StackPointer, low);
+        bus.Write(--state.StackPointer, high);
+        return 16;
     }
 
     private static bool IsIncrement8Operation(byte opCode)
