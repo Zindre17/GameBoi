@@ -20,14 +20,27 @@ public class SystemState
     public byte InterruptEnableRegister { get; set; }
 
     // Cpu registers
-    public byte Accumulator { get; set; }
-    public byte Flags { get; set; }
-    public byte B { get; set; }
-    public byte C { get; set; }
-    public byte D { get; set; }
-    public byte E { get; set; }
-    public byte High { get; set; }
-    public byte Low { get; set; }
+    private byte accumulator;
+    public ref byte Accumulator => ref accumulator;
+    public byte flags;
+    public ref byte Flags => ref flags;
+
+    public byte b;
+    public ref byte B => ref b;
+    public byte c;
+    public ref byte C => ref c;
+
+    public byte d;
+    public ref byte D => ref d;
+    public byte e;
+    public ref byte E => ref e;
+
+    public byte high;
+    public ref byte High => ref high;
+    public byte low;
+    public ref byte Low => ref low;
+
+    public ushort HL => (ushort)((high << 8) & low);
 
     public ushort ProgramCounter { get; set; }
     public ushort StackPointer { get; set; }
