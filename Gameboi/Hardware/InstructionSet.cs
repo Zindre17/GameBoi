@@ -418,7 +418,39 @@ public class InstructionSet
 
     private byte Increment8(byte opCode)
     {
-        return 0;
+        byte oldValue;
+        byte duration = 4;
+
+        if (opCode is 0x34)
+        {
+            oldValue = bus.Read(state.HL);
+            bus.Write(state.HL, (byte)(oldValue + 1));
+            duration = 12;
+        }
+        else
+        {
+            oldValue = opCode switch
+            {
+                0x04 => state.B++,
+                0x0c => state.C++,
+
+                0x14 => state.D++,
+                0x1c => state.E++,
+
+                0x24 => state.High++,
+                0x2c => state.Low++,
+
+                0x3c => state.Accumulator++,
+                _ => 0
+            };
+        }
+
+        state.Flags = new CpuFlagRegister(state.Flags)
+                .SetTo(CpuFlags.HalfCarry, (oldValue & 0xf) is 0xf)
+                .SetTo(CpuFlags.Zero, oldValue is 0xff)
+                .Unset(CpuFlags.Subtract);
+
+        return duration;
     }
 
     private static bool IsIncrement16Operation(byte opCode)
@@ -431,7 +463,31 @@ public class InstructionSet
 
     private byte Increment16(byte opCode)
     {
-        return 0;
+        switch (opCode & 0xf0)
+        {
+            case 0x00:
+                if (state.C++ is 0xff)
+                {
+                    state.B++;
+                }
+                break;
+            case 0x10:
+                if (state.E++ is 0xff)
+                {
+                    state.D++;
+                }
+                break;
+            case 0x20:
+                if (state.Low++ is 0xff)
+                {
+                    state.High++;
+                }
+                break;
+            case 0x30:
+                state.StackPointer++;
+                break;
+        }
+        return 8;
     }
 
     private static bool IsDecrement8Operation(byte opCode)
