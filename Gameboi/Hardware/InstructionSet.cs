@@ -620,8 +620,22 @@ public class InstructionSet
 
     private byte Restart(byte opCode)
     {
-        // TODO
-        return 0;
+        bus.Write(--state.StackPointer, state.ProgramCounter.GetLowByte());
+        bus.Write(--state.StackPointer, state.ProgramCounter.GetHighByte());
+
+        state.ProgramCounter = opCode switch
+        {
+            0xc7 => 0,
+            0xcf => 8,
+            0xd7 => 0x10,
+            0xdf => 0x18,
+            0xe7 => 0x20,
+            0xef => 0x28,
+            0xf7 => 0x30,
+            _ => 0x38
+        };
+
+        return 16;
     }
 
     private static bool IsConditionalReturnOperation(byte opCode)
