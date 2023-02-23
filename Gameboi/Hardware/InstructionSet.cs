@@ -500,7 +500,39 @@ public class InstructionSet
 
     private byte Decrement8(byte opCode)
     {
-        return 0;
+        byte oldValue;
+        byte duration = 4;
+
+        if (opCode is 0x35)
+        {
+            oldValue = bus.Read(state.HL);
+            bus.Write(state.HL, (byte)(oldValue - 1));
+            duration = 12;
+        }
+        else
+        {
+            oldValue = opCode switch
+            {
+                0x05 => state.B--,
+                0x0d => state.C--,
+
+                0x15 => state.D--,
+                0x1d => state.E--,
+
+                0x25 => state.High--,
+                0x2d => state.Low--,
+
+                0x3d => state.Accumulator--,
+                _ => 0
+            };
+        }
+
+        state.Flags = new CpuFlagRegister(state.Flags)
+                .SetTo(CpuFlags.HalfCarry, (oldValue & 0xf) is 0)
+                .SetTo(CpuFlags.Zero, oldValue is 1)
+                .Set(CpuFlags.Subtract);
+
+        return duration;
     }
 
     private static bool IsDecrement16Operation(byte opCode)
@@ -513,7 +545,32 @@ public class InstructionSet
 
     private byte Decrement16(byte opCode)
     {
-        return 0;
+        switch (opCode & 0xf0)
+        {
+            case 0x00:
+                if (state.C-- is 0)
+                {
+                    state.B--;
+                }
+                break;
+            case 0x10:
+                if (state.E-- is 0)
+                {
+                    state.D--;
+                }
+                break;
+            case 0x20:
+                if (state.Low-- is 0)
+                {
+                    state.High--;
+                }
+                break;
+            case 0x30:
+                state.StackPointer--;
+                break;
+        }
+
+        return 8;
     }
 
     private static bool IsRotateOperation(byte opCode)
