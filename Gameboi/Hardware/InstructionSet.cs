@@ -581,9 +581,34 @@ public class InstructionSet
         return (opCode & mask) is result;
     }
 
-    private static byte Rotate(byte opCode)
+    private byte Rotate(byte opCode)
     {
-        return 0;
+        var isRightShift = (opCode & 0xf) is 0xf;
+        var useWrapAround = (opCode & 0xf0) is 0;
+        var wrapAroundMask = useWrapAround
+            ? isRightShift ? 1 : 0x80
+            : 0;
+        var wrapAroundAddition = (byte)(state.Accumulator & wrapAroundMask);
+
+        if (isRightShift)
+        {
+            state.Accumulator >>= 1;
+        }
+        else
+        {
+            state.Accumulator <<= 1;
+        }
+
+        if (useWrapAround)
+        {
+            state.Accumulator += wrapAroundAddition;
+        }
+
+        state.Flags = new CpuFlagRegister(state.Flags)
+            .Unset(CpuFlags.Zero | CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Carry, wrapAroundAddition > 0);
+
+        return 4;
     }
 
     private static bool IsRestartOperation(byte opCode)
