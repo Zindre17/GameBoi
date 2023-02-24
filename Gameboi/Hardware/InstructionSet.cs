@@ -648,8 +648,29 @@ public class InstructionSet
 
     private byte ConditionalReturn(byte opCode)
     {
-        // TODO
-        return 0;
+        var flags = new CpuFlagRegister(state.Flags);
+
+        if (opCode is 0xc0 && flags.IsSet(CpuFlags.Zero))
+        {
+            return 8;
+        }
+        else if (opCode is 0xd0 && flags.IsSet(CpuFlags.Carry))
+        {
+            return 8;
+        }
+        else if (opCode is 0xc8 && flags.IsNotSet(CpuFlags.Zero))
+        {
+            return 8;
+        }
+        else if (opCode is 0xd8 && flags.IsNotSet(CpuFlags.Carry))
+        {
+            return 8;
+        }
+
+        var low = bus.Read(state.StackPointer++);
+        state.ProgramCounter = (byte)((bus.Read(state.StackPointer++) << 8) | low);
+
+        return 20;
     }
 
     private static bool IsReturnOperation(byte opCode)
@@ -662,8 +683,15 @@ public class InstructionSet
 
     private byte Return(byte opCode)
     {
-        // TODO
-        return 0;
+        if (opCode is 0xd9)
+        {
+            state.InterruptMasterEnable = true;
+        }
+
+        var low = bus.Read(state.StackPointer++);
+        state.ProgramCounter = (byte)((bus.Read(state.StackPointer++) << 8) | low);
+
+        return 16;
     }
 
     private const byte CallOpCode = 0xcd;

@@ -16,6 +16,7 @@ public readonly struct CpuFlagRegister
     private CpuFlagRegister(int value) => this.value = (byte)value;
 
     public bool IsSet(CpuFlags flags) => (value & (byte)flags) == (byte)flags;
+    public bool IsNotSet(CpuFlags flags) => (value & (byte)flags) != (byte)flags;
 
     public CpuFlagRegister Set(CpuFlags flags) => new(value | (byte)flags);
     public CpuFlagRegister Unset(CpuFlags flags) => new(value & ~(byte)flags);
