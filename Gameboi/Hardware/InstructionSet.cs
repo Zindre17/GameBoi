@@ -816,7 +816,27 @@ public class InstructionSet
 
     private byte Add16(byte opCode)
     {
-        return 0;
+        var addition = opCode switch
+        {
+            0x09 => (state.B << 8) | state.C,
+            0x19 => (state.D << 8) | state.E,
+            0x29 => state.HL,
+            0x39 => state.StackPointer,
+            _ => throw new Exception()
+        };
+
+        var result = state.HL + addition;
+        var halfResult = (addition & 0x0fff) + (state.HL & 0x0fff);
+
+        var flags = new CpuFlagRegister(state.Flags);
+        flags.SetTo(CpuFlags.Carry, result > 0xffff)
+            .SetTo(CpuFlags.HalfCarry, halfResult > 0x0fff)
+            .Unset(CpuFlags.Subtract);
+
+        state.Low = (byte)(result & 0xff);
+        state.High = (byte)((result >> 8) & 0xff);
+
+        return 8;
     }
 
     private const byte NopCode = 0x00;
