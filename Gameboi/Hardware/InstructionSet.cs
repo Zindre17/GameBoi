@@ -706,8 +706,26 @@ public class InstructionSet
 
     private byte Call(byte opCode)
     {
-        // TODO
-        return 0;
+        bus.Write(state.StackPointer++, state.ProgramCounter.GetLowByte());
+        bus.Write(state.StackPointer++, state.ProgramCounter.GetHighByte());
+
+        byte duration = 12;
+        var flags = new CpuFlagRegister(state.Flags);
+
+        var nextPC = ReadImmediateAddress();
+
+        if (opCode is CallOpCode
+            || (opCode is 0xc4 && flags.IsNotSet(CpuFlags.Zero))
+            || (opCode is 0xd4 && flags.IsNotSet(CpuFlags.Carry))
+            || (opCode is 0xcc && flags.IsSet(CpuFlags.Zero))
+            || (opCode is 0xdc && flags.IsSet(CpuFlags.Carry))
+            )
+        {
+            state.ProgramCounter = nextPC;
+            duration += 12;
+        }
+
+        return duration;
     }
 
     private const byte JumpRelativeOpCode = 0x18;
