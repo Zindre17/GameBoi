@@ -772,8 +772,23 @@ public class InstructionSet
 
     private byte JumpTo(byte opCode)
     {
-        // TODO
-        return 0;
+        byte duration = 12;
+        var flags = new CpuFlagRegister(state.Flags);
+
+        var nextPC = ReadImmediateAddress();
+
+        if (opCode is JumpDirectOpCode
+            || (opCode is 0xc2 && flags.IsNotSet(CpuFlags.Zero))
+            || (opCode is 0xd2 && flags.IsNotSet(CpuFlags.Carry))
+            || (opCode is 0xca && flags.IsSet(CpuFlags.Zero))
+            || (opCode is 0xda && flags.IsSet(CpuFlags.Carry))
+            )
+        {
+            state.ProgramCounter = nextPC;
+            duration += 4;
+        }
+
+        return duration;
     }
 
     private static bool IsLogicalOperation(byte opCode)
