@@ -740,8 +740,23 @@ public class InstructionSet
 
     private byte RelativeJump(byte opCode)
     {
-        // TODO
-        return 0;
+        byte duration = 8;
+        var flags = new CpuFlagRegister(state.Flags);
+
+        var jumpBy = (sbyte)ReadImmediateByte();
+
+        if (opCode is JumpRelativeOpCode
+            || (opCode is 0x20 && flags.IsNotSet(CpuFlags.Zero))
+            || (opCode is 0x30 && flags.IsNotSet(CpuFlags.Carry))
+            || (opCode is 0x28 && flags.IsSet(CpuFlags.Zero))
+            || (opCode is 0x38 && flags.IsSet(CpuFlags.Carry))
+            )
+        {
+            state.ProgramCounter = (ushort)(state.ProgramCounter + jumpBy);
+            duration += 4;
+        }
+
+        return duration;
     }
 
     private const byte JumpDirectOpCode = 0xc3;
