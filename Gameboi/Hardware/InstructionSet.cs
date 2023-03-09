@@ -802,8 +802,90 @@ public class InstructionSet
 
     private byte ExecuteLogic(byte opCode)
     {
-        // TODO
-        return 0;
+        var flags = new CpuFlagRegister(state.Flags);
+        byte duration = 4;
+
+        var value = GetSourceValue(opCode, out var didReadFromMemory);
+        if (didReadFromMemory)
+        {
+            duration += 4;
+        }
+
+        if (opCode < 0xa0)
+        {
+            var isWithCarry = (opCode & 8) is 8 && flags.IsSet(CpuFlags.Carry);
+
+            if (opCode < 0x90)
+            {
+                var result = state.Accumulator + value;
+                var halfResult = (state.Accumulator & 0xf) + (value & 0xf);
+
+                if (isWithCarry)
+                {
+                    result++;
+                    halfResult++;
+                }
+
+                state.Accumulator = (byte)result;
+
+                state.Flags = flags.SetTo(CpuFlags.Carry, result > 0xff)
+                    .SetTo(CpuFlags.HalfCarry, halfResult > 0xf)
+                    .SetTo(CpuFlags.Zero, state.Accumulator is 0)
+                    .Unset(CpuFlags.Subtract);
+            }
+            else
+            {
+                var result = state.Accumulator - value;
+                var halfResult = (state.Accumulator & 0xf) - (value & 0xf);
+
+                if (isWithCarry)
+                {
+                    result--;
+                    halfResult--;
+                }
+
+                state.Accumulator = (byte)result;
+
+                state.Flags = flags.SetTo(CpuFlags.Carry, result < 0)
+                    .SetTo(CpuFlags.HalfCarry, halfResult < 0)
+                    .SetTo(CpuFlags.Zero, state.Accumulator is 0)
+                    .Set(CpuFlags.Subtract);
+            }
+        }
+        else if (opCode < 0xa8)
+        {
+            state.Accumulator &= value;
+
+            state.Flags = flags.Set(CpuFlags.HalfCarry)
+                .Unset(CpuFlags.Subtract | CpuFlags.Carry)
+                .SetTo(CpuFlags.Zero, state.Accumulator is 0);
+        }
+        else if (opCode < 0xb0)
+        {
+            state.Accumulator ^= value;
+
+            state.Flags = flags.Unset(CpuFlags.Subtract | CpuFlags.HalfCarry | CpuFlags.Carry)
+                .SetTo(CpuFlags.Zero, state.Accumulator is 0);
+        }
+        else if (opCode < 0xb8)
+        {
+            state.Accumulator |= value;
+
+            state.Flags = flags.Unset(CpuFlags.Subtract | CpuFlags.HalfCarry | CpuFlags.Carry)
+                .SetTo(CpuFlags.Zero, state.Accumulator is 0);
+        }
+        else if (opCode < 0xc0)
+        {
+            var result = state.Accumulator - value;
+            var halfResult = (state.Accumulator & 0xf) - (value & 0xf);
+
+            state.Flags = flags.Set(CpuFlags.Subtract)
+                .SetTo(CpuFlags.Zero, result is 0)
+                .SetTo(CpuFlags.Carry, result < 0)
+                .SetTo(CpuFlags.HalfCarry, halfResult < 0);
+        }
+
+        return duration;
     }
 
     private static bool IsAdd16Operation(byte opCode)
