@@ -585,10 +585,10 @@ public class InstructionSet
     {
         var isRightShift = (opCode & 0xf) is 0xf;
         var useWrapAround = (opCode & 0xf0) is 0;
-        var wrapAroundMask = useWrapAround
-            ? isRightShift ? 1 : 0x80
-            : 0;
-        var wrapAroundAddition = (byte)(state.Accumulator & wrapAroundMask);
+
+        var wrapAroundAddition = (byte)(isRightShift
+            ? state.Accumulator << 7
+            : state.Accumulator >> 7);
 
         if (isRightShift)
         {
@@ -601,7 +601,7 @@ public class InstructionSet
 
         if (useWrapAround)
         {
-            state.Accumulator += wrapAroundAddition;
+            state.Accumulator |= wrapAroundAddition;
         }
 
         state.Flags = new CpuFlagRegister(state.Flags)
