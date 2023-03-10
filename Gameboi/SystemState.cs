@@ -17,7 +17,9 @@ public class SystemState
     public byte[] Oam { get; private set; } = new byte[0xA0];
     public byte[] IoPorts { get; private set; } = new byte[0x80];
     public byte[] HighRam { get; private set; } = new byte[0x7F];
-    public byte InterruptEnableRegister { get; set; }
+
+    private byte interruptEnableRegister;
+    public ref byte InterruptEnableRegister => ref interruptEnableRegister;
 
     // Cpu registers
     private byte accumulator;
@@ -49,6 +51,8 @@ public class SystemState
     public bool InterruptMasterEnable { get; set; } = true;
     public int TicksElapsedThisFrame { get; set; } = 0;
     public bool IsHalted { get; set; } = false;
+
+    public bool IsInCbMode { get; set; } = false;
 
     public SystemState(bool color, byte[] cartridgeRom, byte[] cartridgeRam)
     {

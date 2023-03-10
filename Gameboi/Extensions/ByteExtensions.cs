@@ -12,4 +12,11 @@ public static class ByteExtensions
 
     public static byte SetBit(this byte value, int bit, bool on)
         => on ? value.SetBit(bit) : value.UnsetBit(bit);
+
+    public static byte SwapNibbles(this byte value)
+    {
+        var low = value & 0xf;
+        var high = value & 0xf0;
+        return (byte)((high >> 4) | (low << 4));
+    }
 }

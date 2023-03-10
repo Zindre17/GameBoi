@@ -31,6 +31,31 @@ public class ImprovedBus
         };
     }
 
+    public ref byte GetRef(ushort address)
+    {
+        switch (address)
+        {
+            case < 0x8000:
+                return ref mbc.GetRomRef(state.CartridgeRom, address);
+            case < 0xA000:
+                return ref state.VideoRam[address - 0x8000];
+            case < 0xC000:
+                return ref mbc.GetRamRef(state.CartridgeRam, (ushort)(address - 0xA000));
+            case < 0xE000:
+                return ref state.WorkRam[address - 0xC000];
+            case < 0xFE00:
+                return ref state.WorkRam[address - 0xE000]; // ECHO 0xC000 - 0xDDFF
+            case < 0xFF00:
+                throw new System.Exception(); // Not used
+            case < 0xFF80:
+                return ref ioLogic.GetRef((ushort)(address - 0xFF00));
+            case < 0xFFFF:
+                return ref state.HighRam[address - 0xFF80];
+            default:
+                return ref state.InterruptEnableRegister;
+        };
+    }
+
     public void Write(ushort address, byte value)
     {
         switch (address)

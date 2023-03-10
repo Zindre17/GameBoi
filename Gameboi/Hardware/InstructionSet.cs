@@ -33,6 +33,11 @@ public class InstructionSet
 
     public byte ExecuteInstruction(byte opCode)
     {
+        if (state.IsInCbMode)
+        {
+            return ExecuteCbInstruction(opCode);
+        }
+
         return opCode switch
         {
             NopCode => NopDuration,
@@ -95,7 +100,7 @@ public class InstructionSet
 
     private byte PrefixCb()
     {
-        // TODO: emulate prefix cb.
+        state.IsInCbMode = true;
         return PrefixCbDuration;
     }
 
@@ -919,6 +924,176 @@ public class InstructionSet
         state.High = (byte)((result >> 8) & 0xff);
 
         return 8;
+    }
+
+    private byte ExecuteCbInstruction(byte opCode)
+    {
+        ref var destination = ref GetDestinationByteRef(opCode, out var destinationIsInMemory);
+
+        var flags = new CpuFlagRegister(state.Flags);
+
+        if (opCode < 9)
+        {
+            // RotateLeftCarry
+            var carry = destination >> 7;
+            destination <<= 1;
+            destination |= (byte)carry;
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, destination is 0)
+            .SetTo(CpuFlags.Carry, (byte)carry > 0);
+        }
+        else if (opCode < 0x10)
+        {
+            // RotateRightCarry
+            var carry = destination << 7;
+            destination >>= 1;
+            destination |= (byte)carry;
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, destination is 0)
+            .SetTo(CpuFlags.Carry, (byte)carry > 0);
+        }
+        else if (opCode < 0x18)
+        {
+            // Rotate left
+            var carry = destination >> 7;
+            destination <<= 1;
+            if (flags.IsSet(CpuFlags.Carry))
+            {
+                destination |= 1;
+            }
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, destination is 0)
+            .SetTo(CpuFlags.Carry, (byte)carry > 0);
+        }
+        else if (opCode < 0x20)
+        {
+            // Rotate right
+            var carry = destination << 7;
+            destination >>= 1;
+            if (flags.IsSet(CpuFlags.Carry))
+            {
+                destination |= 0x80;
+            }
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, destination is 0)
+            .SetTo(CpuFlags.Carry, (byte)carry > 0);
+        }
+        else if (opCode < 0x28)
+        {
+            // Shift left aritmetic
+            var carry = destination >> 7;
+            destination <<= 1;
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, destination is 0)
+            .SetTo(CpuFlags.Carry, (byte)carry > 0);
+        }
+        else if (opCode < 0x30)
+        {
+            // Shift right aritmetic (b7 = b7)
+            var carry = destination << 7;
+            destination = (byte)((destination >> 1) | (destination & 0x80));
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, destination is 0)
+            .SetTo(CpuFlags.Carry, (byte)carry > 0);
+        }
+        else if (opCode < 0x38)
+        {
+            // Swap nibbles
+            destination = destination.SwapNibbles();
+
+            state.Flags = flags.Unset(CpuFlags.Subtract | CpuFlags.HalfCarry | CpuFlags.Carry)
+                .SetTo(CpuFlags.Zero, destination is 0);
+        }
+        else if (opCode < 0x40)
+        {
+            // Shift right Logical (b7 = 0)
+            var carry = destination << 7;
+            destination >>= 1;
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract | CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, destination is 0)
+            .SetTo(CpuFlags.Carry, (byte)carry > 0);
+        }
+        else if (opCode < 0x80)
+        {
+            // Test bit
+            var bitNumber = (opCode - 0x40) / 8;
+            var result = destination.IsBitSet(bitNumber);
+
+            state.Flags = flags
+            .Unset(CpuFlags.Subtract)
+            .Set(CpuFlags.HalfCarry)
+            .SetTo(CpuFlags.Zero, !result);
+        }
+        else if (opCode < 0xc0)
+        {
+            // Reset bit
+            var bitNumber = (opCode - 0x80) / 8;
+            destination = destination.UnsetBit(bitNumber);
+        }
+        else
+        {
+            // Set bit
+            var bitNumber = (opCode - 0xc0) / 8;
+            destination = destination.SetBit(bitNumber);
+        }
+
+        return (byte)(destinationIsInMemory ? 16 : 8);
+    }
+
+    private ref byte GetDestinationByteRef(byte opCode, out bool destinationIsInMemory)
+    {
+        destinationIsInMemory = false;
+
+        var first3bits = opCode & 7;
+
+        if (first3bits is 0)
+        {
+            return ref state.B;
+        }
+        if (first3bits is 1)
+        {
+            return ref state.C;
+        }
+        if (first3bits is 2)
+        {
+            return ref state.D;
+        }
+        if (first3bits is 3)
+        {
+            return ref state.E;
+        }
+        if (first3bits is 4)
+        {
+            return ref state.High;
+        }
+        if (first3bits is 5)
+        {
+            return ref state.Low;
+        }
+        if (first3bits is 6)
+        {
+            destinationIsInMemory = true;
+            return ref bus.GetRef(state.HL);
+        }
+        if (first3bits is 7)
+        {
+            return ref state.Accumulator;
+        }
+        throw new Exception();
     }
 
     private const byte NopCode = 0x00;

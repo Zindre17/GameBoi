@@ -82,5 +82,10 @@ internal class IoLogic
         return value;
     }
 
+    internal ref byte GetRef(ushort address)
+    {
+        return ref state.IoPorts[address];
+    }
+
     private const byte WriteOnly = 0xff;
 }

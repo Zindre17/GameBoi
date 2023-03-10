@@ -4,6 +4,8 @@ namespace Gameboi.Cartridges;
 
 public interface IMemoryBankControllerLogic
 {
+    ref byte GetRamRef(byte[] ram, ushort address);
+    ref byte GetRomRef(byte[] rom, ushort address);
     byte ReadRam(byte[] ram, ushort address);
     byte ReadRom(byte[] rom, ushort address);
     void WriteRam(byte[] ram, ushort address, byte value);
@@ -12,6 +14,16 @@ public interface IMemoryBankControllerLogic
 
 public class NoMemoryBankController : IMemoryBankControllerLogic
 {
+    public ref byte GetRamRef(byte[] ram, ushort address)
+    {
+        return ref ram[address % ram.Length];
+    }
+
+    public ref byte GetRomRef(byte[] rom, ushort address)
+    {
+        return ref rom[address % rom.Length];
+    }
+
     public byte ReadRam(byte[] ram, ushort address)
     {
         return ram[address % ram.Length];
@@ -44,6 +56,20 @@ public abstract class MemoryBankControllerBase : IMemoryBankControllerLogic
 
     protected int rom0Offset = 0;
     protected int rom1Offset = RomBankSize;
+
+    public ref byte GetRamRef(byte[] ram, ushort address)
+    {
+        return ref ram[ramOffset + address];
+    }
+
+    public ref byte GetRomRef(byte[] rom, ushort address)
+    {
+        if (address < RomBankSize)
+        {
+            return ref rom[rom0Offset + address];
+        }
+        return ref rom[rom1Offset + address];
+    }
 
     public virtual byte ReadRam(byte[] ram, ushort address)
     {
