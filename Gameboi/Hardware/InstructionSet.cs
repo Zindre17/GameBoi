@@ -33,6 +33,11 @@ public class InstructionSet
 
     public byte ExecuteInstruction(byte opCode)
     {
+        if (state.IsHalted)
+        {
+            return NopDuration;
+        }
+
         if (state.IsInCbMode)
         {
             return ExecuteCbInstruction(opCode);
@@ -86,15 +91,16 @@ public class InstructionSet
 
     private byte Stop()
     {
-        // TODO: emulate stop.
-        // TODO: emulate stop bug.
+        // TODO: emulate stop/halt bug.
+        state.IsHalted = true;
         ReadImmediateByte();
         return StopDuration;
     }
 
     private byte Halt()
     {
-        // TODO: emulate halt.
+        // TODO: emulate stop/halt bug.
+        state.IsHalted = true;
         return HaltDuration;
     }
 
