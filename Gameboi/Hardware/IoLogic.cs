@@ -69,6 +69,12 @@ internal class IoLogic
 
             _ => value
         };
+
+        if (address is DMA_index)
+        {
+            state.IsDmaInProgress = true;
+            state.DmaStartAddress = (ushort)(state.Dma << 4);
+        }
     }
 
     private byte LycWriteLogic(byte value)

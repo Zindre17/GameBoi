@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Gameboi.Extensions;
-using Gameboi.Graphics;
 using static Gameboi.IoIndices;
 
 namespace Gameboi;
@@ -54,6 +52,11 @@ public class SystemState
 
     public bool IsInCbMode { get; set; } = false;
 
+    public bool IsDmaInProgress { get; set; } = false;
+    public ushort DmaStartAddress { get; set; }
+    public int DmaTicksElapsed { get; set; } = 0;
+    public int DmaBytesTransferred { get; set; } = 0;
+
     public SystemState(bool color, byte[] cartridgeRom, byte[] cartridgeRam)
     {
         CartridgeRom = cartridgeRom;
@@ -97,6 +100,17 @@ public class SystemState
         Oam.Clear();
         ResetIO();
         InterruptEnableRegister = 0;
+
+        InterruptMasterEnable = true;
+        TicksElapsedThisFrame = 0;
+
+        IsHalted = false;
+
+        IsInCbMode = false;
+
+        IsDmaInProgress = false;
+        DmaBytesTransferred = 0;
+        DmaTicksElapsed = 0;
     }
 
     private void ResetIO()
