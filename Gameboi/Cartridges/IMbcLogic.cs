@@ -73,6 +73,10 @@ public abstract class MemoryBankControllerBase : IMemoryBankControllerLogic
 
     public virtual byte ReadRam(byte[] ram, ushort address)
     {
+        if (ram.Length is 0)
+        {
+            return 0xff;
+        }
         return (byte)(ram[ramOffset + address] | ramState);
     }
 
@@ -89,6 +93,10 @@ public abstract class MemoryBankControllerBase : IMemoryBankControllerLogic
     {
         // ramState Enabled : value & ff
         // ramState Disabled : ff & current value
+        if (ram.Length is 0)
+        {
+            return;
+        }
         ram[ramOffset + address] = (byte)(
             (value | ramState)
             & (ram[ramOffset + address] | ~ramState)
