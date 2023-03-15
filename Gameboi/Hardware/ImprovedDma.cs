@@ -32,6 +32,7 @@ public class Dma
             {
                 state.IsDmaInProgress = false;
                 state.DmaTicksElapsed = 0;
+                state.DmaBytesTransferred = 0;
             }
         }
     }
