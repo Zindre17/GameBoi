@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Gameboi.Graphics;
 using Gameboi.Memory.Io;
+using Gameboi.Memory.Specials;
 
 namespace Gameboi.Hardware;
 
@@ -10,6 +12,8 @@ public class ImprovedLcd : IClocked
     private readonly SystemState state;
 
     public ImprovedLcd(SystemState state) => this.state = state;
+
+    public Action<byte, Rgba[]>? OnLineReady;
 
     private int remainingTicksInMode = SearchingOamDurationInTicks;
 
@@ -21,12 +25,22 @@ public class ImprovedLcd : IClocked
             return;
         }
 
+        LcdStatus lcdStatus = state.LcdStatus;
+        if (lcdStatus.CoincidenceFlag && lcdStatus.IsCoincidenceInterruptEnabled)
+        {
+            var interruptRequests = new InterruptState(state.InterruptFlags);
+            state.InterruptFlags = interruptRequests.WithLcdStatusSet();
+        }
+
         if (--remainingTicksInMode is not 0)
         {
+            if (lcdStatus.Mode is VerticalBlank && (remainingTicksInMode % ScanLineDurationInTicks) is 0)
+            {
+                state.LineY++;
+            }
             return;
         }
 
-        LcdStatus lcdStatus = state.LcdStatus;
         switch (lcdStatus.Mode)
         {
             case SearchingOam:
@@ -35,6 +49,7 @@ public class ImprovedLcd : IClocked
                 break;
             case TransferringDataToLcd:
                 GeneratePixelLine();
+                OnLineReady?.Invoke(state.LineY, GetPixelLine());
                 SetNextMode(lcdStatus, HorizontalBlank);
                 break;
             case HorizontalBlank:
@@ -47,6 +62,7 @@ public class ImprovedLcd : IClocked
                 break;
             case VerticalBlank:
                 SetNextMode(lcdStatus, SearchingOam);
+                state.LineY = 0;
                 break;
         }
     }
@@ -55,6 +71,18 @@ public class ImprovedLcd : IClocked
     {
         state.LcdStatus = status.WithMode(nextMode);
         remainingTicksInMode = modeDurations[nextMode];
+
+        var interruptRequests = new InterruptState(state.InterruptFlags);
+        if (nextMode is VerticalBlank)
+        {
+            state.InterruptFlags = interruptRequests.WithVerticalBlankSet();
+        }
+        else if ((nextMode is HorizontalBlank && status.IsHblankInterruptEnabled)
+            || (nextMode is SearchingOam && status.IsOAMInterruptEnabled)
+            )
+        {
+            state.InterruptFlags = interruptRequests.WithLcdStatusSet();
+        }
     }
 
     private readonly List<ImprovedSprite> spritesOnScanLine = new();
@@ -99,8 +127,25 @@ public class ImprovedLcd : IClocked
     private const int ScreenWidth = 160;
     private const int TileMapSize = 32;
 
-    private readonly Rgb[] spritePixels = new Rgb[ScreenWidth];
-    private readonly Rgb[] backgroundAndWindowPixels = new Rgb[ScreenWidth];
+    private readonly Rgba[] spritePixels = new Rgba[ScreenWidth];
+    private readonly Rgba[] backgroundAndWindowPixels = new Rgba[ScreenWidth];
+
+
+    private Rgba[] GetPixelLine()
+    {
+        var result = new Rgba[ScreenWidth];
+        for (var i = 0; i < ScreenWidth; i++)
+        {
+            if (spritePixels[i].Alpha is 0)
+            {
+                result[i] = backgroundAndWindowPixels[i];
+                continue;
+            }
+
+            result[i] = spritePixels[i];
+        }
+        return result;
+    }
 
     private void GeneratePixelLine()
     {
@@ -137,7 +182,7 @@ public class ImprovedLcd : IClocked
 
         for (var i = 0; i < ScreenWidth; i++)
         {
-            backgroundAndWindowPixels[i] = GetBackgroundTileColor(tile, tileX, tileY);
+            backgroundAndWindowPixels[i] = new(GetBackgroundTileColor(tile, tileX, tileY));
 
             if (++tileX is TileSize)
             {
@@ -175,7 +220,7 @@ public class ImprovedLcd : IClocked
                 continue;
             }
 
-            backgroundAndWindowPixels[i] = GetWindowTileColor(tile, tileX, tileY);
+            backgroundAndWindowPixels[i] = new(GetWindowTileColor(tile, tileX, tileY));
 
             if (++tileX is TileSize)
             {
@@ -231,7 +276,7 @@ public class ImprovedLcd : IClocked
                 }
 
                 var colorIndex = tileData.GetColorIndex(tileRow, tileColumn);
-                spritePixels[screenStartIndex + tileColumn] = palette.DecodeColorIndex(colorIndex);
+                spritePixels[screenStartIndex + tileColumn] = new(palette.DecodeColorIndex(colorIndex));
             }
         }
 
