@@ -220,7 +220,7 @@ public class InstructionSet
         {
 
             _ when highNibble < 4 && lowNibble is 2 or 6 or 0xa or 0xe => true, // 0x[0-3](2|6|a|e)
-            < 0x3f and < 0x80 => true,
+            > 0x3f and < 0x80 => true,
             0xe0 or 0xe2 or 0xea => true,
             0xf0 or 0xf2 or 0xfa => true,
             _ => false
@@ -229,6 +229,138 @@ public class InstructionSet
 
     private byte Load8(byte opCode)
     {
+        if (opCode is 0x02)
+        {
+            bus.Write(state.BC, state.Accumulator);
+            return 8;
+        }
+        if (opCode is 0x12)
+        {
+            bus.Write(state.DE, state.Accumulator);
+            return 8;
+        }
+        if (opCode is 0x22)
+        {
+            bus.Write(state.HL, state.Accumulator);
+            if (state.Low++ is 0xff)
+            {
+                state.High++;
+            }
+            return 8;
+        }
+        if (opCode is 0x32)
+        {
+            bus.Write(state.HL, state.Accumulator);
+            if (state.Low-- is 0)
+            {
+                state.High--;
+            }
+            return 8;
+        }
+
+        if (opCode is 0x0a)
+        {
+            state.Accumulator = bus.Read(state.BC);
+            return 8;
+        }
+        if (opCode is 0x1a)
+        {
+            state.Accumulator = bus.Read(state.DE);
+            return 8;
+        }
+        if (opCode is 0x2a)
+        {
+            state.Accumulator = bus.Read(state.HL);
+            if (state.Low++ is 0xff)
+            {
+                state.High++;
+            }
+            return 8;
+        }
+        if (opCode is 0x3a)
+        {
+            state.Accumulator = bus.Read(state.HL);
+            if (state.Low-- is 0)
+            {
+                state.High--;
+            }
+            return 8;
+        }
+
+        if (opCode is 0x06)
+        {
+            state.B = ReadImmediateByte();
+            return 8;
+        }
+        if (opCode is 0x0e)
+        {
+            state.C = ReadImmediateByte();
+            return 8;
+        }
+        if (opCode is 0x16)
+        {
+            state.D = ReadImmediateByte();
+            return 8;
+        }
+        if (opCode is 0x1e)
+        {
+            state.E = ReadImmediateByte();
+            return 8;
+        }
+        if (opCode is 0x26)
+        {
+            state.High = ReadImmediateByte();
+            return 8;
+        }
+        if (opCode is 0x2e)
+        {
+            state.Low = ReadImmediateByte();
+            return 8;
+        }
+        if (opCode is 0x36)
+        {
+            bus.Write(state.HL, ReadImmediateByte());
+            return 12;
+        }
+        if (opCode is 0x3e)
+        {
+            state.Accumulator = ReadImmediateByte();
+            return 8;
+        }
+
+        if (opCode is 0xe0)
+        {
+            bus.Write((ushort)(0xff00 + ReadImmediateByte()), state.Accumulator);
+            return 12;
+        }
+        if (opCode is 0xf0)
+        {
+            state.Accumulator = bus.Read((ushort)(0xff00 + ReadImmediateByte()));
+            return 12;
+        }
+
+        if (opCode is 0xe2)
+        {
+            bus.Write((ushort)(0xff00 + state.C), state.Accumulator);
+            return 8;
+        }
+        if (opCode is 0xf2)
+        {
+            state.Accumulator = bus.Read((ushort)(0xff00 + state.C));
+            return 8;
+        }
+
+        if (opCode is 0xea)
+        {
+            bus.Write(ReadImmediateAddress(), state.Accumulator);
+            return 16;
+        }
+        if (opCode is 0xfa)
+        {
+            state.Accumulator = bus.Read(ReadImmediateAddress());
+            return 16;
+        }
+
         var value = GetSourceValue(opCode, out var didReadFromMemory);
         var duration = didReadFromMemory ? 8 : 4;
 
