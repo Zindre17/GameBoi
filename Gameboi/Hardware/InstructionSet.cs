@@ -1066,6 +1066,8 @@ public class InstructionSet
 
     private byte ExecuteCbInstruction(byte opCode)
     {
+        state.IsInCbMode = false;
+
         ref var destination = ref GetDestinationByteRef(opCode, out var destinationIsInMemory);
 
         var flags = new CpuFlagRegister(state.Flags);
