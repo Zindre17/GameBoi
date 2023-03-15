@@ -517,7 +517,7 @@ public class InstructionSet
     {
         // 0x[c-f]5
         const byte mask = 0b1100_1111;
-        const byte result = 0b1100_1010;
+        const byte result = 0b1100_0101;
         return (opCode & mask) is result;
     }
 
