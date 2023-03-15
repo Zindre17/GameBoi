@@ -1,4 +1,5 @@
 using Gameboi.Memory.Io;
+using Gameboi.Memory.Specials;
 using static Gameboi.Statics.Frequencies;
 
 namespace Gameboi.Hardware;
@@ -30,7 +31,8 @@ public class ImprovedTimer : IClocked
         if (state.Tima is AboutToOverflow)
         {
             state.Tima = state.Tma;
-            state.SetTimerInterruptFlag();
+            var interruptRequests = new InterruptState(state.InterruptFlags);
+            state.InterruptFlags = interruptRequests.WithTimerSet();
             return;
         }
         state.Tima++;
