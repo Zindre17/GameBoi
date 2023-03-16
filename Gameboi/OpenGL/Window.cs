@@ -1,3 +1,5 @@
+using System;
+using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -18,8 +20,10 @@ public class Window
     private Texture? spriteTexture;
     private Shaders? shaders;
 
-    private readonly Gameboy gameboy = new();
+    private ImprovedGameboy? gameboy;
+    private readonly SystemState state = new();
 
+    private bool isPlaying;
 
     private static readonly float[] vertices = new float[]{
     //    x,   y, tx, ty,
@@ -79,39 +83,48 @@ public class Window
         shaders.SetUniform("Background", 0);
         shaders.SetUniform("Window", 1);
         shaders.SetUniform("Sprites", 2);
-
-        gameboy.OnPixelRowReady += UploadPixelRow;
     }
 
     private void UploadPixelRow(byte line, Rgba[] pixelRow)
     {
-        backgroundTexture?.FeedData<Rgba>(pixelRow, 0, line, (uint)(pixelRow.Length), 1);
+        backgroundTexture?.FeedData<Rgba>(pixelRow, 0, line, (uint)pixelRow.Length, 1);
     }
 
     private void OnKeyReleased(IKeyboard _, Key key, int __)
     {
-        gameboy.Controller.KeyUp(key);
+        gameboy?.Joypad.KeyUp(key);
     }
 
     private void OnKeyPressed(IKeyboard _, Key key, int __)
     {
-        gameboy.Controller.KeyDown(key);
+        gameboy?.Joypad.KeyDown(key);
         if (key is Key.Space)
         {
-            gameboy.PausePlayToggle();
+            isPlaying = !isPlaying;
         }
         if (key is Key.Escape)
         {
             //TODO add file picker.
-            gameboy.LoadGame("./roms/Pokemon Red.gb");
+            var game = RomReader.ReadRom("./roms/Pokemon Red.gb");
+
+            var gameHeader = new GameHeader(game.Rom);
+            window.Title = gameHeader.GetTitle();
+
+            state.ChangeGame(game.Rom, game.Ram, gameHeader.IsColorGame);
+
+            var mbcLogic = MbcFactory.GetMbcLogic(gameHeader.GetCartridgeType(), state);
+            gameboy = new ImprovedGameboy(state, mbcLogic);
+            gameboy.OnPixelRowReady += UploadPixelRow;
+            isPlaying = true;
+
         }
     }
 
     private void OnUpdate(double obj)
     {
-        if (gameboy.IsPlaying)
+        if (isPlaying)
         {
-            gameboy.PlayForOneFrame();
+            gameboy?.PlayFrame();
         }
     }
 
