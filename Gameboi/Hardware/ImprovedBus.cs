@@ -1,3 +1,4 @@
+using System;
 using Gameboi.Cartridges;
 
 namespace Gameboi.Hardware;
@@ -19,9 +20,9 @@ public class ImprovedBus
     {
         return address switch
         {
-            < 0x8000 => mbc.ReadRom(state.CartridgeRom, address),
+            < 0x8000 => mbc.ReadRom(address),
             < 0xA000 => state.VideoRam[address - 0x8000],
-            < 0xC000 => mbc.ReadRam(state.CartridgeRam, (ushort)(address - 0xA000)),
+            < 0xC000 => mbc.ReadRam((ushort)(address - 0xA000)),
             < 0xE000 => state.WorkRam[address - 0xC000],
             < 0xFE00 => state.WorkRam[address - 0xE000], // ECHO 0xC000 - 0xDDFF
             < 0xFF00 => 0xff, // Not used
@@ -36,17 +37,17 @@ public class ImprovedBus
         switch (address)
         {
             case < 0x8000:
-                return ref mbc.GetRomRef(state.CartridgeRom, address);
+                return ref mbc.GetRomRef(address);
             case < 0xA000:
                 return ref state.VideoRam[address - 0x8000];
             case < 0xC000:
-                return ref mbc.GetRamRef(state.CartridgeRam, (ushort)(address - 0xA000));
+                return ref mbc.GetRamRef((ushort)(address - 0xA000));
             case < 0xE000:
                 return ref state.WorkRam[address - 0xC000];
             case < 0xFE00:
                 return ref state.WorkRam[address - 0xE000]; // ECHO 0xC000 - 0xDDFF
             case < 0xFF00:
-                throw new System.Exception(); // Not used
+                throw new Exception(); // Not used
             case < 0xFF80:
                 return ref ioLogic.GetRef((ushort)(address - 0xFF00));
             case < 0xFFFF:
@@ -61,13 +62,13 @@ public class ImprovedBus
         switch (address)
         {
             case < 0x8000:
-                mbc.WriteRom(state.CartridgeRom, address, value);
+                mbc.WriteRom(address, value);
                 break;
             case < 0xA000:
                 state.VideoRam[address - 0x8000] = value;
                 break;
             case < 0xC000:
-                mbc.WriteRam(state.CartridgeRam, (ushort)(address - 0xA000), value);
+                mbc.WriteRam((ushort)(address - 0xA000), value);
                 break;
             case < 0xE000:
                 state.WorkRam[address - 0xC000] = value;

@@ -1,3 +1,4 @@
+using System;
 using Gameboi.Extensions;
 using static Gameboi.IoIndices;
 
@@ -6,12 +7,26 @@ namespace Gameboi;
 public class SystemState
 {
     // Cartridge memory
-    public byte[] CartridgeRom { get; private set; }
-    public byte[] CartridgeRam { get; private set; }
+    public byte[] CartridgeRom { get; private set; } = Array.Empty<byte>();
+    public byte[] CartridgeRam { get; private set; } = Array.Empty<byte>();
+
+    // MBC state
+    public bool MbcRamDisabled { get; set; } = true;
+    public int MbcRamOffset { get; set; } = 0;
+
+    public int MbcRom0Offset { get; set; } = 0;
+    public int MbcRom1Offset { get; set; } = MbcCartridgeBankSizes.RomBankSize;
+
+    public int MbcRomSelectLow { get; set; } = 0;
+    public int MbcRomSelectHigh { get; set; } = 0;
+
+    public int MbcRamSelect { get; set; } = 0;
+
+    public int MbcMode { get; set; } = 0;
 
     // Gameboy state (memory and IO)
-    public byte[] VideoRam { get; private set; }
-    public byte[] WorkRam { get; private set; }
+    public byte[] VideoRam { get; private set; } = new byte[0x16_000]; // Color specs
+    public byte[] WorkRam { get; private set; } = new byte[0x32_000]; // Color specs
     public byte[] Oam { get; private set; } = new byte[0xA0];
     public byte[] IoPorts { get; private set; } = new byte[0x80];
     public byte[] HighRam { get; private set; } = new byte[0x7F];
@@ -61,18 +76,17 @@ public class SystemState
     public int DmaTicksElapsed { get; set; } = 0;
     public int DmaBytesTransferred { get; set; } = 0;
 
-    public SystemState(bool color, byte[] cartridgeRom, byte[] cartridgeRam)
+    public void ChangeGame(byte[] cartridgeRom, byte[] cartridgeRam, bool isColorGame)
     {
         CartridgeRom = cartridgeRom;
         CartridgeRam = cartridgeRam;
 
-        VideoRam = new byte[color ? 0x16_000 : 0x8_000];
-        WorkRam = new byte[color ? 0x32_000 : 0x8_000];
+        Reset(isColorGame);
     }
 
-    public void Reset(bool color)
+    public void Reset(bool isColorGame)
     {
-        ResetCpu(color);
+        ResetCpu(isColorGame);
         ResetCartridge();
         ResetGameboiState();
     }
@@ -94,6 +108,13 @@ public class SystemState
     private void ResetCartridge()
     {
         CartridgeRam.Clear();
+        MbcMode = 0;
+        MbcRamDisabled = true;
+        MbcRamOffset = 0;
+        MbcRom0Offset = 0;
+        MbcRom1Offset = MbcCartridgeBankSizes.RomBankSize;
+        MbcRomSelectHigh = 0;
+        MbcRomSelectLow = 0;
     }
 
     private void ResetGameboiState()
@@ -196,6 +217,12 @@ public class SystemState
     public ref byte ObjectPalette1 => ref IoPorts[OBP_1_index];
     public ref byte WindowY => ref IoPorts[WY_index];
     public ref byte WindowX => ref IoPorts[WX_index];
+}
+
+public static class MbcCartridgeBankSizes
+{
+    public const int RomBankSize = 0x4_000;
+    public const int RamBankSize = 0x2_000;
 }
 
 public static class IoIndices

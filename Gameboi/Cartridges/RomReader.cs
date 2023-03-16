@@ -5,15 +5,12 @@ namespace Gameboi.Cartridges;
 
 public static class RomReader
 {
-    private const int typePosition = 0x147;
     private const int romBanksPosition = 0x148;
     private const int ramSizePosition = 0x149;
 
     public static RomCartridge ReadRom(string filePath)
     {
         byte[] allBytes = File.ReadAllBytes(filePath);
-
-        var type = InterpretCartridgeType(allBytes[typePosition]);
 
         var romBanks = TranslateRomSizeTypeToBanks(allBytes[romBanksPosition]);
         var rom = new byte[romBanks * 0x4000];
@@ -22,21 +19,7 @@ public static class RomReader
         var ramSize = TranslateRamSize(allBytes[ramSizePosition]);
         var ram = new byte[ramSize.Banks * ramSize.SizePerBank];
 
-        return new(rom, ram, type);
-    }
-
-    private static IMemoryBankControllerLogic InterpretCartridgeType(byte typeValue)
-    {
-        return typeValue switch
-        {
-            0 or 8 or 9 => new NoMemoryBankController(),
-            1 or 2 or 3 => new MemoryBankController1(),
-            5 or 6 => new MemoryBankController2(),
-            >= 0xF and <= 0x13 => new MemoryBankController3(),
-            >= 0x19 and <= 0x1E => new MemoryBankController5(),
-
-            _ => throw new Exception("Does not support cartridge type")
-        };
+        return new(rom, ram);
     }
 
     private static RamSize TranslateRamSize(byte type)
@@ -51,6 +34,7 @@ public static class RomReader
             _ => throw new ArgumentException("Unexpected type"),
         };
     }
+
     private static int TranslateRomSizeTypeToBanks(byte type)
     {
         return type switch
@@ -71,6 +55,6 @@ public static class RomReader
     }
 }
 
-public record RomCartridge(byte[] Rom, byte[] Ram, IMemoryBankControllerLogic Logic);
+public record RomCartridge(byte[] Rom, byte[] Ram);
 
 public record RamSize(int Banks, int SizePerBank);
