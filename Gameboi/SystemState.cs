@@ -35,6 +35,8 @@ public class SystemState
     private byte interruptEnableRegister;
     public ref byte InterruptEnableRegister => ref interruptEnableRegister;
 
+    public int TicksLeftOfInstruction { get; set; } = 0;
+
     // Cpu registers
     private byte accumulator;
     public ref byte Accumulator => ref accumulator;

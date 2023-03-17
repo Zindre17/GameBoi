@@ -16,13 +16,11 @@ public class ImprovedCpu
         this.instructionSet = instructionSet;
     }
 
-    private int ticksLeftOfInstruction = 0;
-
     public void Tick()
     {
-        if (ticksLeftOfInstruction is not 0)
+        if (state.TicksLeftOfInstruction is not 0)
         {
-            ticksLeftOfInstruction--;
+            state.TicksLeftOfInstruction--;
             return;
         }
 
@@ -67,7 +65,7 @@ public class ImprovedCpu
         bus.Write(--state.StackPointer, state.ProgramCounter.GetHighByte());
         bus.Write(--state.StackPointer, state.ProgramCounter.GetLowByte());
 
-        ticksLeftOfInstruction = 20;
+        state.TicksLeftOfInstruction = 20;
 
         var interrupts = new InterruptState(state.InterruptEnableRegister & state.InterruptFlags);
         if (interrupts.IsVerticalBlankSet)
@@ -101,7 +99,7 @@ public class ImprovedCpu
     private void ExecuteNextInstruction()
     {
         var opCode = Fetch();
-        ticksLeftOfInstruction = instructionSet.ExecuteInstruction(opCode);
+        state.TicksLeftOfInstruction = instructionSet.ExecuteInstruction(opCode);
     }
 
     private byte Fetch()
