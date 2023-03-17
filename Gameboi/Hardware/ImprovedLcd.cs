@@ -15,8 +15,6 @@ public class ImprovedLcd : IClocked
 
     public Action<byte, Rgba[]>? OnLineReady;
 
-    private int remainingTicksInMode = SearchingOamDurationInTicks;
-
     public void Tick()
     {
         LcdControl lcdControl = state.LcdControl;
@@ -32,9 +30,9 @@ public class ImprovedLcd : IClocked
             state.InterruptFlags = interruptRequests.WithLcdStatusSet();
         }
 
-        if (--remainingTicksInMode is not 0)
+        if (--state.LcdRemainingTicksInMode is not 0)
         {
-            if (lcdStatus.Mode is VerticalBlank && (remainingTicksInMode % ScanLineDurationInTicks) is 0)
+            if (lcdStatus.Mode is VerticalBlank && (state.LcdRemainingTicksInMode % ScanLineDurationInTicks) is 0)
             {
                 state.LineY++;
             }
@@ -70,7 +68,7 @@ public class ImprovedLcd : IClocked
     private void SetNextMode(LcdStatus status, byte nextMode)
     {
         state.LcdStatus = status.WithMode(nextMode);
-        remainingTicksInMode = modeDurations[nextMode];
+        state.LcdRemainingTicksInMode = modeDurations[nextMode];
 
         var interruptRequests = new InterruptState(state.InterruptFlags);
         if (nextMode is VerticalBlank)
@@ -193,8 +191,6 @@ public class ImprovedLcd : IClocked
         }
     }
 
-    private int linesOfWindowDrawnThisFrame = 0;
-
     private void ProcessWindowLine(bool useHighTileMapArea, bool useLowTileDataArea)
     {
         if (state.LineY < state.WindowY)
@@ -207,8 +203,8 @@ public class ImprovedLcd : IClocked
         }
 
         var tileX = 0;
-        var tileY = linesOfWindowDrawnThisFrame % TileSize;
-        var currentTileRow = linesOfWindowDrawnThisFrame / TileSize;
+        var tileY = state.LcdLinesOfWindowDrawnThisFrame % TileSize;
+        var currentTileRow = state.LcdLinesOfWindowDrawnThisFrame / TileSize;
         var tileMapIndex = currentTileRow * TileMapSize;
 
         var tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
@@ -230,7 +226,7 @@ public class ImprovedLcd : IClocked
             }
         }
 
-        linesOfWindowDrawnThisFrame++;
+        state.LcdLinesOfWindowDrawnThisFrame++;
     }
 
     private ImprovedTile GetTileData(bool useHighTileMapArea, bool useLowTileDataArea, int tileMapIndex)
