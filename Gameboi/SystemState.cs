@@ -65,7 +65,9 @@ public class SystemState
     public ushort HL => (ushort)((high << 8) & low);
 
     public ushort ProgramCounter { get; set; }
-    public ushort StackPointer { get; set; }
+
+    public ushort stackPointer;
+    public ref ushort StackPointer => ref stackPointer;
 
     // etc
     public bool InterruptMasterEnable { get; set; } = true;

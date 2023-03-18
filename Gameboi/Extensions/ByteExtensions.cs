@@ -19,4 +19,6 @@ public static class ByteExtensions
         var high = value & 0xf0;
         return (byte)((high >> 4) | (low << 4));
     }
+
+    public static byte Invert(this byte value) => (byte)~value;
 }

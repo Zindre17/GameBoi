@@ -17,7 +17,7 @@ public class ImprovedGameboy
     private readonly Joypad joypad;
 
     // cpu and bus
-    private readonly ImprovedCpu cpu;
+    private readonly OldCpuWithNewState cpu;
 
     public ImprovedGameboy(
         SystemState state,
@@ -35,7 +35,7 @@ public class ImprovedGameboy
         timer = new ImprovedTimer(state);
         dma = new Dma(state, bus);
         joypad = new Joypad(state);
-        cpu = new ImprovedCpu(state, bus, new InstructionSet(state, bus));
+        cpu = new OldCpuWithNewState(state, bus);
     }
 
     private const int TicksPerFrame = 70224;
