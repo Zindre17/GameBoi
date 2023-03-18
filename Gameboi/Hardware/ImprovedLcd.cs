@@ -170,13 +170,16 @@ public class ImprovedLcd : IClocked
         var scrollX = state.ScrollX;
         var scrollY = state.ScrollY;
 
-        var startingTileMapIndex = TileMap.GetTileMapIndex(scrollX, scrollY);
+        var tileMapIndex = TileMap.GetTileMapIndex(scrollX, scrollY);
+
+        LcdControl lcdControl = state.LcdControl;
 
         var tileY = scrollY % TileSize;
         var tileX = scrollX % TileSize;
-        var tileMapIndex = startingTileMapIndex;
 
-        var tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
+        var tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, lcdControl.BackgroundUsesHighTileMapArea, tileMapIndex);
+
+        var tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileDataIndex);
 
         for (var i = 0; i < ScreenWidth; i++)
         {
@@ -186,7 +189,8 @@ public class ImprovedLcd : IClocked
             {
                 tileX = 0;
                 tileMapIndex++;
-                tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
+                tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, lcdControl.BackgroundUsesHighTileMapArea, tileMapIndex);
+                tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileDataIndex);
             }
         }
     }
@@ -206,8 +210,9 @@ public class ImprovedLcd : IClocked
         var tileY = state.LcdLinesOfWindowDrawnThisFrame % TileSize;
         var currentTileRow = state.LcdLinesOfWindowDrawnThisFrame / TileSize;
         var tileMapIndex = currentTileRow * TileMapSize;
-
-        var tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
+        LcdControl lcdControl = state.LcdControl;
+        var tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, lcdControl.WindowUsesHighTileMapArea, tileMapIndex);
+        var tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileDataIndex);
 
         for (var i = state.WindowX - 7; i < ScreenWidth; i++)
         {
@@ -222,7 +227,8 @@ public class ImprovedLcd : IClocked
             {
                 tileX = 0;
                 tileMapIndex++;
-                tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
+                tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, lcdControl.WindowUsesHighTileMapArea, tileMapIndex);
+                tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileDataIndex);
             }
         }
 
