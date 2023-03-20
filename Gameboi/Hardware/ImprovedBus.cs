@@ -25,6 +25,7 @@ public class ImprovedBus
             < 0xC000 => mbc.ReadRam((ushort)(address - 0xA000)),
             < 0xE000 => state.WorkRam[address - 0xC000],
             < 0xFE00 => state.WorkRam[address - 0xE000], // ECHO 0xC000 - 0xDDFF
+            < 0xFEA0 => state.Oam[address - 0xFE00],
             < 0xFF00 => 0xff, // Not used
             < 0xFF80 => ioLogic.Read((ushort)(address - 0xFF00)),
             < 0xFFFF => state.HighRam[address - 0xFF80],
@@ -46,6 +47,8 @@ public class ImprovedBus
                 return ref state.WorkRam[address - 0xC000];
             case < 0xFE00:
                 return ref state.WorkRam[address - 0xE000]; // ECHO 0xC000 - 0xDDFF
+            case < 0xFEA0:
+                return ref state.Oam[address - 0xFE00];
             case < 0xFF00:
                 throw new Exception(); // Not used
             case < 0xFF80:
@@ -75,6 +78,9 @@ public class ImprovedBus
                 break;
             case < 0xFE00:
                 state.WorkRam[address - 0xE000] = value;
+                break;
+            case < 0xFEA0:
+                state.Oam[address - 0xFE00] = value;
                 break;
             case < 0xFF00: break; // Not used
             case < 0xFF80:
