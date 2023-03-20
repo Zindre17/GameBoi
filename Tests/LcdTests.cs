@@ -1,6 +1,6 @@
 using Gameboi.Hardware;
 
-namespace LcdTests;
+namespace Tests;
 
 [TestClass]
 public class LcdTests
