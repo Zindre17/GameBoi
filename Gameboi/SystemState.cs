@@ -48,21 +48,21 @@ public class SystemState
     public byte c;
     public ref byte C => ref c;
 
-    public ushort BC => (ushort)((B << 8) & C);
+    public ushort BC => (ushort)((B << 8) | C);
 
     public byte d;
     public ref byte D => ref d;
     public byte e;
     public ref byte E => ref e;
 
-    public ushort DE => (ushort)((D << 8) & E);
+    public ushort DE => (ushort)((D << 8) | E);
 
     public byte high;
     public ref byte High => ref high;
     public byte low;
     public ref byte Low => ref low;
 
-    public ushort HL => (ushort)((high << 8) & low);
+    public ushort HL => (ushort)((high << 8) | low);
 
     public ushort ProgramCounter { get; set; }
 
