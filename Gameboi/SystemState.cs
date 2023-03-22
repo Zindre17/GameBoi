@@ -48,21 +48,21 @@ public class SystemState
     public byte c;
     public ref byte C => ref c;
 
-    public ushort BC => (ushort)((B << 8) | C);
+    public ushort BC => B.Concat(C);
 
     public byte d;
     public ref byte D => ref d;
     public byte e;
     public ref byte E => ref e;
 
-    public ushort DE => (ushort)((D << 8) | E);
+    public ushort DE => D.Concat(E);
 
     public byte high;
     public ref byte High => ref high;
     public byte low;
     public ref byte Low => ref low;
 
-    public ushort HL => (ushort)((high << 8) | low);
+    public ushort HL => high.Concat(low);
 
     public ushort ProgramCounter { get; set; }
 

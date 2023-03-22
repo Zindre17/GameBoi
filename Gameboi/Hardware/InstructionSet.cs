@@ -23,7 +23,7 @@ public class InstructionSet
     private ushort ReadImmediateAddress()
     {
         var low = ReadNextInstructionByte();
-        return (ushort)((ReadNextInstructionByte() << 8) | low);
+        return ReadNextInstructionByte().Concat(low);
     }
 
     private byte ReadImmediateByte()
@@ -811,7 +811,7 @@ public class InstructionSet
         }
 
         var low = bus.Read(state.StackPointer++);
-        state.ProgramCounter = (byte)((bus.Read(state.StackPointer++) << 8) | low);
+        state.ProgramCounter = bus.Read(state.StackPointer++).Concat(low);
 
         return 20;
     }
@@ -832,7 +832,7 @@ public class InstructionSet
         }
 
         var low = bus.Read(state.StackPointer++);
-        state.ProgramCounter = (byte)((bus.Read(state.StackPointer++) << 8) | low);
+        state.ProgramCounter = bus.Read(state.StackPointer++).Concat(low);
 
         return 16;
     }
@@ -1043,8 +1043,8 @@ public class InstructionSet
     {
         var addition = opCode switch
         {
-            0x09 => (state.B << 8) | state.C,
-            0x19 => (state.D << 8) | state.E,
+            0x09 => state.BC,
+            0x19 => state.DE,
             0x29 => state.HL,
             0x39 => state.StackPointer,
             _ => throw new Exception()

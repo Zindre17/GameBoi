@@ -189,14 +189,9 @@ public class OldCpuWithNewState
     private ushort GetDirectAddress()
     {
         byte lowByte = Fetch();
-        return ConcatBytes(Fetch(), lowByte);
+        return Fetch().Concat(lowByte);
     }
     #endregion
-
-    private static ushort ConcatBytes(byte high, byte low)
-    {
-        return (ushort)((high << 8) | low);
-    }
 
     #region Instructions
 
@@ -359,8 +354,8 @@ public class OldCpuWithNewState
     }
     private void Add(ref byte targetHigh, ref byte targetLow, byte operandHigh, byte operandLow)
     {
-        ushort target = ConcatBytes(targetHigh, targetLow);
-        ushort operand = ConcatBytes(operandHigh, operandLow);
+        ushort target = targetHigh.Concat(targetLow);
+        ushort operand = operandHigh.Concat(operandLow);
         ushort result = Add16(target, operand, out bool C, out bool H);
         targetHigh = result.GetHighByte();
         targetLow = result.GetLowByte();
@@ -398,7 +393,7 @@ public class OldCpuWithNewState
     }
     private void IncrementInMemory(byte addressHigh, byte addressLow)
     {
-        ushort address = ConcatBytes(addressHigh, addressLow);
+        ushort address = addressHigh.Concat(addressLow);
         byte value = Read(address);
         Increment(ref value);
         Write(address, value);
@@ -427,7 +422,7 @@ public class OldCpuWithNewState
     }
     private void DecrementInMemory(byte addresshigh, byte addressLow)
     {
-        ushort address = ConcatBytes(addresshigh, addressLow);
+        ushort address = addresshigh.Concat(addressLow);
         byte value = Read(address);
         Decrement(ref value);
         Write(address, value);
@@ -620,7 +615,7 @@ public class OldCpuWithNewState
     {
         byte newPCLow = Read(state.StackPointer++);
         byte newPCHigh = Read(state.StackPointer++);
-        state.ProgramCounter = ConcatBytes(newPCHigh, newPCLow);
+        state.ProgramCounter = newPCHigh.Concat(newPCLow);
     }
     private void ReturnAndEnableInterrupt()
     {

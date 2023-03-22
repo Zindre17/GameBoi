@@ -21,4 +21,6 @@ public static class ByteExtensions
     }
 
     public static byte Invert(this byte value) => (byte)~value;
+
+    public static ushort Concat(this byte highByte, byte lowByte) => (ushort)((highByte << 8) | lowByte);
 }
