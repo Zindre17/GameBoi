@@ -19,8 +19,8 @@ public readonly struct ImprovedSprite
 
     public int SpriteNr => spriteNr;
 
-    public byte X => oam[startAddress];
-    public byte Y => oam[startAddress + 1];
+    public byte Y => oam[startAddress];
+    public byte X => oam[startAddress + 1];
 
     public byte TileIndex => oam[startAddress + 2];
 
