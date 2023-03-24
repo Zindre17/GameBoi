@@ -8,10 +8,10 @@ public static class TileMap
     private const int HighTileMapAreaStart = 0x1c00;
     private const int LowTileMapAreaStart = 0x1800;
 
-    public static int GetTileMapIndex(byte mapX, byte mapY)
+    public static int GetTileMapIndex(byte x, byte y)
     {
-        var firstTileMapIndexOfRow = mapY / TileSize * TileMapSize;
-        var relativeTileMapIndexInRow = mapX / TileSize;
+        var firstTileMapIndexOfRow = y / TileSize * TileMapSize;
+        var relativeTileMapIndexInRow = x / TileSize;
 
         return firstTileMapIndexOfRow + relativeTileMapIndexInRow;
     }
