@@ -4,6 +4,7 @@ using System.Linq;
 using Gameboi.Graphics;
 using Gameboi.Memory.Io;
 using Gameboi.Memory.Specials;
+using static Gameboi.Hardware.LcdConstants;
 
 namespace Gameboi.Hardware;
 
@@ -286,21 +287,24 @@ public class ImprovedLcd : IClocked
 
         bool IsOffScreen(int screenIndex) => screenIndex is < 0 or >= ScreenWidth;
     }
+}
 
-    private const byte VerticalBlankLineYStart = 144;
+public static class LcdConstants
+{
+    public const byte VerticalBlankLineYStart = 144;
 
-    private const byte SearchingOam = 2;
-    private const byte TransferringDataToLcd = 3;
-    private const byte HorizontalBlank = 0;
-    private const byte VerticalBlank = 1;
+    public const byte SearchingOam = 2;
+    public const byte TransferringDataToLcd = 3;
+    public const byte HorizontalBlank = 0;
+    public const byte VerticalBlank = 1;
 
-    private const int SearchingOamDurationInTicks = 80;
-    private const int GeneratePixelLineDurationInTicks = 172; // Minimum
-    private const int HorizontalBlankDurationInTicks = 204; // Maximum
-    private const int VerticalBlankDurationInTicks = ScanLineDurationInTicks * 10;
-    private const int ScanLineDurationInTicks = 456;
+    public const int SearchingOamDurationInTicks = 80;
+    public const int GeneratePixelLineDurationInTicks = 172; // Minimum
+    public const int HorizontalBlankDurationInTicks = 204; // Maximum
+    public const int VerticalBlankDurationInTicks = ScanLineDurationInTicks * 10;
+    public const int ScanLineDurationInTicks = 456;
 
-    private static readonly int[] modeDurations = new[]{
+    public static readonly int[] modeDurations = new[]{
         HorizontalBlankDurationInTicks,
         VerticalBlankDurationInTicks,
         SearchingOamDurationInTicks,
