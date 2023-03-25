@@ -73,7 +73,7 @@ internal class IoLogic
         if (address is DMA_index)
         {
             state.IsDmaInProgress = true;
-            state.DmaStartAddress = (ushort)(state.Dma << 4);
+            state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
     }
 
