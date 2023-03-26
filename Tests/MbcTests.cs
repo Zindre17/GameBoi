@@ -151,6 +151,12 @@ public class Mbc1Tests
         mbc.WriteRom(0x3fff, 0x21);
         Assert.AreEqual(0x4000, state.MbcRom1Offset);
 
+        // Test ram banks
+        mbc.WriteRom(0x4000, 1);
+        Assert.AreEqual(0x2000, state.MbcRamOffset);
+        mbc.WriteRom(0x4000, 0);
+        Assert.AreEqual(0x0000, state.MbcRamOffset);
+
         // Enable more than 0x1f rom banks
         mbc.WriteRom(0x6000, 1);
         Assert.AreEqual(0x4000, state.MbcRom1Offset);
