@@ -46,10 +46,10 @@ public class ImprovedGameboy
 
     public void PlayFrame()
     {
-        state.TicksElapsedThisFrame = 0;
-        while (state.TicksElapsedThisFrame < TicksPerFrame)
+        var ticksElapsedThisFrame = 0;
+        while (ticksElapsedThisFrame < TicksPerFrame)
         {
-            state.TicksElapsedThisFrame++;
+            ticksElapsedThisFrame++;
 
             timer.Tick();
 

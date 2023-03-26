@@ -71,7 +71,6 @@ public class SystemState
 
     // etc
     public bool InterruptMasterEnable { get; set; } = true;
-    public int TicksElapsedThisFrame { get; set; } = 0;
     public bool IsHalted { get; set; } = false;
 
     public int LcdRemainingTicksInMode { get; set; } = ScreenTimings.mode2Clocks;
@@ -83,6 +82,9 @@ public class SystemState
     public ushort DmaStartAddress { get; set; }
     public int DmaTicksElapsed { get; set; } = 0;
     public int DmaBytesTransferred { get; set; } = 0;
+
+    public int TicksSinceLastDivIncrement { get; set; } = 0;
+    public int TicksSinceLastTimaIncrement { get; set; } = 0;
 
     public void ChangeGame(byte[] cartridgeRom, byte[] cartridgeRam, bool isColorGame)
     {
@@ -135,7 +137,6 @@ public class SystemState
         InterruptEnableRegister = 0;
 
         InterruptMasterEnable = true;
-        TicksElapsedThisFrame = 0;
 
         IsHalted = false;
 
@@ -144,6 +145,9 @@ public class SystemState
         IsDmaInProgress = false;
         DmaBytesTransferred = 0;
         DmaTicksElapsed = 0;
+
+        TicksSinceLastDivIncrement = 0;
+        TicksSinceLastTimaIncrement = 0;
     }
 
     private void ResetIO()

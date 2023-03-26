@@ -32,7 +32,8 @@ public class OldDivWithNewState
 
     public void Tick()
     {
-        if (state.TicksElapsedThisFrame % ticksPerDivIncrement is 0)
+        state.TicksSinceLastDivIncrement++;
+        if (state.TicksSinceLastDivIncrement == ticksPerDivIncrement)
         {
             if (state.Div++ is 0xff)
             {
