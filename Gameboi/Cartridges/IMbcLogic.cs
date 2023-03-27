@@ -1,4 +1,5 @@
 using System;
+using Gameboi.Extensions;
 using static Gameboi.MbcCartridgeBankSizes;
 
 namespace Gameboi.Cartridges;
@@ -186,14 +187,15 @@ public class MemoryBankController2 : MemoryBankControllerBase
         {
             return 0xff;
         }
-        return (byte)(state.CartridgeRam[address % state.CartridgeRam.Length] | 0xF0);
+        address &= 0x01ff;
+        return (byte)(state.CartridgeRam[address] | 0xF0);
     }
 
     public override void WriteRom(ushort address, byte value)
     {
         if (address < 0x4000)
         {
-            if ((address & 0x0100) is 0x0100)
+            if (address.GetHighByte().IsBitSet(0))
             {
                 var romSelect = (value & 0x0F) % RomBanks;
                 if (romSelect is 0)
@@ -204,7 +206,7 @@ public class MemoryBankController2 : MemoryBankControllerBase
             }
             else
             {
-                var enabled = (value & 0b0101) is 0b0101;
+                var enabled = value is 0x0a;
                 state.MbcRamDisabled = !enabled;
             }
         }
