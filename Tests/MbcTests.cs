@@ -314,3 +314,137 @@ public class Mbc2Tests
         Assert.AreEqual(0x4000 * 14, state.MbcRom1Offset);
     }
 }
+
+[TestClass]
+public class Mbc3Tests
+{
+    private readonly SystemState state = new();
+    private readonly MemoryBankController3 mbc;
+
+    public Mbc3Tests()
+    {
+        mbc = new MemoryBankController3(state);
+        state.ChangeGame(new byte[0x4000 * 128], new byte[0x2000 * 8], false);
+    }
+
+    [TestMethod]
+    public void Read()
+    {
+        state.CartridgeRom[0x0000] = 1;
+        state.CartridgeRom[0x7fff] = 2;
+
+        Assert.AreEqual(1, mbc.ReadRom(0x0000));
+        Assert.AreEqual(2, mbc.ReadRom(0x7fff));
+
+        state.MbcRom1Offset = 0;
+        Assert.AreEqual(1, mbc.ReadRom(0x4000));
+
+        Assert.AreEqual(0xff, mbc.ReadRam(0));
+
+        state.MbcRamDisabled = false;
+        state.CartridgeRam[0] = 3;
+
+        Assert.AreEqual(3, mbc.ReadRam(0));
+
+        state.MbcRamOffset = 0x2000;
+        state.CartridgeRam[0x2000] = 4;
+
+        Assert.AreEqual(4, mbc.ReadRam(0));
+
+        state.MbcRamSelect = 0x8;
+        Assert.AreEqual(DateTime.Now.Second, mbc.ReadRam(0));
+
+        state.MbcRamSelect = 0x9;
+        Assert.AreEqual(DateTime.Now.Minute, mbc.ReadRam(0));
+
+        state.MbcRamSelect = 0xa;
+        Assert.AreEqual(DateTime.Now.Hour, mbc.ReadRam(0));
+
+        // TODO: test day counter
+    }
+
+    [TestMethod]
+    public void Write()
+    {
+        state.MbcRamDisabled = false;
+
+        mbc.WriteRam(0x0000, 1);
+        mbc.WriteRam(0x1fff, 2);
+
+        Assert.AreEqual(1, state.CartridgeRam[0x0000]);
+        Assert.AreEqual(2, state.CartridgeRam[0x1fff]);
+
+        state.MbcRamOffset = 0x2000;
+        mbc.WriteRam(0x0000, 1);
+        mbc.WriteRam(0x1fff, 2);
+
+        Assert.AreEqual(1, state.CartridgeRam[0x2000]);
+        Assert.AreEqual(2, state.CartridgeRam[0x3fff]);
+
+        mbc.WriteRom(0x0000, 3);
+        mbc.WriteRom(0x7fff, 4);
+
+        Assert.AreEqual(0, state.CartridgeRom[0x0000]);
+        Assert.AreEqual(0, state.CartridgeRom[0x7fff]);
+    }
+
+    [TestMethod]
+    public void WriteRom()
+    {
+        state.MbcRamDisabled = true;
+        Assert.AreEqual(true, state.MbcRamDisabled);
+
+        mbc.WriteRom(0x0000, 0x0a);
+        Assert.AreEqual(false, state.MbcRamDisabled);
+
+        state.MbcRamDisabled = true;
+        mbc.WriteRom(0x1fff, 0x0a);
+        Assert.AreEqual(false, state.MbcRamDisabled);
+
+        state.MbcRamDisabled = true;
+        mbc.WriteRom(0x0000, 0x0b);
+        Assert.AreEqual(true, state.MbcRamDisabled);
+
+        state.MbcRamDisabled = true;
+        mbc.WriteRom(0x0000, 0x00);
+        Assert.AreEqual(true, state.MbcRamDisabled);
+
+        state.MbcRamDisabled = false;
+        mbc.WriteRom(0x0000, 0x00);
+        Assert.AreEqual(true, state.MbcRamDisabled);
+
+        state.MbcRamDisabled = false;
+        mbc.WriteRom(0x1fff, 0x00);
+        Assert.AreEqual(true, state.MbcRamDisabled);
+
+        state.MbcRamDisabled = false;
+        mbc.WriteRom(0x0000, 0x01);
+        Assert.AreEqual(false, state.MbcRamDisabled);
+
+        state.MbcRamDisabled = false;
+        mbc.WriteRom(0x0000, 0x0a);
+        Assert.AreEqual(false, state.MbcRamDisabled);
+
+
+        mbc.WriteRom(0x2000, 0xff);
+        Assert.AreEqual(0x4000 * 0x7f, state.MbcRom1Offset);
+
+        mbc.WriteRom(0x3fff, 0x01);
+        Assert.AreEqual(0x4000 * 0x01, state.MbcRom1Offset);
+
+        mbc.WriteRom(0x4000, 0x8);
+        Assert.AreEqual(8, state.MbcRamSelect);
+
+        mbc.WriteRom(0x5fff, 0x9);
+        Assert.AreEqual(9, state.MbcRamSelect);
+
+        mbc.WriteRom(0x4000, 0xc);
+        Assert.AreEqual(0xc, state.MbcRamSelect);
+
+        mbc.WriteRom(0x4000, 0xd);
+        Assert.AreEqual(0x0, state.MbcRamSelect);
+
+        mbc.WriteRom(0x4000, 0xe);
+        Assert.AreEqual(0x1, state.MbcRamSelect);
+    }
+}

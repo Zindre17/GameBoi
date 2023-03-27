@@ -217,6 +217,8 @@ public class MemoryBankController3 : MemoryBankControllerBase
 {
     public MemoryBankController3(SystemState state) : base(state) { }
 
+    // TODO: Implement latching of RTC registers
+    // TODO: Fix day counter
     public override byte ReadRam(ushort address)
     {
         if (state.MbcRamDisabled)
