@@ -289,7 +289,7 @@ public class MemoryBankController5 : MemoryBankControllerBase
         }
         else if (address < 0x4000)
         {
-            state.MbcRomSelectHigh = value;
+            state.MbcRomSelectHigh = value & 1;
         }
         else if (address < 0x6000)
         {
