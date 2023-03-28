@@ -62,6 +62,7 @@ public static class RomReader
             5 => 64,
             6 => 128,
             7 => 256,
+            8 => 512,
             0x52 => 72,
             0x53 => 80,
             0x54 => 96,
