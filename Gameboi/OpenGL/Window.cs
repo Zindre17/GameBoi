@@ -112,7 +112,7 @@ public class Window
 
             state.ChangeGame(game.Rom, game.Ram, gameHeader.IsColorGame);
 
-            var mbcLogic = MbcFactory.GetMbcLogic(gameHeader.GetCartridgeType(), state);
+            var mbcLogic = MbcFactory.GetMbcLogic(game.Type, state);
             gameboy = new ImprovedGameboy(state, mbcLogic);
             gameboy.OnPixelRowReady += UploadPixelRow;
             isPlaying = true;
