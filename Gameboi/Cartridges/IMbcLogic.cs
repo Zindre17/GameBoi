@@ -57,6 +57,10 @@ public class NoMemoryBankController : IMemoryBankControllerLogic
 
     public byte ReadRam(ushort address)
     {
+        if (state.CartridgeRam.Length is 0)
+        {
+            return 0xff;
+        }
         return state.CartridgeRam[address % state.CartridgeRam.Length];
     }
 
@@ -67,7 +71,10 @@ public class NoMemoryBankController : IMemoryBankControllerLogic
 
     public void WriteRam(ushort address, byte value)
     {
-        state.CartridgeRam[address % state.CartridgeRam.Length] = value;
+        if (state.CartridgeRam.Length > 0)
+        {
+            state.CartridgeRam[address % state.CartridgeRam.Length] = value;
+        }
     }
 
     public void WriteRom(ushort address, byte value)
@@ -221,7 +228,7 @@ public class MemoryBankController3 : MemoryBankControllerBase
     // TODO: Fix day counter
     public override byte ReadRam(ushort address)
     {
-        if (state.MbcRamDisabled)
+        if (state.MbcRamDisabled || state.CartridgeRam.Length is 0)
         {
             return 0xff;
         }
