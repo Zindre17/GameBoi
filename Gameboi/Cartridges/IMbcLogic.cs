@@ -172,7 +172,10 @@ public class MemoryBankController1 : MemoryBankControllerBase
         }
         else
         {
-            state.MbcRamOffset = (state.MbcRamSelect % RamBanks) * RamBankSize;
+            if (RamBanks is not 0)
+            {
+                state.MbcRamOffset = (state.MbcRamSelect % RamBanks) * RamBankSize;
+            }
             romBankNr = state.MbcRomSelectLow;
         }
 
