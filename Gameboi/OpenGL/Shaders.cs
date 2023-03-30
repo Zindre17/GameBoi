@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Silk.NET.OpenGL;
 
@@ -15,7 +16,7 @@ public class Shaders : IDisposable
     public Shaders(GL gl)
     {
         this.gl = gl;
-        var shaders = FindShaders("./Gameboi/OpenGL/Basic.shader");
+        var shaders = FindShaders("OpenGL.Basic.shader");
 
         program = gl.CreateProgram();
         var vert = gl.CreateShader(ShaderType.VertexShader);
@@ -97,8 +98,11 @@ public class Shaders : IDisposable
         var sourceBuilders = new StringBuilder[2] { new(), new() };
         var mode = -1;
 
-        var file = File.ReadLines(filepath);
-        foreach (var line in file)
+        var assembly = Assembly.GetExecutingAssembly();
+        using var reader = new StreamReader(assembly.GetManifestResourceStream(assembly.GetName().Name + "." + filepath)
+            ?? throw new Exception($"File {assembly.GetName().Name}.{filepath} does not exist in assembly"));
+        var line = reader.ReadLine();
+        while (line is not null)
         {
             if (line.Contains(ShaderStart))
             {
@@ -116,6 +120,7 @@ public class Shaders : IDisposable
                 sourceBuilders[mode].Append(line);
                 sourceBuilders[mode].Append(Environment.NewLine);
             }
+            line = reader.ReadLine();
         }
 
         return sourceBuilders.Select(b => b.ToString()).ToArray();
