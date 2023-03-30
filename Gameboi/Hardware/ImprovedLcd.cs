@@ -170,12 +170,13 @@ public class ImprovedLcd : IClocked
     {
         var scrollX = state.ScrollX;
         var scrollY = state.ScrollY;
+        var spaceY = (byte)(scrollY + state.LineY);
 
-        var tileMapIndex = TileMap.GetTileMapIndex(scrollX, scrollY);
+        var tileMapIndex = TileMap.GetTileMapIndex(scrollX, spaceY);
 
         LcdControl lcdControl = state.LcdControl;
 
-        var tileY = scrollY % TileSize;
+        var tileY = spaceY % TileSize;
         var tileX = scrollX % TileSize;
 
         var tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, lcdControl.BackgroundUsesHighTileMapArea, tileMapIndex);
@@ -247,7 +248,7 @@ public class ImprovedLcd : IClocked
 
     private Rgb GetBackgroundTileColor(ImprovedTile tile, int x, int y)
     {
-        var colorIndex = tile.GetColorIndex(x, y);
+        var colorIndex = tile.GetColorIndex(y, x);
         ImprovedPalette palette = state.BackgroundPalette;
         return palette.DecodeColorIndex(colorIndex);
     }
