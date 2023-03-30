@@ -1,4 +1,3 @@
-using System;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
@@ -54,6 +53,8 @@ public class Window
         window.Resize += OnResize;
     }
 
+    public SystemState State => state;
+
     public void Run() => window.Run();
 
     private void OnLoad()
@@ -106,18 +107,24 @@ public class Window
         {
             //TODO add file picker.
             var game = RomReader.ReadRom("./roms/Pokemon Red.gb");
-
-            var gameHeader = new GameHeader(game.Rom);
-            window.Title = gameHeader.GetTitle();
-
-            state.ChangeGame(game.Rom, game.Ram, gameHeader.IsColorGame);
-
-            var mbcLogic = MbcFactory.GetMbcLogic(game.Type, state);
-            gameboy = new ImprovedGameboy(state, mbcLogic);
-            gameboy.OnPixelRowReady += UploadPixelRow;
-            isPlaying = true;
-
+            ChangeGame(game);
         }
+    }
+
+    public void ChangeGame(RomCartridge game)
+    {
+        isPlaying = false;
+
+        var gameHeader = new GameHeader(game.Rom);
+        window.Title = gameHeader.GetTitle();
+
+        state.ChangeGame(game.Rom, game.Ram, gameHeader.IsColorGame);
+
+        var mbcLogic = MbcFactory.GetMbcLogic(game.Type, state);
+        gameboy = new ImprovedGameboy(state, mbcLogic);
+        gameboy.OnPixelRowReady += UploadPixelRow;
+
+        isPlaying = true;
     }
 
     private void OnUpdate(double obj)

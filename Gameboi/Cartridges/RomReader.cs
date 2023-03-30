@@ -11,8 +11,11 @@ public static class RomReader
 
     public static RomCartridge ReadRom(string filePath)
     {
-        byte[] allBytes = File.ReadAllBytes(filePath);
+        return ReadRom(File.ReadAllBytes(filePath));
+    }
 
+    public static RomCartridge ReadRom(byte[] allBytes)
+    {
         var romBanks = TranslateRomSizeTypeToBanks(allBytes[romBanksPosition]);
         var rom = new byte[romBanks * 0x4000];
         Array.Copy(allBytes, 0, rom, 0, romBanks * 0x4000);
