@@ -67,6 +67,52 @@ public class WindowTests
 
         window.Run();
     }
+
+    [TestMethod]
+    public void TestWindow()
+    {
+        var window = new Window();
+
+        var rom = new byte[0x8000];
+
+        RomHelper.SetTitle(rom, "Test Window");
+        RomHelper.Enfeeble(rom);
+
+        window.ChangeGame(RomReader.ReadRom(rom));
+
+        var state = window.State;
+
+        // Lcd on, wnd high tilemap, wnd on, bg/wnd low data area, bg+wnd on
+        state.LcdControl = 0b1111_0001;
+
+        state.BackgroundPalette = 0b11_10_01_00;
+        state.ScrollY = 20;
+        state.WindowX = 7;
+        state.WindowY = 0;
+
+        var tileStartIndex = 16;
+        for (var i = 0; i < 16; i++)
+        {
+            var index = tileStartIndex + i;
+            state.VideoRam[index] = 0xff;
+        }
+
+        // Add black corners
+        state.VideoRam[0x1c00] = 1;
+        state.VideoRam[0x1c01] = 1;
+        state.VideoRam[0x1c12] = 1;
+        state.VideoRam[0x1c13] = 1;
+        state.VideoRam[0x1c20] = 1;
+        state.VideoRam[0x1c33] = 1;
+        state.VideoRam[0x1e00] = 1;
+        state.VideoRam[0x1e13] = 1;
+        state.VideoRam[0x1e20] = 1;
+        state.VideoRam[0x1e21] = 1;
+        state.VideoRam[0x1e32] = 1;
+        state.VideoRam[0x1e33] = 1;
+
+        window.Run();
+    }
 }
 
 public static class RomHelper
