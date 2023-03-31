@@ -61,6 +61,7 @@ public class ImprovedLcd : IClocked
                 break;
             case VerticalBlank:
                 SetNextMode(lcdStatus, SearchingOam);
+                state.LcdLinesOfWindowDrawnThisFrame = 0;
                 state.LineY = 0;
                 break;
         }
@@ -207,9 +208,7 @@ public class ImprovedLcd : IClocked
         var tileY = state.LcdLinesOfWindowDrawnThisFrame % TileSize;
         var currentTileRow = state.LcdLinesOfWindowDrawnThisFrame / TileSize;
         var tileMapIndex = currentTileRow * TileMapSize;
-        LcdControl lcdControl = state.LcdControl;
-        var tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, lcdControl.WindowUsesHighTileMapArea, tileMapIndex);
-        var tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileDataIndex);
+        var tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
 
         for (var i = state.WindowX - 7; i < ScreenWidth; i++)
         {
@@ -218,14 +217,17 @@ public class ImprovedLcd : IClocked
                 continue;
             }
 
-            backgroundAndWindowPixels[i] = new(GetWindowTileColor(tile, tileX, tileY));
+            var color = GetWindowTileColor(tile, tileX, tileY);
+            if (color is not null)
+            {
+                backgroundAndWindowPixels[i] = new(color.Value);
+            }
 
             if (++tileX is TileSize)
             {
                 tileX = 0;
                 tileMapIndex++;
-                tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, lcdControl.WindowUsesHighTileMapArea, tileMapIndex);
-                tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileDataIndex);
+                tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
             }
         }
 
@@ -238,8 +240,16 @@ public class ImprovedLcd : IClocked
         return ImprovedTileData.GetTileData(state.VideoRam, useLowTileDataArea, tileDataIndex);
     }
 
-    private Rgb GetWindowTileColor(ImprovedTile tile, int x, int y)
-        => GetBackgroundTileColor(tile, x, y);
+    private Rgb? GetWindowTileColor(ImprovedTile tile, int x, int y)
+    {
+        var colorIndex = tile.GetColorIndex(y, x);
+        if (colorIndex is 0)
+        {
+            return null;
+        }
+        ImprovedPalette palette = state.BackgroundPalette;
+        return palette.DecodeColorIndex(colorIndex);
+    }
 
     private Rgb GetBackgroundTileColor(ImprovedTile tile, int x, int y)
     {
