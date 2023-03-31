@@ -1,4 +1,5 @@
 using Gameboi.Cartridges;
+using Gameboi.Memory.Io;
 using Gameboi.OpenGL;
 
 namespace Tests;
@@ -24,7 +25,7 @@ public class WindowTests
         // Color 2 = dark gray
         // Color 1 = ligh gray
         // Color 0 = white
-        state.BackgroundPalette = 0b11100100;
+        state.BackgroundPalette = 0b11_10_01_00;
 
         // Setup a tile with horizontal lines at index 0
         // (all tiles in tilemap for background point to tile 0)
@@ -32,7 +33,7 @@ public class WindowTests
         {
             var color = i / 4;
 
-            state.VideoRam[i] = color switch
+            state.VideoRam[i + 16] = color switch
             {
                 0 => 0,
                 1 => 0,
@@ -41,7 +42,7 @@ public class WindowTests
                 _ => throw new Exception()
             };
 
-            state.VideoRam[i + 1] = color switch
+            state.VideoRam[i + 17] = color switch
             {
                 0 => 0,
                 1 => 0xff,
@@ -50,6 +51,19 @@ public class WindowTests
                 _ => throw new Exception()
             };
         }
+
+        state.VideoRam[0x1800] = 1;
+        state.VideoRam[0x1801] = 1;
+        state.VideoRam[0x1812] = 1;
+        state.VideoRam[0x1813] = 1;
+        state.VideoRam[0x1820] = 1;
+        state.VideoRam[0x1833] = 1;
+        state.VideoRam[0x1a00] = 1;
+        state.VideoRam[0x1a13] = 1;
+        state.VideoRam[0x1a20] = 1;
+        state.VideoRam[0x1a21] = 1;
+        state.VideoRam[0x1a32] = 1;
+        state.VideoRam[0x1a33] = 1;
 
         window.Run();
     }
