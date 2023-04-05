@@ -1,5 +1,4 @@
 using Gameboi.Cartridges;
-using Gameboi.Memory.Io;
 using Gameboi.OpenGL;
 
 namespace Tests;
@@ -110,6 +109,61 @@ public class WindowTests
         state.VideoRam[0x1e21] = 1;
         state.VideoRam[0x1e32] = 1;
         state.VideoRam[0x1e33] = 1;
+
+        window.Run();
+    }
+}
+
+[TestClass]
+public class SpriteLayerTests
+{
+    [TestMethod]
+    public void MovingSprite()
+    {
+        var window = new Window();
+        var state = window.State;
+
+        var rom = new byte[0x8000];
+
+        RomHelper.Enfeeble(rom);
+        RomHelper.SetTitle(rom, "Sprites moving");
+
+        window.ChangeGame(RomReader.ReadRom(rom));
+
+        state.LcdControl = 0b1001_0111;
+        state.ObjectPalette0 = 0b11_10_01_00;
+
+        state.Oam[0] = 20;
+        state.Oam[1] = 20;
+        state.Oam[2] = 2;
+        state.Oam[3] = 0;
+
+        for (var i = 1; i < 16; i += 2)
+        {
+            state.VideoRam[32 + i] = 0xff;
+            state.VideoRam[32 + i - 1] = 0xe7;
+        }
+
+        for (var i = 0; i < 16; i += 2)
+        {
+            state.VideoRam[48 + i] = 0xff;
+            state.VideoRam[48 + i + 1] = 0xe7;
+        }
+
+        var counter = 0;
+        window.OnFrameUpdate += () =>
+        {
+            state.Oam[1] += 1;
+            state.Oam[1] %= 167;
+            state.Oam[0] += 1;
+            state.Oam[0] %= 159;
+            counter++;
+            if (counter > 120)
+            {
+                counter = 0;
+                state.LcdControl ^= 0b0000_0100;
+            }
+        };
 
         window.Run();
     }

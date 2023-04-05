@@ -1,3 +1,4 @@
+using System;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
@@ -54,6 +55,8 @@ public class Window
     }
 
     public SystemState State => state;
+
+    public Action? OnFrameUpdate { get; set; }
 
     public void Run() => window.Run();
 
@@ -131,6 +134,7 @@ public class Window
     {
         if (isPlaying)
         {
+            OnFrameUpdate?.Invoke();
             gameboy?.PlayFrame();
         }
     }
