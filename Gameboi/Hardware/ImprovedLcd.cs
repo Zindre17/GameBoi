@@ -111,6 +111,10 @@ public class ImprovedLcd : IClocked
     private bool SpriteShowsOnScanLine(ImprovedSprite sprite)
     {
         var spriteEnd = sprite.Y - NormalSpriteHeight;
+        if (spriteEnd < 0)
+        {
+            return false;
+        }
         var spriteHeight = NormalSpriteHeight;
 
         LcdControl lcdControl = state.LcdControl;
@@ -120,7 +124,7 @@ public class ImprovedLcd : IClocked
             spriteHeight = DoublelSpriteHeight;
         }
 
-        return spriteEnd <= state.LineY && (state.LineY - spriteEnd) < spriteHeight;
+        return state.LineY <= spriteEnd && state.LineY > (spriteEnd - spriteHeight);
     }
 
     private const int TileSize = 8;
@@ -149,6 +153,8 @@ public class ImprovedLcd : IClocked
 
     private void GeneratePixelLine()
     {
+        Array.Clear(spritePixels);
+
         LcdControl lcdControl = state.LcdControl;
 
         if (lcdControl.IsBackgroundEnabled)
@@ -269,8 +275,21 @@ public class ImprovedLcd : IClocked
                 continue;
             }
 
-            var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, sprite.TileIndex);
-            var tileRow = state.LineY - sprite.Y;
+            LcdControl control = state.LcdControl;
+
+            var offset = control.IsDoubleSpriteSize ? 15 : 7;
+
+            var tileRow = offset - (sprite.Y - state.LineY);
+
+            var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, control.IsDoubleSpriteSize
+                ? (byte)(sprite.TileIndex & 0xfe)
+                : sprite.TileIndex);
+
+            if (tileRow > 7)
+            {
+                tileRow -= 8;
+                tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1));
+            }
 
             ImprovedPalette palette = sprite.UsePalette1
                 ? state.ObjectPalette1
@@ -289,7 +308,7 @@ public class ImprovedLcd : IClocked
             }
         }
 
-        bool IsSpriteVisible(ImprovedSprite sprite) => sprite.X is 0 or >= ScreenWidth + 8;
+        bool IsSpriteVisible(ImprovedSprite sprite) => sprite.X is >= 0 and < ScreenWidth + 8;
 
         bool IsOffScreen(int screenIndex) => screenIndex is < 0 or >= ScreenWidth;
     }
