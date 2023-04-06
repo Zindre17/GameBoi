@@ -277,9 +277,9 @@ public class ImprovedLcd : IClocked
 
             LcdControl control = state.LcdControl;
 
-            var offset = control.IsDoubleSpriteSize ? 15 : 7;
+            var offset = control.IsDoubleSpriteSize ? 0 : 8;
 
-            var tileRow = offset - (sprite.Y - state.LineY);
+            var tileRow = sprite.Y - offset - state.LineY;
 
             var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, control.IsDoubleSpriteSize
                 ? (byte)(sprite.TileIndex & 0xfe)
