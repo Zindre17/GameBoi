@@ -129,17 +129,19 @@ public class ImprovedLcd : IClocked
     private const int TileMapSize = 32;
 
     private readonly Rgba[] spritePixels = new Rgba[ScreenWidth];
-    private readonly Rgba[] backgroundAndWindowPixels = new Rgba[ScreenWidth];
-
+    private readonly int[] backgroundAndWindowColors = new int[ScreenWidth];
 
     private Rgba[] GetPixelLine()
     {
         var result = new Rgba[ScreenWidth];
+        var palette = new ImprovedPalette(state.BackgroundPalette);
+
         for (var i = 0; i < ScreenWidth; i++)
         {
             if (spritePixels[i].Alpha is 0)
             {
-                result[i] = backgroundAndWindowPixels[i];
+                var color = palette.DecodeColorIndex(backgroundAndWindowColors[i]);
+                result[i] = new(color);
                 continue;
             }
 
@@ -157,11 +159,10 @@ public class ImprovedLcd : IClocked
         if (lcdControl.IsBackgroundEnabled)
         {
             ProcessBackgroundLine(lcdControl.BackgroundUsesHighTileMapArea, lcdControl.BackgroundAndWindowUsesLowTileDataArea);
-        }
-
-        if (lcdControl.IsWindowEnabled)
-        {
-            ProcessWindowLine(lcdControl.WindowUsesHighTileMapArea, lcdControl.BackgroundAndWindowUsesLowTileDataArea);
+            if (lcdControl.IsWindowEnabled)
+            {
+                ProcessWindowLine(lcdControl.WindowUsesHighTileMapArea, lcdControl.BackgroundAndWindowUsesLowTileDataArea);
+            }
         }
 
         if (lcdControl.IsSpritesEnabled)
@@ -185,7 +186,7 @@ public class ImprovedLcd : IClocked
 
         for (var i = 0; i < ScreenWidth; i++)
         {
-            backgroundAndWindowPixels[i] = new(GetBackgroundTileColor(tile, tileX, tileY));
+            backgroundAndWindowColors[i] = tile.GetColorIndex(tileY, tileX);
 
             if (++tileX is TileSize)
             {
@@ -220,11 +221,7 @@ public class ImprovedLcd : IClocked
                 continue;
             }
 
-            var color = GetWindowTileColor(tile, tileX, tileY);
-            if (color is not null)
-            {
-                backgroundAndWindowPixels[i] = new(color.Value);
-            }
+            backgroundAndWindowColors[i] = tile.GetColorIndex(tileY, tileX);
 
             if (++tileX is TileSize)
             {
@@ -241,24 +238,6 @@ public class ImprovedLcd : IClocked
     {
         var tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, useHighTileMapArea, tileMapIndex);
         return ImprovedTileData.GetTileData(state.VideoRam, useLowTileDataArea, tileDataIndex);
-    }
-
-    private Rgb? GetWindowTileColor(ImprovedTile tile, int x, int y)
-    {
-        var colorIndex = tile.GetColorIndex(y, x);
-        if (colorIndex is 0)
-        {
-            return null;
-        }
-        ImprovedPalette palette = state.BackgroundPalette;
-        return palette.DecodeColorIndex(colorIndex);
-    }
-
-    private Rgb GetBackgroundTileColor(ImprovedTile tile, int x, int y)
-    {
-        var colorIndex = tile.GetColorIndex(y, x);
-        ImprovedPalette palette = state.BackgroundPalette;
-        return palette.DecodeColorIndex(colorIndex);
     }
 
     private void ProcessSpritesLine()
@@ -308,6 +287,11 @@ public class ImprovedLcd : IClocked
                 var colorIndex = tileData.GetColorIndex(tileRow, column);
 
                 if (colorIndex is 0)
+                {
+                    continue;
+                }
+
+                if (sprite.Hidden && backgroundAndWindowColors[rowPixelIndex] > 0)
                 {
                     continue;
                 }
