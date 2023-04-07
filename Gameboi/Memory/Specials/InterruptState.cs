@@ -19,16 +19,16 @@ public readonly struct InterruptState
     public InterruptState(int value) => this.value = (byte)value;
 
     public bool IsVerticalBlankSet => value.IsBitSet(0);
-    public byte WithVerticalBlankSet() => value.SetBit(4);
-    public byte WithVerticalBlankUnset() => value.UnsetBit(4);
+    public byte WithVerticalBlankSet() => value.SetBit(0);
+    public byte WithVerticalBlankUnset() => value.UnsetBit(0);
 
     public bool IsLcdStatusSet => value.IsBitSet(1);
-    public byte WithLcdStatusSet() => value.SetBit(4);
-    public byte WithLcdStatusUnset() => value.UnsetBit(4);
+    public byte WithLcdStatusSet() => value.SetBit(1);
+    public byte WithLcdStatusUnset() => value.UnsetBit(1);
 
     public bool IsTimerSet => value.IsBitSet(2);
-    public byte WithTimerSet() => value.SetBit(4);
-    public byte WithTimerUnset() => value.UnsetBit(4);
+    public byte WithTimerSet() => value.SetBit(2);
+    public byte WithTimerUnset() => value.UnsetBit(2);
 
     public bool IsSerialPortSet => value.IsBitSet(3);
     public byte WithSerialPortSet() => value.SetBit(3);
