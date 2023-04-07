@@ -56,6 +56,8 @@ public class ImprovedGameboy
             cpu.Tick();
             lcd.Tick();
             dma.Tick();
+
+            joypad.CheckInputs();
         }
     }
 }
