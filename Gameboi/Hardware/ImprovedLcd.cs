@@ -85,19 +85,19 @@ public class ImprovedLcd : IClocked
         }
     }
 
-    private readonly List<ImprovedSprite> spritesOnScanLine = new();
+    private readonly List<(ImprovedSprite, int)> spritesOnScanLine = new();
     private void SearchOam()
     {
         spritesOnScanLine.Clear();
 
         foreach (var sprite in ImprovedOam.GetSprites(state.Oam))
         {
-            if (!SpriteShowsOnScanLine(sprite))
+            if (!SpriteShowsOnScanLine(sprite, out var spriteTileRow))
             {
                 continue;
             }
 
-            spritesOnScanLine.Add(sprite);
+            spritesOnScanLine.Add((sprite, spriteTileRow));
             if (spritesOnScanLine.Count is 10)
             {
                 break;
@@ -108,23 +108,20 @@ public class ImprovedLcd : IClocked
     private const byte NormalSpriteHeight = 8;
     private const byte DoublelSpriteHeight = NormalSpriteHeight * 2;
 
-    private bool SpriteShowsOnScanLine(ImprovedSprite sprite)
+    private bool SpriteShowsOnScanLine(ImprovedSprite sprite, out int tileRow)
     {
-        var spriteEnd = sprite.Y - NormalSpriteHeight;
-        if (spriteEnd < 0)
+        var spriteStart = sprite.Y - DoublelSpriteHeight;
+        if (spriteStart is < 0 or > 143)
         {
+            tileRow = -1;
             return false;
         }
-        var spriteHeight = NormalSpriteHeight;
 
-        LcdControl lcdControl = state.LcdControl;
-        if (lcdControl.IsDoubleSpriteSize)
-        {
-            spriteEnd = sprite.Y;
-            spriteHeight = DoublelSpriteHeight;
-        }
+        LcdControl control = state.LcdControl;
+        var spriteHeight = control.IsDoubleSpriteSize ? DoublelSpriteHeight : NormalSpriteHeight;
+        tileRow = state.LineY - spriteStart;
 
-        return state.LineY <= spriteEnd && state.LineY > (spriteEnd - spriteHeight);
+        return tileRow >= 0 && tileRow < spriteHeight;
     }
 
     private const int TileSize = 8;
@@ -266,29 +263,31 @@ public class ImprovedLcd : IClocked
 
     private void ProcessSpritesLine()
     {
-        foreach (var sprite in spritesOnScanLine
-            .OrderByDescending(sprite => sprite.X)
-            .ThenByDescending(sprite => sprite.SpriteNr))
+        LcdControl control = state.LcdControl;
+
+        foreach (var (sprite, spriteTileRow) in spritesOnScanLine
+            .OrderByDescending(pair => pair.Item1.X)
+            .ThenByDescending(pair => pair.Item1.SpriteNr))
         {
             if (IsSpriteVisible(sprite) is false)
             {
                 continue;
             }
 
-            LcdControl control = state.LcdControl;
-
-            var offset = control.IsDoubleSpriteSize ? 0 : 8;
-
-            var tileRow = sprite.Y - offset - state.LineY;
-
             var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, control.IsDoubleSpriteSize
                 ? (byte)(sprite.TileIndex & 0xfe)
                 : sprite.TileIndex);
 
+            var tileRow = spriteTileRow;
             if (tileRow > 7)
             {
                 tileRow -= 8;
                 tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1));
+            }
+
+            if (sprite.Yflip)
+            {
+                tileRow = 7 - tileRow;
             }
 
             ImprovedPalette palette = sprite.UsePalette1
@@ -298,13 +297,22 @@ public class ImprovedLcd : IClocked
             var screenStartIndex = sprite.X - TileSize;
             for (var tileColumn = 0; tileColumn < TileSize; tileColumn++)
             {
-                if (IsOffScreen(screenStartIndex + tileColumn))
+                var rowPixelIndex = screenStartIndex + tileColumn;
+
+                if (IsOffScreen(rowPixelIndex))
                 {
                     continue;
                 }
 
-                var colorIndex = tileData.GetColorIndex(tileRow, tileColumn);
-                spritePixels[screenStartIndex + tileColumn] = new(palette.DecodeColorIndex(colorIndex));
+                var column = sprite.Xflip ? 7 - tileColumn : tileColumn;
+                var colorIndex = tileData.GetColorIndex(tileRow, column);
+
+                if (colorIndex is 0)
+                {
+                    continue;
+                }
+
+                spritePixels[rowPixelIndex] = new(palette.DecodeColorIndex(colorIndex));
             }
         }
 
