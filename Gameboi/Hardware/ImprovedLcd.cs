@@ -81,6 +81,10 @@ public class ImprovedLcd : IClocked
         if (nextMode is VerticalBlank)
         {
             state.InterruptFlags = interruptRequests.WithVerticalBlankSet();
+            if (status.IsVblankInterruptEnabled)
+            {
+                state.InterruptFlags = interruptRequests.WithLcdStatusSet();
+            }
         }
         else if ((nextMode is HorizontalBlank && status.IsHblankInterruptEnabled)
             || (nextMode is SearchingOam && status.IsOAMInterruptEnabled)
