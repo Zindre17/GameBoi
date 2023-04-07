@@ -185,8 +185,9 @@ public class ImprovedLcd : IClocked
         var scrollX = state.ScrollX;
         var scrollY = state.ScrollY;
         var spaceY = (byte)(scrollY + state.LineY);
+        var spaceX = scrollX;
 
-        var tileMapIndex = TileMap.GetTileMapIndex(scrollX, spaceY);
+        var tileMapIndex = TileMap.GetTileMapIndex(spaceX, spaceY);
 
         var tileY = spaceY % TileSize;
         var tileX = scrollX % TileSize;
@@ -200,7 +201,8 @@ public class ImprovedLcd : IClocked
             if (++tileX is TileSize)
             {
                 tileX = 0;
-                tileMapIndex++;
+                spaceX += TileSize;
+                tileMapIndex = TileMap.GetTileMapIndex(spaceX, spaceY);
                 tile = GetTileData(useHighTileMapArea, useLowTileDataArea, tileMapIndex);
             }
         }
