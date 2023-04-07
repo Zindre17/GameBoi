@@ -20,8 +20,9 @@ public readonly struct ImprovedTile
         var firstByte = data[rowStartOffset];
         var secondByte = data[rowStartOffset + 1];
 
-        var firstLayer = (firstByte >> column) & 1;
-        var secondLayer = (secondByte >> column) & 1;
+        var shift = 7 - column;
+        var firstLayer = (firstByte >> shift) & 1;
+        var secondLayer = (secondByte >> shift) & 1;
 
         return (secondLayer << 1) | firstLayer;
     }
