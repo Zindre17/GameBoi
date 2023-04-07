@@ -44,6 +44,10 @@ public class ImprovedLcd : IClocked
         {
             case SearchingOam:
                 SearchOam();
+                if (state.LineY == state.WindowY)
+                {
+                    state.LcdWindowTriggered = true;
+                }
                 SetNextMode(lcdStatus, TransferringDataToLcd);
                 break;
             case TransferringDataToLcd:
@@ -62,6 +66,7 @@ public class ImprovedLcd : IClocked
             case VerticalBlank:
                 SetNextMode(lcdStatus, SearchingOam);
                 state.LcdLinesOfWindowDrawnThisFrame = 0;
+                state.LcdWindowTriggered = false;
                 state.LineY = 0;
                 break;
         }
@@ -199,12 +204,14 @@ public class ImprovedLcd : IClocked
 
     private void ProcessWindowLine(bool useHighTileMapArea, bool useLowTileDataArea)
     {
-        if (state.LineY < state.WindowY)
+        if (state.LcdWindowTriggered is false)
         {
             return;
         }
+
         if (state.WindowX > 166)
         {
+            state.LcdLinesOfWindowDrawnThisFrame++;
             return;
         }
 

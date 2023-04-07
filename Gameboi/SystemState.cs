@@ -75,6 +75,7 @@ public class SystemState
 
     public int LcdRemainingTicksInMode { get; set; } = ScreenTimings.mode2Clocks;
     public int LcdLinesOfWindowDrawnThisFrame { get; set; } = 0;
+    public bool LcdWindowTriggered { get; set; } = false;
 
     public bool IsInCbMode { get; set; } = false;
 
@@ -178,6 +179,7 @@ public class SystemState
         LcdStatus = 0x80;
         LcdRemainingTicksInMode = ScreenTimings.mode2Clocks;
         LcdLinesOfWindowDrawnThisFrame = 0;
+        LcdWindowTriggered = false;
 
         BackgroundPalette = 0xfc;
         ObjectPalette0 = 0xff;
