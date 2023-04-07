@@ -10,9 +10,6 @@ public class OldCpuWithNewState
     private readonly SystemState state;
     private readonly ImprovedBus bus;
 
-    private bool shouldUpdateIME = false;
-    private bool nextIMEValue = false;
-
     private InterruptState IE => new(state.InterruptEnableRegister);
     private InterruptState IF => new(state.InterruptFlags);
 
@@ -76,22 +73,21 @@ public class OldCpuWithNewState
     #region Interrupts
     private void HandleInterrupts()
     {
-        if (shouldUpdateIME)
+        // if IF is 0 there are no interrupt requests => exit
+        if (IF.HasNone)
         {
-            state.InterruptMasterEnable = nextIMEValue;
-            shouldUpdateIME = false;
             return;
         }
-
-        // if IF is 0 there are no interrupt requests => exit
-        if (!IF.Any) return;
 
         // any interrupt request should remove halt-state (even if events are not enabled)
         state.IsHalted = false;
 
-        if (!state.InterruptMasterEnable) return;
-        if (!IE.Any) return;
-        if (new InterruptState(IF & IE).HasNone) return;
+        if (state.InterruptMasterEnable is false
+            || IE.HasNone
+            || new InterruptState(IF & IE).HasNone)
+        {
+            return;
+        }
 
         Interrupt();
     }
@@ -211,19 +207,11 @@ public class OldCpuWithNewState
 
     private void DisableInterrupt()
     {
-        if (state.InterruptMasterEnable)
-        {
-            shouldUpdateIME = true;
-            nextIMEValue = false;
-        }
+        state.InterruptMasterEnable = false;
     }
     private void EnableInterrupt()
     {
-        if (!state.InterruptMasterEnable)
-        {
-            shouldUpdateIME = true;
-            nextIMEValue = true;
-        }
+        state.InterruptMasterEnable = true;
     }
 
     private void Prefix_CB()
