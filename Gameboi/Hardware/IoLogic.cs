@@ -61,6 +61,7 @@ internal class IoLogic
 
             // LCD -----------------------------
             // Bits 0-2 are readonly.
+            LCDC_index => LcdControlWriteLogic(value),
             STAT_index => (byte)((value & 0xf8) | (state.LcdStatus & 7)),
             // Resets when written to.
             LY_index => 0,
@@ -75,6 +76,23 @@ internal class IoLogic
             state.IsDmaInProgress = true;
             state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
+    }
+
+    private byte LcdControlWriteLogic(byte value)
+    {
+        LcdControl control = state.LcdControl;
+        LcdControl newControl = value;
+        LcdStatus status = state.LcdStatus;
+
+        // disabled => enabled
+        if (newControl.IsLcdEnabled && control.IsLcdEnabled is false)
+        {
+            state.LineY = 0;
+            state.LcdRemainingTicksInMode = 80;
+            state.LcdStatus = status.WithMode(2);
+        }
+
+        return value;
     }
 
     private byte LycWriteLogic(byte value)
