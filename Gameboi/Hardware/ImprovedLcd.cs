@@ -231,6 +231,7 @@ public class ImprovedLcd : IClocked
         {
             if (i < 0)
             {
+                tileX++;
                 continue;
             }
 
