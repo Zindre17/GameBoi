@@ -20,17 +20,9 @@ out vec4 FragColor;
 
 in vec2 TexCoord;
 
-uniform sampler2D Background;
-uniform sampler2D Window;
-uniform sampler2D Sprites;
+uniform sampler2D Game;
 
 void main()
 {
-    vec4 st, wt, bt;
-    st = texture(Sprites, TexCoord);
-    wt = texture(Window, TexCoord);
-    bt = texture(Background, TexCoord);
-    // FragColor = vec4(1,1,1,1);
-    FragColor = bt;
-    // FragColor = mix(bt, mix(wt, st, st.a), max(wt.a, st.a));
+    FragColor = texture(Game, TexCoord);
 }

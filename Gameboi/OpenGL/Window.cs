@@ -15,9 +15,7 @@ public class Window
     private VertexArray? vertexArray;
     private VertexBuffer? vertexBuffer;
     private IndexBuffer? indexBuffer;
-    private Texture? backgroundTexture;
-    private Texture? windowTexture;
-    private Texture? spriteTexture;
+    private Texture? gameTexture;
     private Shaders? shaders;
 
     private ImprovedGameboy? gameboy;
@@ -77,21 +75,17 @@ public class Window
 
         vertexArray.AddBuffer(vertexBuffer);
 
-        backgroundTexture = new Texture(gl, 0, null, 160, 144);
-        windowTexture = new Texture(gl, 1, null, 160, 144);
-        spriteTexture = new Texture(gl, 2, null, 160, 144);
+        gameTexture = new Texture(gl, 0, null, 160, 144);
 
         shaders = new Shaders(gl);
         shaders.Bind();
 
-        shaders.SetUniform("Background", 0);
-        shaders.SetUniform("Window", 1);
-        shaders.SetUniform("Sprites", 2);
+        shaders.SetUniform("Game", 0);
     }
 
     private void UploadPixelRow(byte line, Rgba[] pixelRow)
     {
-        backgroundTexture?.FeedData<Rgba>(pixelRow, 0, line, (uint)pixelRow.Length, 1);
+        gameTexture?.FeedData<Rgba>(pixelRow, 0, line, (uint)pixelRow.Length, 1);
     }
 
     private void OnKeyReleased(IKeyboard _, Key key, int __)
@@ -157,14 +151,11 @@ public class Window
 
         shaders!.Dispose();
 
-        backgroundTexture!.Dispose();
-        windowTexture!.Dispose();
-        spriteTexture!.Dispose();
+        gameTexture!.Dispose();
     }
 
     private void OnResize(Vector2D<int> newScreenSize)
     {
         gl!.Viewport(0, 0, (uint)newScreenSize.X, (uint)newScreenSize.Y);
     }
-
 }
