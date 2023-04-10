@@ -13,6 +13,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <EmbeddedResource Include="OpenGL\Basic.shader" />
+    <EmbeddedResource Include="**/*.shader" />
   </ItemGroup>
 </Project>
