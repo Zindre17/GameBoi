@@ -14,15 +14,12 @@ public class Window
     private readonly IWindow window;
     private GL? gl;
     private VertexArray? vertexArray;
-    private VertexArray? textVertexArray;
     private VertexBuffer? vertexBuffer;
-    private VertexBuffer? textVertexBuffer;
     private IndexBuffer? indexBuffer;
-    private IndexBuffer? textIndexBuffer;
     private Texture? gameTexture;
-    private Texture? fontTexture;
     private Shaders? shaders;
-    private Shaders? fontShaders;
+
+    private UiLayer? uiLayer;
 
     private ImprovedGameboy? gameboy;
     private readonly SystemState state = new();
@@ -39,25 +36,6 @@ public class Window
 
     private static readonly uint[] indices = new uint[]{
         0, 1, 2, 2, 3, 0
-    };
-
-    private readonly byte[] fontTextureData = new byte[]{
-        0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000,
-        0b_00011000, 0b_00111000, 0b_00011100, 0b_00111000, 0b_00111100, 0b_00111100, 0b_00011100, 0b_00100100, 0b_00011100, 0b_00001110, 0b_00100100, 0b_00100000, 0b_00100010, 0b_00100010, 0b_00011100, 0b_00111000, 0b_00011100, 0b_00111000, 0b_00011100, 0b_00111100, 0b_00100010, 0b_00100010, 0b_00100010, 0b_00100010, 0b_00100010, 0b_00111110,
-        0b_00100100, 0b_00100100, 0b_00100010, 0b_00100100, 0b_00100000, 0b_00100000, 0b_00100010, 0b_00100100, 0b_00001000, 0b_00000100, 0b_00101000, 0b_00100000, 0b_00110110, 0b_00110010, 0b_00100010, 0b_00100100, 0b_00100010, 0b_00100100, 0b_00100010, 0b_00001000, 0b_00100010, 0b_00100010, 0b_00100010, 0b_00010100, 0b_00100010, 0b_00000100,
-        0b_00100100, 0b_00111000, 0b_00100000, 0b_00100100, 0b_00111100, 0b_00111100, 0b_00100000, 0b_00111100, 0b_00001000, 0b_00000100, 0b_00110000, 0b_00100000, 0b_00101010, 0b_00101010, 0b_00100010, 0b_00111000, 0b_00100010, 0b_00111000, 0b_00010000, 0b_00001000, 0b_00100010, 0b_00100010, 0b_00101010, 0b_00001000, 0b_00010100, 0b_00001000,
-        0b_00111100, 0b_00100100, 0b_00100000, 0b_00100100, 0b_00100000, 0b_00100000, 0b_00101110, 0b_00100100, 0b_00001000, 0b_00000100, 0b_00101000, 0b_00100000, 0b_00100010, 0b_00100110, 0b_00100010, 0b_00100000, 0b_00100010, 0b_00101000, 0b_00001100, 0b_00001000, 0b_00100010, 0b_00010100, 0b_00101010, 0b_00010100, 0b_00001000, 0b_00010000,
-        0b_00100100, 0b_00100100, 0b_00100010, 0b_00100100, 0b_00100000, 0b_00100000, 0b_00100010, 0b_00100100, 0b_00001000, 0b_00100100, 0b_00100100, 0b_00100000, 0b_00100010, 0b_00100010, 0b_00100010, 0b_00100000, 0b_00100110, 0b_00100100, 0b_00100010, 0b_00001000, 0b_00100010, 0b_00010100, 0b_00101010, 0b_00100010, 0b_00001000, 0b_00100000,
-        0b_00100100, 0b_00111000, 0b_00011100, 0b_00111000, 0b_00111100, 0b_00100000, 0b_00011100, 0b_00100100, 0b_00011100, 0b_00011000, 0b_00100100, 0b_00111100, 0b_00100010, 0b_00100010, 0b_00011100, 0b_00100000, 0b_00011110, 0b_00100100, 0b_00011100, 0b_00001000, 0b_00011100, 0b_00001000, 0b_00010100, 0b_00100010, 0b_00001000, 0b_00111110,
-        0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000001, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000, 0b_00000000,
-    };
-
-    private readonly float[] fontVertices = new float[]{
-    //    x,   y, tx, ty,
-        -0.5f, -0.5f, 0f, 1f,
-         0.5f, -0.5f, 0.5f, 1f,
-         0.5f,  0.5f, 0.5f, 0f,
-        -0.5f,  0.5f, 0f, 0f
     };
 
     public Window()
@@ -94,6 +72,8 @@ public class Window
             keyboard.KeyUp += OnKeyReleased;
         }
 
+        uiLayer = new UiLayer(gl);
+
         vertexArray = new(gl);
         vertexBuffer = new(gl, vertices);
         indexBuffer = new(gl, indices);
@@ -104,33 +84,6 @@ public class Window
 
         shaders = new Shaders(gl, "OpenGL.Basic.shader");
         shaders.SetUniform("Game", 0);
-
-        fontTexture = new Texture(gl, 1, null, 8 * 26, 8);
-        fontTexture.FeedData(ProcessFontData());
-
-        textVertexArray = new VertexArray(gl);
-        textVertexBuffer = new VertexBuffer(gl, fontVertices);
-        textIndexBuffer = new IndexBuffer(gl, indices);
-
-        textVertexArray.AddBuffer(textVertexBuffer);
-
-        fontShaders = new Shaders(gl, "OpenGL.Text.shader");
-        fontShaders.SetUniform("Font", 1);
-    }
-
-    private Rgba[] ProcessFontData()
-    {
-        var colors = new Rgba[8 * 8 * 26];
-        for (var i = 0; i < fontTextureData.Length; i++)
-        {
-            var data = fontTextureData[i];
-            for (var j = 0; j < 8; j++)
-            {
-                var index = 8 * i + j;
-                colors[index] = new(data.IsBitSet(7 - j) ? Rgb.white : Rgb.darkGray);
-            }
-        }
-        return colors;
     }
 
     private void UploadPixelRow(byte line, Rgba[] pixelRow)
@@ -193,11 +146,7 @@ public class Window
         shaders!.Bind();
         gl!.DrawElements(GLEnum.Triangles, indexBuffer!.Count, GLEnum.UnsignedInt, null);
 
-        // Draw emulator UI
-        textVertexArray!.Bind();
-        textIndexBuffer!.Bind();
-        fontShaders!.Bind();
-        gl!.DrawElements(GLEnum.Triangles, textIndexBuffer!.Count, GLEnum.UnsignedInt, null);
+        uiLayer?.Render();
     }
 
     private void OnClose()
@@ -208,11 +157,7 @@ public class Window
         shaders?.Dispose();
         gameTexture?.Dispose();
 
-        textVertexArray?.Dispose();
-        textIndexBuffer?.Dispose();
-        textVertexBuffer?.Dispose();
-        fontShaders?.Dispose();
-        fontTexture?.Dispose();
+        uiLayer?.Dispose();
     }
 
     private void OnResize(Vector2D<int> newScreenSize)
