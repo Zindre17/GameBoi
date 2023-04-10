@@ -1,5 +1,6 @@
 using System;
 using Gameboi.Cartridges;
+using Gameboi.Extensions;
 using Gameboi.Graphics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -13,10 +14,15 @@ public class Window
     private readonly IWindow window;
     private GL? gl;
     private VertexArray? vertexArray;
+    private VertexArray? textVertexArray;
     private VertexBuffer? vertexBuffer;
+    private VertexBuffer? textVertexBuffer;
     private IndexBuffer? indexBuffer;
+    private IndexBuffer? textIndexBuffer;
     private Texture? gameTexture;
+    private Texture? fontTexture;
     private Shaders? shaders;
+    private Shaders? fontShaders;
 
     private ImprovedGameboy? gameboy;
     private readonly SystemState state = new();
@@ -33,6 +39,25 @@ public class Window
 
     private static readonly uint[] indices = new uint[]{
         0, 1, 2, 2, 3, 0
+    };
+
+    private readonly byte[] fontTextureData = new byte[]{
+        0b_00000000, 0b_00000000,
+        0b_00011000, 0b_01111100,
+        0b_00100100, 0b_01000010,
+        0b_00100100, 0b_01111100,
+        0b_00111100, 0b_01000010,
+        0b_00100100, 0b_01000010,
+        0b_00100100, 0b_01111100,
+        0b_00000000, 0b_00000000,
+    };
+
+    private readonly float[] fontVertices = new float[]{
+    //    x,   y, tx, ty,
+        -0.5f, -0.5f, 0f, 1f,
+         0.5f, -0.5f, 0.5f, 1f,
+         0.5f,  0.5f, 0.5f, 0f,
+        -0.5f,  0.5f, 0f, 0f
     };
 
     public Window()
@@ -79,6 +104,33 @@ public class Window
 
         shaders = new Shaders(gl, "OpenGL.Basic.shader");
         shaders.SetUniform("Game", 0);
+
+        fontTexture = new Texture(gl, 1, null, 8 * 2, 8);
+        fontTexture.FeedData(ProcessFontData());
+
+        textVertexArray = new VertexArray(gl);
+        textVertexBuffer = new VertexBuffer(gl, fontVertices);
+        textIndexBuffer = new IndexBuffer(gl, indices);
+
+        textVertexArray.AddBuffer(textVertexBuffer);
+
+        fontShaders = new Shaders(gl, "OpenGL.Text.shader");
+        fontShaders.SetUniform("Font", 1);
+    }
+
+    private Rgba[] ProcessFontData()
+    {
+        var colors = new Rgba[8 * 8 * 2];
+        for (var i = 0; i < fontTextureData.Length; i++)
+        {
+            var data = fontTextureData[i];
+            for (var j = 0; j < 8; j++)
+            {
+                var index = 8 * i + j;
+                colors[index] = new(data.IsBitSet(7 - j) ? Rgb.white : Rgb.darkGray);
+            }
+        }
+        return colors;
     }
 
     private void UploadPixelRow(byte line, Rgba[] pixelRow)
@@ -134,22 +186,33 @@ public class Window
     unsafe private void OnRender(double obj)
     {
         gl!.Clear(ClearBufferMask.ColorBufferBit);
+
+        // Draw gameboy screen
         vertexArray!.Bind();
         indexBuffer!.Bind();
         shaders!.Bind();
         gl!.DrawElements(GLEnum.Triangles, indexBuffer!.Count, GLEnum.UnsignedInt, null);
+
+        // Draw emulator UI
+        textVertexArray!.Bind();
+        textIndexBuffer!.Bind();
+        fontShaders!.Bind();
+        gl!.DrawElements(GLEnum.Triangles, textIndexBuffer!.Count, GLEnum.UnsignedInt, null);
     }
 
     private void OnClose()
     {
-        vertexArray!.Dispose();
+        vertexArray?.Dispose();
+        indexBuffer?.Dispose();
+        vertexBuffer?.Dispose();
+        shaders?.Dispose();
+        gameTexture?.Dispose();
 
-        indexBuffer!.Dispose();
-        vertexBuffer!.Dispose();
-
-        shaders!.Dispose();
-
-        gameTexture!.Dispose();
+        textVertexArray?.Dispose();
+        textIndexBuffer?.Dispose();
+        textVertexBuffer?.Dispose();
+        fontShaders?.Dispose();
+        fontTexture?.Dispose();
     }
 
     private void OnResize(Vector2D<int> newScreenSize)
