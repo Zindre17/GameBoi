@@ -1,6 +1,5 @@
 using System;
 using Gameboi.Cartridges;
-using Gameboi.Extensions;
 using Gameboi.Graphics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -74,6 +73,8 @@ public class Window
 
         uiLayer = new UiLayer(gl);
         uiLayer.ShowText("Hello World", 0, 0);
+        uiLayer.ShowText("Yes", 1, 2);
+        uiLayer.ShowText("No", 2, 3);
 
         vertexArray = new(gl);
         vertexBuffer = new(gl, vertices);

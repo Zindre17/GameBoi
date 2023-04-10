@@ -27,15 +27,21 @@ public sealed class UiLayer : IDisposable
     private readonly Texture fontTexture;
     private readonly Shaders fontShaders;
 
+    private int currentVertexBufferOffset = 0;
+    private int currentIndexBufferOffset = 0;
+
+    private const int vertexCapacity = 2_000;
+    private const int indexCapacity = 1_000;
+
     public UiLayer(GL gl)
     {
         this.gl = gl;
 
         vertexArray = new VertexArray(gl);
-        vertexBuffer = new VertexBuffer(gl, null);
+        vertexBuffer = new VertexBuffer(gl, vertexCapacity);
         vertexArray.AddBuffer(vertexBuffer);
 
-        indexBuffer = new IndexBuffer(gl, null);
+        indexBuffer = new IndexBuffer(gl, indexCapacity);
         fontTexture = new Texture(gl, 1, null, 8 * 26, 8);
         fontTexture.FeedData(ProcessFontData());
 
@@ -79,8 +85,20 @@ public sealed class UiLayer : IDisposable
 
         var vertices = new List<float>();
         var indices = new List<uint>();
+
+        var currentVertexCount = (uint)currentVertexBufferOffset / (sizeof(float) * 4);
+
         foreach (var character in text.ToLower())
         {
+            indices.AddRange(new uint[]{
+               currentVertexCount + 0,
+               currentVertexCount + 1,
+               currentVertexCount + 2,
+               currentVertexCount + 2,
+               currentVertexCount + 3,
+               currentVertexCount + 0,
+            });
+
             var charIndex = character - 'a';
             var fontXstart = fontWidthUnit * charIndex;
 
@@ -95,20 +113,14 @@ public sealed class UiLayer : IDisposable
 
             xStart += tileWidth;
             xEnd += tileWidth;
-
-            uint currentLength = (uint)(indices.Count / 6) * 4;
-            indices.AddRange(new uint[]{
-               currentLength + 0,
-               currentLength + 1,
-               currentLength + 2,
-               currentLength + 2,
-               currentLength + 3,
-               currentLength + 0,
-            });
+            currentVertexCount += 4;
         }
 
-        vertexBuffer.FeedData(vertices.ToArray(), 0);
-        indexBuffer.FeedData(indices.ToArray(), 0);
+        vertexBuffer.FeedSubData(vertices.ToArray(), currentVertexBufferOffset);
+        currentVertexBufferOffset += vertices.Count * sizeof(float);
+
+        indexBuffer.FeedSubData(indices.ToArray(), currentIndexBufferOffset);
+        currentIndexBufferOffset += indices.Count * sizeof(uint);
     }
 
     private Rgba[] ProcessFontData()
