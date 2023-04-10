@@ -56,6 +56,7 @@ public class Shaders : IDisposable
 
     public void SetUniform(string name, int value)
     {
+        Bind();
         gl.Uniform1(GetUniformLocation(name), value);
     }
 
