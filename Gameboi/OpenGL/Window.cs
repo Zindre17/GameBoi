@@ -73,6 +73,7 @@ public class Window
         }
 
         uiLayer = new UiLayer(gl);
+        uiLayer.ShowText("Hello World", 0, 0);
 
         vertexArray = new(gl);
         vertexBuffer = new(gl, vertices);

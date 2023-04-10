@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Gameboi.Extensions;
 using Gameboi.Graphics;
 using Silk.NET.OpenGL;
@@ -26,27 +27,15 @@ public sealed class UiLayer : IDisposable
     private readonly Texture fontTexture;
     private readonly Shaders fontShaders;
 
-    private readonly float[] fontVertices = new float[]{
-    //    x,   y, tx, ty,
-        -0.5f, -0.5f, 0f, 1f,
-         0.5f, -0.5f, 0.5f, 1f,
-         0.5f,  0.5f, 0.5f, 0f,
-        -0.5f,  0.5f, 0f, 0f
-    };
-
-    private static readonly uint[] indices = new uint[]{
-        0, 1, 2, 2, 3, 0
-    };
-
     public UiLayer(GL gl)
     {
         this.gl = gl;
 
         vertexArray = new VertexArray(gl);
-        vertexBuffer = new VertexBuffer(gl, fontVertices);
+        vertexBuffer = new VertexBuffer(gl, null);
         vertexArray.AddBuffer(vertexBuffer);
 
-        indexBuffer = new IndexBuffer(gl, indices);
+        indexBuffer = new IndexBuffer(gl, null);
         fontTexture = new Texture(gl, 1, null, 8 * 26, 8);
         fontTexture.FeedData(ProcessFontData());
 
@@ -70,6 +59,56 @@ public sealed class UiLayer : IDisposable
         indexBuffer.Bind();
         fontShaders.Bind();
         gl!.DrawElements(GLEnum.Triangles, indexBuffer.Count, GLEnum.UnsignedInt, null);
+    }
+
+    private const float heightUnit = 2f / 144;
+    private const float widthUnit = 2f / 160;
+
+    private const float tileHeight = heightUnit * 8;
+    private const float tileWidth = widthUnit * 8;
+
+    private const float fontWidthUnit = 1f / 26;
+
+    public void ShowText(string text, int row, int column)
+    {
+        var yStart = 1f - (tileHeight * row);
+        var yEnd = yStart - tileHeight;
+
+        var xStart = -1f + (tileWidth * column);
+        var xEnd = xStart + tileWidth;
+
+        var vertices = new List<float>();
+        var indices = new List<uint>();
+        foreach (var character in text.ToLower())
+        {
+            var charIndex = character - 'a';
+            var fontXstart = fontWidthUnit * charIndex;
+
+            var fontXEnd = fontXstart + fontWidthUnit;
+            vertices.AddRange(new float[]{
+            //  x, y, tx, ty
+                xStart, yStart, fontXstart, 0f,
+                xEnd, yStart, fontXEnd, 0f,
+                xEnd, yEnd, fontXEnd, 1f,
+                xStart, yEnd, fontXstart, 1f,
+            });
+
+            xStart += tileWidth;
+            xEnd += tileWidth;
+
+            uint currentLength = (uint)(indices.Count / 6) * 4;
+            indices.AddRange(new uint[]{
+               currentLength + 0,
+               currentLength + 1,
+               currentLength + 2,
+               currentLength + 2,
+               currentLength + 3,
+               currentLength + 0,
+            });
+        }
+
+        vertexBuffer.FeedData(vertices.ToArray(), 0);
+        indexBuffer.FeedData(indices.ToArray(), 0);
     }
 
     private Rgba[] ProcessFontData()
