@@ -77,9 +77,7 @@ public class Window
 
         gameTexture = new Texture(gl, 0, null, 160, 144);
 
-        shaders = new Shaders(gl);
-        shaders.Bind();
-
+        shaders = new Shaders(gl, "OpenGL.Basic.shader");
         shaders.SetUniform("Game", 0);
     }
 

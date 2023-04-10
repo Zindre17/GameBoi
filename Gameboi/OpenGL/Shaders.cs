@@ -13,10 +13,10 @@ public class Shaders : IDisposable
     private readonly Dictionary<string, int> uniformLocations = new();
     private readonly GL gl;
 
-    public Shaders(GL gl)
+    public Shaders(GL gl, string shaderAssemblyPath)
     {
         this.gl = gl;
-        var shaders = FindShaders("OpenGL.Basic.shader");
+        var shaders = FindShaders(shaderAssemblyPath);
 
         program = gl.CreateProgram();
         var vert = gl.CreateShader(ShaderType.VertexShader);
