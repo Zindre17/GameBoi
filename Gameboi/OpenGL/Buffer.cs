@@ -35,7 +35,6 @@ public abstract class Buffer<T> : IDisposable where T : unmanaged
         this.target = target;
 
         id = gl.CreateBuffer();
-        Bind();
 
         if (data is not null)
         {
@@ -47,6 +46,7 @@ public abstract class Buffer<T> : IDisposable where T : unmanaged
 
     unsafe public virtual void FeedData(Span<T> data, nint offset = 0)
     {
+        Bind();
         var lengthOfData = (nuint)(sizeof(T) * data.Length);
         fixed (void* dataPointer = data)
         {
@@ -75,5 +75,6 @@ public abstract class Buffer<T> : IDisposable where T : unmanaged
     public void Dispose()
     {
         gl.DeleteBuffers(1, id);
+        GC.SuppressFinalize(this);
     }
 }
