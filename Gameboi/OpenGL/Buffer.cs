@@ -7,17 +7,29 @@ public class VertexBuffer : Buffer<float>
 {
     public VertexBuffer(GL gl, float[]? data = null)
         : base(gl, GLEnum.ArrayBuffer, data) { }
+
+    public VertexBuffer(GL gl, int capacity)
+        : base(gl, GLEnum.ArrayBuffer, capacity) { }
 }
 
 public class IndexBuffer : Buffer<uint>
 {
-    unsafe public IndexBuffer(GL gl, uint[]? data = null)
-        : base(gl, GLEnum.ElementArrayBuffer, data) { }
+    public IndexBuffer(GL gl, uint[]? data = null)
+       : base(gl, GLEnum.ElementArrayBuffer, data) { }
 
-    override public void FeedData(Span<uint> data, nint offset = 0)
+    public IndexBuffer(GL gl, int capacity)
+        : base(gl, GLEnum.ElementArrayBuffer, capacity) { }
+
+    override public void FeedData(Span<uint> data)
     {
         Count = (uint)data.Length;
-        base.FeedData(data, offset);
+        base.FeedData(data);
+    }
+
+    public override void FeedSubData(Span<uint> data, int offset)
+    {
+        Count = (uint)((offset / sizeof(uint)) + data.Length);
+        base.FeedSubData(data, offset);
     }
 
     public uint Count { get; private set; }
@@ -42,24 +54,43 @@ public abstract class Buffer<T> : IDisposable where T : unmanaged
         }
     }
 
-    private nuint currentLength = 0;
+    unsafe public Buffer(GL gl, GLEnum target, int capacity)
+    {
+        this.gl = gl;
+        this.target = target;
 
-    unsafe public virtual void FeedData(Span<T> data, nint offset = 0)
+        id = gl.GenBuffer();
+        Bind();
+
+        gl.BufferData(target, (nuint)capacity, null, GLEnum.StaticDraw);
+        currentCapacity = capacity;
+    }
+
+    private int currentCapacity;
+
+    unsafe public virtual void FeedData(Span<T> data)
     {
         Bind();
-        var lengthOfData = (nuint)(sizeof(T) * data.Length);
+        var lengthOfData = sizeof(T) * data.Length;
         fixed (void* dataPointer = data)
         {
-            if (((nuint)offset) + lengthOfData < currentLength)
-            {
-                gl.BufferSubData(target, offset, lengthOfData, dataPointer);
-            }
-            else
-            {
-                gl.BufferData(target, lengthOfData, dataPointer, GLEnum.StaticDraw);
-            }
+            gl.BufferData(target, (nuint)lengthOfData, dataPointer, GLEnum.StaticDraw);
         }
-        currentLength = lengthOfData;
+        currentCapacity = lengthOfData;
+    }
+
+    unsafe public virtual void FeedSubData(Span<T> data, int offset)
+    {
+        Bind();
+        var lengthOfData = sizeof(T) * data.Length;
+        if (lengthOfData + offset > currentCapacity)
+        {
+            throw new Exception("Buffer overflow");
+        }
+        fixed (void* dataPointer = data)
+        {
+            gl.BufferSubData(target, offset, (nuint)lengthOfData, dataPointer);
+        }
     }
 
     public void Bind()
