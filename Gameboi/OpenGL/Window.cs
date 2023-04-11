@@ -77,9 +77,9 @@ public class Window
 
         uiLayer = new UiLayer(gl);
 
-        uiHandles.Add(uiLayer.ShowText("Hello World", 0, 0));
-        uiHandles.Add(uiLayer.ShowText("Yes", 1, 2));
-        uiHandles.Add(uiLayer.ShowText("No", 2, 3));
+        uiHandles.Add(uiLayer.ShowText("Hello, World!", 0, 0));
+        uiHandles.Add(uiLayer.ShowText("*(Yes)9", 1, 2));
+        uiHandles.Add(uiLayer.ShowText(".[No]0", 2, 3));
 
         pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2);
 
