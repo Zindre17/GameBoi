@@ -61,7 +61,8 @@ public class Window
 
     public void Run() => window.Run();
 
-    private List<int> uiHandles = new();
+    private readonly List<int> uiHandles = new();
+    private int pauseTextHandle;
 
     private void OnLoad()
     {
@@ -79,6 +80,8 @@ public class Window
         uiHandles.Add(uiLayer.ShowText("Hello World", 0, 0));
         uiHandles.Add(uiLayer.ShowText("Yes", 1, 2));
         uiHandles.Add(uiLayer.ShowText("No", 2, 3));
+
+        pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2);
 
         vertexArray = new(gl);
         vertexBuffer = new(gl, vertices);
@@ -120,6 +123,14 @@ public class Window
         if (key is Key.Space)
         {
             isPlaying = !isPlaying;
+            if (isPlaying)
+            {
+                uiLayer?.HideText(pauseTextHandle);
+            }
+            else
+            {
+                uiLayer?.ShowText(pauseTextHandle);
+            }
         }
         if (key is Key.Escape)
         {
