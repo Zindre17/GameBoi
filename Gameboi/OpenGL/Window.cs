@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
@@ -60,6 +61,8 @@ public class Window
 
     public void Run() => window.Run();
 
+    private List<int> uiHandles = new();
+
     private void OnLoad()
     {
         gl = GL.GetApi(window);
@@ -72,9 +75,10 @@ public class Window
         }
 
         uiLayer = new UiLayer(gl);
-        uiLayer.ShowText("Hello World", 0, 0);
-        uiLayer.ShowText("Yes", 1, 2);
-        uiLayer.ShowText("No", 2, 3);
+
+        uiHandles.Add(uiLayer.ShowText("Hello World", 0, 0));
+        uiHandles.Add(uiLayer.ShowText("Yes", 1, 2));
+        uiHandles.Add(uiLayer.ShowText("No", 2, 3));
 
         vertexArray = new(gl);
         vertexBuffer = new(gl, vertices);
@@ -101,6 +105,18 @@ public class Window
     private void OnKeyPressed(IKeyboard _, Key key, int __)
     {
         gameboy?.Joypad.KeyDown(key);
+        if (key is Key.S)
+        {
+            uiLayer?.ShowText(uiHandles[0]);
+        }
+        if (key is Key.H)
+        {
+            uiLayer?.HideText(uiHandles[0]);
+        }
+        if (key is Key.R)
+        {
+            uiLayer?.RemoveText(uiHandles[0]);
+        }
         if (key is Key.Space)
         {
             isPlaying = !isPlaying;
