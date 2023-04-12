@@ -84,6 +84,30 @@ public sealed class UiLayer : IDisposable
     private readonly Dictionary<int, (bool, int, uint[])> loadedText = new();
     private int currentId = 0;
 
+    public int FillScreen()
+    {
+        var newVertices = new float[]{
+            -1, -1, 0, 0,
+            1, -1, 0, 0,
+            1, 1, 0, 0,
+            -1, 1, 0, 0,
+        };
+
+        var newIndices = GetIndicesForQuad((uint)QuadCount);
+
+        var id = currentId;
+        loadedText[id] = (true, indices.Count, newIndices);
+        currentId += 1;
+
+        vertexBuffer.FeedSubData(newVertices, vertices.Count * sizeof(float));
+        vertices.AddRange(newVertices);
+
+        indexBuffer.FeedSubData(newIndices, indices.Count * sizeof(uint));
+        indices.AddRange(newIndices);
+
+        return id;
+    }
+
     public int ShowText(string text, int row, int column)
     {
         var id = CreateText(text, row, column);
