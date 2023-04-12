@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Gameboi.Extensions;
 using Gameboi.Graphics;
 using Silk.NET.OpenGL;
@@ -34,10 +35,9 @@ public sealed class UiLayer : IDisposable
     private const int vertexCapacity = 20_000;
     private const int indexCapacity = 10_000;
 
-    private readonly List<float> vertices = new();
-    private int QuadCount => vertices.Count / 16;
-
+    private readonly List<Quad> quads = new();
     private readonly List<uint> indices = new();
+    private readonly List<Quad> orderedVisibleQuads = new();
 
     public UiLayer(GL gl)
     {
@@ -81,29 +81,24 @@ public sealed class UiLayer : IDisposable
 
     private readonly float fontWidthUnit = 1f / fontSymbols;
 
-    private readonly Dictionary<int, (bool, int, uint[])> loadedText = new();
+    private readonly Dictionary<int, (bool, Quad, int)> loadedText = new();
     private int currentId = 0;
 
     public int FillScreen()
     {
-        var newVertices = new float[]{
-            -1, -1, 0, 0,
-            1, -1, 0, 0,
-            1, 1, 0, 0,
-            -1, 1, 0, 0,
-        };
-
-        var newIndices = GetIndicesForQuad((uint)QuadCount);
+        var quad = new Quad(-1, -1, 1, 1, 0, 0, 0, 0);
+        var newIndices = GetIndicesForQuad(quads.Count);
 
         var id = currentId;
-        loadedText[id] = (true, indices.Count, newIndices);
+        loadedText[id] = (true, quad, 1);
         currentId += 1;
 
-        vertexBuffer.FeedSubData(newVertices, vertices.Count * sizeof(float));
-        vertices.AddRange(newVertices);
+        vertexBuffer.FeedSubData(quad.verticesData, quads.Count * Quad.SizeInBytes);
+        quads.Add(quad);
 
         indexBuffer.FeedSubData(newIndices, indices.Count * sizeof(uint));
         indices.AddRange(newIndices);
+        orderedVisibleQuads.Add(quad);
 
         return id;
     }
@@ -123,16 +118,10 @@ public sealed class UiLayer : IDisposable
         var xStart = -1f + (tileWidth * column);
         var xEnd = xStart + tileWidth;
 
-        var currentQuadCount = (uint)QuadCount;
-
-        var newVertices = new List<float>();
-        var newIndices = new List<uint>();
+        var newQuads = new List<Quad>();
 
         foreach (var character in text.ToLower())
         {
-            newIndices.AddRange(GetIndicesForQuad(currentQuadCount));
-
-
             var charIndex = character switch
             {
                 '.' => 26,
@@ -156,31 +145,21 @@ public sealed class UiLayer : IDisposable
                 '9' => 44,
                 _ => character - 'a'
             };
-            var fontXstart = fontWidthUnit * charIndex;
 
-            var fontXEnd = fontXstart + fontWidthUnit;
-            newVertices.AddRange(new float[]{
-            //  x, y, tx, ty
-                xStart, yStart, fontXstart, 0f,
-                xEnd, yStart, fontXEnd, 0f,
-                xEnd, yEnd, fontXEnd, 1f,
-                xStart, yEnd, fontXstart, 1f,
-            });
+            var fontXstart = fontWidthUnit * charIndex;
+            var fontXend = fontXstart + fontWidthUnit;
+
+            newQuads.Add(new Quad(xStart, yStart, xEnd, yEnd, fontXstart, 0, fontXend, 1));
 
             xStart += tileWidth;
             xEnd += tileWidth;
-            currentQuadCount += 1;
         }
 
-        var indicesArray = newIndices.ToArray();
-        // loadedText.Add(currentId, (false, indices.Count, indicesArray));
-        loadedText.Add(currentId, (false, -1, indicesArray));
+        loadedText.Add(currentId, (false, newQuads[0], newQuads.Count));
 
-        vertexBuffer.FeedSubData(newVertices.ToArray(), vertices.Count * sizeof(float));
-        // indexBuffer.FeedSubData(indicesArray, indices.Count * sizeof(uint));
+        vertexBuffer.FeedSubData(newQuads, quads.Count * Quad.SizeInBytes);
 
-        vertices.AddRange(newVertices);
-        // indices.AddRange(newIndices);
+        quads.AddRange(newQuads);
 
         var id = currentId;
         currentId += 1;
@@ -189,58 +168,102 @@ public sealed class UiLayer : IDisposable
 
     public void ShowText(int id)
     {
-        var (isShowing, _, data) = loadedText[id];
-        if (isShowing is false)
+        ShowText(new int[] { id });
+    }
+
+    public void ShowText(IEnumerable<int> ids)
+    {
+        var allNewIndices = new List<uint>();
+        foreach (var id in ids)
         {
-            indexBuffer.FeedSubData(data, indices.Count * sizeof(uint));
-            loadedText[id] = (true, indices.Count, data);
-            indices.AddRange(data);
+            var (isShowing, firstQuad, quadCount) = loadedText[id];
+            if (isShowing is false)
+            {
+                var firstIndex = quads.IndexOf(firstQuad);
+                var newIndices = GetIndicesForQuads(firstIndex, quadCount);
+                loadedText[id] = (true, firstQuad, quadCount);
+                orderedVisibleQuads.AddRange(quads.Skip(firstIndex).Take(quadCount));
+                allNewIndices.AddRange(newIndices);
+            }
         }
+        indexBuffer.FeedSubData(allNewIndices.ToArray(), indices.Count * sizeof(uint));
+        indices.AddRange(allNewIndices);
     }
 
     public void HideText(int id)
     {
-        var (isShowing, start, data) = loadedText[id];
-        if (isShowing)
+        HideText(new int[] { id });
+    }
+
+    public void HideText(IEnumerable<int> ids)
+    {
+        foreach (var id in ids)
         {
-            indices.RemoveRange(start, data.Length);
-            indexBuffer.FeedSubData(indices.ToArray(), 0);
-            loadedText[id] = (false, start, data);
+            var (isShowing, firstQuad, quadCount) = loadedText[id];
+            if (isShowing)
+            {
+                var firstIndex = orderedVisibleQuads.IndexOf(firstQuad);
+                indices.RemoveRange(firstIndex * 6, quadCount * 6);
+                orderedVisibleQuads.RemoveRange(firstIndex, quadCount);
+                loadedText[id] = (false, firstQuad, quadCount);
+            }
         }
+        indexBuffer.FeedSubData(indices.ToArray(), 0);
     }
 
     public void RemoveText(int id)
     {
-        var (isShowing, _, data) = loadedText[id];
-        if (isShowing)
-        {
-            vertices.RemoveRange((int)data[0] * 4, data.Length / 6 * 16);
-            vertexBuffer.FeedSubData(vertices.ToArray(), 0);
-
-            indices.Clear();
-            for (var i = 0; i < QuadCount; i++)
-            {
-                indices.AddRange(GetIndicesForQuad((uint)i));
-            }
-            indexBuffer.FeedSubData(indices.ToArray(), 0);
-            loadedText.Remove(id);
-        }
+        RemoveText(new int[] { id });
     }
 
-    private static uint[] GetIndicesForQuad(uint quadNr)
+    public void RemoveText(IEnumerable<int> ids)
+    {
+        foreach (var id in ids)
+        {
+            var (isShowing, firstQuad, quadCount) = loadedText[id];
+            var firstIndex = quads.IndexOf(firstQuad);
+            quads.RemoveRange(firstIndex, quadCount);
+            if (isShowing)
+            {
+                var index = orderedVisibleQuads.IndexOf(firstQuad);
+                orderedVisibleQuads.RemoveRange(index, quadCount);
+            }
+            loadedText.Remove(id);
+        }
+        vertexBuffer.FeedSubData(quads, 0);
+
+        indices.Clear();
+        foreach (var quad in orderedVisibleQuads)
+        {
+            var index = quads.IndexOf(quad);
+            indices.AddRange(GetIndicesForQuad(index));
+        }
+        indexBuffer.FeedSubData(indices.ToArray(), 0);
+    }
+
+    private static uint[] GetIndicesForQuads(int startQuadNr, int count)
+    {
+        var indices = new List<uint>();
+        for (var i = startQuadNr; i < startQuadNr + count; i++)
+        {
+            indices.AddRange(GetIndicesForQuad(i));
+        }
+        return indices.ToArray();
+    }
+
+    private static uint[] GetIndicesForQuad(int quadNr)
     {
         return new uint[]{
-            (quadNr * 4) + 0,
-            (quadNr * 4) + 1,
-            (quadNr * 4) + 2,
-            (quadNr * 4) + 2,
-            (quadNr * 4) + 3,
-            (quadNr * 4) + 0,
+            (uint)(quadNr * 4) + 0,
+            (uint)(quadNr * 4) + 1,
+            (uint)(quadNr * 4) + 2,
+            (uint)(quadNr * 4) + 2,
+            (uint)(quadNr * 4) + 3,
+            (uint)(quadNr * 4) + 0,
         };
     }
 
-
-    private Rgba[] ProcessFontData()
+    private static Rgba[] ProcessFontData()
     {
         var colors = new Rgba[fontWidth * fontHeight * fontSymbols];
         for (var i = 0; i < fontTextureData.Length; i++)

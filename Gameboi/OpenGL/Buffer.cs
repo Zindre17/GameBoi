@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Silk.NET.OpenGL;
 
 namespace Gameboi.OpenGL;
@@ -10,6 +12,11 @@ public class VertexBuffer : Buffer<float>
 
     public VertexBuffer(GL gl, int capacity)
         : base(gl, GLEnum.ArrayBuffer, capacity) { }
+
+    public void FeedSubData(IEnumerable<Quad> quads, int offset)
+    {
+        FeedSubData(quads.SelectMany(q => q.verticesData).ToArray(), offset);
+    }
 }
 
 public class IndexBuffer : Buffer<uint>
