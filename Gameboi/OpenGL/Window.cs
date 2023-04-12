@@ -20,6 +20,7 @@ public class Window
     private Shaders? shaders;
 
     private UiLayer? uiLayer;
+    private FilePicker? picker;
 
     private ImprovedGameboy? gameboy;
     private readonly SystemState state = new();
@@ -77,11 +78,14 @@ public class Window
 
         uiLayer = new UiLayer(gl);
 
+        uiLayer.FillScreen();
         uiHandles.Add(uiLayer.ShowText("Hello, World!", 0, 0));
         uiHandles.Add(uiLayer.ShowText("*(Yes)9", 1, 2));
         uiHandles.Add(uiLayer.ShowText(".[No]0", 2, 3));
 
         pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2);
+
+        picker = new FilePicker(gl);
 
         vertexArray = new(gl);
         vertexBuffer = new(gl, vertices);
@@ -135,8 +139,16 @@ public class Window
         if (key is Key.Escape)
         {
             //TODO add file picker.
-            var game = RomReader.ReadRom("./roms/Pokemon Red.gb");
-            ChangeGame(game);
+            // var game = RomReader.ReadRom("./roms/Pokemon Red.gb");
+            // ChangeGame(game);
+        }
+        if (!picker?.IsOpen ?? false && key is Key.Escape)
+        {
+            picker?.SelectFile();
+        }
+        else
+        {
+            picker?.OnKeyPressed(key);
         }
     }
 
@@ -176,6 +188,8 @@ public class Window
         gl!.DrawElements(GLEnum.Triangles, indexBuffer!.Count, GLEnum.UnsignedInt, null);
 
         uiLayer?.Render();
+
+        picker?.Render();
     }
 
     private void OnClose()
