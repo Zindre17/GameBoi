@@ -9,13 +9,20 @@ namespace Gameboi.OpenGL;
 
 public class FilePicker
 {
+    private enum DirectoryItemType
+    {
+        File,
+        Directory,
+        Parent
+    }
+
     private readonly UiLayer ui;
     private readonly List<int> itemHandles = new();
     private readonly List<int> selectorHandles = new();
 
     private readonly int backgroundHandle;
-    private string currentDirectory = null!;
-    private string[] subDirs = null!;
+    private readonly List<(DirectoryItemType, string)> dirItems = new();
+
     private int currentIndex;
     private bool isSelecting = false;
     public bool IsOpen => isSelecting;
@@ -31,51 +38,58 @@ public class FilePicker
         LoadDirectory(Directory.GetCurrentDirectory());
     }
 
-    public void SelectFile()
+    private Action<string> onFileChosen = null!;
+    private Action? onDialogCancelled;
+
+    public void SelectFile(Action<string> onFileChosen, Action? onDialogCancelled = null)
     {
-        currentIndex = 0;
+        this.onFileChosen = onFileChosen;
+        this.onDialogCancelled = onDialogCancelled;
+
         isSelecting = true;
 
         ui.ShowText(backgroundHandle);
-        var dir = Directory.GetCurrentDirectory();
-        if (currentDirectory != dir)
-        {
-            LoadDirectory(dir);
-        }
-        else
-        {
-            ui.ShowText(itemHandles);
-        }
-        ui.ShowText(selectorHandles[currentIndex]);
+        ui.ShowText(itemHandles);
+        UpdateSelectionIndex(0);
     }
 
     private void LoadDirectory(string directory)
     {
         ui.RemoveText(itemHandles);
         itemHandles.Clear();
+        dirItems.Clear();
 
         UpdateSelectionIndex(0);
-        currentDirectory = directory;
 
         var parent = Directory.GetParent(directory)?.FullName;
-        subDirs = Directory.GetDirectories(directory);
         if (parent is not null)
         {
-            var newSubDirs = new string[subDirs.Length + 1];
-            newSubDirs[0] = parent;
-            Array.Copy(subDirs, 0, newSubDirs, 1, subDirs.Length);
-            subDirs = newSubDirs;
+            dirItems.Add((DirectoryItemType.Parent, parent));
         }
-        var row = 0;
-        foreach (var subDir in subDirs)
+
+        foreach (var subDir in Directory.GetDirectories(directory))
         {
-            if (subDir.Length < directory.Length)
+            dirItems.Add((DirectoryItemType.Directory, subDir));
+        }
+        foreach (var file in Directory.GetFiles(directory))
+        {
+            if (file.EndsWith(".gb") || file.EndsWith(".gbc"))
+            {
+                dirItems.Add((DirectoryItemType.File, file));
+            }
+        }
+
+        var row = 0;
+        foreach (var (type, path) in dirItems)
+        {
+            if (type is DirectoryItemType.Parent)
             {
                 itemHandles.Add(ui.ShowText("..", row, 1, new(Rgb.white)));
             }
             else
             {
-                itemHandles.Add(ui.ShowText(subDir[(directory.Length + 1)..], row, 1, new(Rgb.white)));
+                var color = type is DirectoryItemType.File ? new Rgba(40, 200, 40, 0xff) : new Rgba(Rgb.white);
+                itemHandles.Add(ui.ShowText(path[(directory.Length + 1)..], row, 1, color));
             }
             row++;
         }
@@ -92,6 +106,8 @@ public class FilePicker
                     ui.HideText(selectorHandles);
                     ui.HideText(itemHandles);
                     ui.HideText(backgroundHandle);
+
+                    onDialogCancelled?.Invoke();
                     break;
                 case Key.Up:
                     UpdateSelectionIndex(Math.Max(0, currentIndex - 1));
@@ -100,7 +116,20 @@ public class FilePicker
                     UpdateSelectionIndex(Math.Min(selectorHandles.Count - 1, Math.Min(itemHandles.Count - 1, currentIndex + 1)));
                     break;
                 case Key.Enter:
-                    LoadDirectory(subDirs[currentIndex]);
+                    var (type, item) = dirItems[currentIndex];
+                    if (type is DirectoryItemType.File)
+                    {
+                        isSelecting = false;
+                        ui.HideText(selectorHandles);
+                        ui.HideText(itemHandles);
+                        ui.HideText(backgroundHandle);
+
+                        onFileChosen(item);
+                    }
+                    else
+                    {
+                        LoadDirectory(item);
+                    }
                     break;
             }
         }

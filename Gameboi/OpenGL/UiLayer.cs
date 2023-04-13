@@ -32,8 +32,8 @@ public sealed class UiLayer : IDisposable
     private readonly Texture fontTexture;
     private readonly Shaders fontShaders;
 
-    private const int vertexCapacity = 1 << 17;
-    private const int indexCapacity = 1 << 14;
+    private const int vertexCapacity = 1 << 20;
+    private const int indexCapacity = 1 << 16;
 
     private readonly List<ColoredQuad> quads = new();
     private readonly List<uint> indices = new();

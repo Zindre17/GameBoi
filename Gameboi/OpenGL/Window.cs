@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
@@ -62,7 +61,6 @@ public class Window
 
     public void Run() => window.Run();
 
-    private readonly List<int> uiHandles = new();
     private int pauseTextHandle;
 
     private void OnLoad()
@@ -80,11 +78,6 @@ public class Window
         }
 
         uiLayer = new UiLayer(gl);
-
-        uiLayer.FillScreen(new(Rgb.darkGray));
-        uiHandles.Add(uiLayer.ShowText("Hello, World!", 0, 0, new(0xff, 0, 0xff, 0x80), new(0xff, 0, 0xff, 50)));
-        uiHandles.Add(uiLayer.ShowText("*(Yes)9", 1, 2, new(Rgb.lightGray)));
-        uiHandles.Add(uiLayer.ShowText(".[No]0", 2, 3, new(Rgb.white)));
 
         pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
 
@@ -118,19 +111,7 @@ public class Window
 
         var wasOpen = picker?.IsOpen;
 
-        if (key is Key.S)
-        {
-            uiLayer?.ShowText(uiHandles[0]);
-        }
-        else if (key is Key.H)
-        {
-            uiLayer?.HideText(uiHandles[0]);
-        }
-        else if (key is Key.R)
-        {
-            uiLayer?.RemoveText(uiHandles[0]);
-        }
-        else if (key is Key.Space)
+        if (key is Key.Space)
         {
             isPlaying = !isPlaying;
             if (isPlaying)
@@ -146,11 +127,15 @@ public class Window
         {
             if (picker?.IsOpen is false)
             {
-                picker?.SelectFile();
+                isPlaying = false;
+                uiLayer?.ShowText(pauseTextHandle);
+                picker?.SelectFile(rom =>
+                {
+                    uiLayer?.HideText(pauseTextHandle);
+                    var game = RomReader.ReadRom(rom);
+                    ChangeGame(game);
+                });
             }
-            //TODO add file picker.
-            // var game = RomReader.ReadRom("./roms/Pokemon Red.gb");
-            // ChangeGame(game);
         }
 
         if (wasOpen is true)
