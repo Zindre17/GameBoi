@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Gameboi.Extensions;
 using Gameboi.Graphics;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Gameboi.OpenGL;
@@ -71,6 +72,12 @@ public sealed class UiLayer : IDisposable
         indexBuffer.Bind();
         fontShaders.Bind();
         gl!.DrawElements(GLEnum.Triangles, indexBuffer.Count, GLEnum.UnsignedInt, null);
+    }
+
+    public void Translate(int x, int y)
+    {
+        var matrix = Matrix4X4.CreateTranslation(x * tileWidth, y * tileHeight, 0);
+        fontShaders.SetUniform4x4("TranslationMatrix", matrix);
     }
 
     private const float heightUnit = 2f / 144;

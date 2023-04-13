@@ -10,9 +10,11 @@ out vec2 TexCoord;
 out vec4 ForColor;
 out vec4 BackColor;
 
+uniform mat4x4 TranslationMatrix = mat4x4(1.0);
+
 void main()
 {
-    gl_Position = Position;
+    gl_Position = TranslationMatrix * Position;
     TexCoord = TextureCoordinates;
     ForColor = ForegroundColor;
     BackColor = BackgroundColor;

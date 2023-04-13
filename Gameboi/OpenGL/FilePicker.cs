@@ -16,7 +16,10 @@ public class FilePicker
         Parent
     }
 
-    private readonly UiLayer ui;
+    private readonly UiLayer itemLayer;
+    private readonly UiLayer selectorLayer;
+    private readonly UiLayer backgroundLayer;
+
     private readonly List<int> itemHandles = new();
     private readonly List<int> selectorHandles = new();
 
@@ -24,16 +27,20 @@ public class FilePicker
     private readonly List<(DirectoryItemType, string)> dirItems = new();
 
     private int currentIndex;
+    private int scrollOffset;
     private bool isSelecting = false;
     public bool IsOpen => isSelecting;
 
     public FilePicker(GL gl)
     {
-        ui = new(gl);
-        backgroundHandle = ui.FillScreen(new(100, 100, 255, 0xff));
+        itemLayer = new(gl);
+        selectorLayer = new(gl);
+        backgroundLayer = new(gl);
+        backgroundHandle = backgroundLayer.FillScreen(new(100, 100, 255, 0xff));
+
         for (var i = 0; i < 18; i++)
         {
-            selectorHandles.Add(ui.CreateText("*                   ", i, 0, new(0, 0, 0, 128), new(0, 0, 0, 50)));
+            selectorHandles.Add(selectorLayer.CreateText("*                   ", i, 0, new(0, 0, 0, 128), new(0, 0, 0, 50)));
         }
         LoadDirectory(Directory.GetCurrentDirectory());
     }
@@ -48,14 +55,14 @@ public class FilePicker
 
         isSelecting = true;
 
-        ui.ShowText(backgroundHandle);
-        ui.ShowText(itemHandles);
-        UpdateSelectionIndex(0);
+        backgroundLayer.ShowText(backgroundHandle);
+        itemLayer.ShowText(itemHandles);
+        UpdateSelectionIndex(currentIndex);
     }
 
     private void LoadDirectory(string directory)
     {
-        ui.RemoveText(itemHandles);
+        itemLayer.RemoveText(itemHandles);
         itemHandles.Clear();
         dirItems.Clear();
 
@@ -84,12 +91,12 @@ public class FilePicker
         {
             if (type is DirectoryItemType.Parent)
             {
-                itemHandles.Add(ui.ShowText("..", row, 1, new(Rgb.white)));
+                itemHandles.Add(itemLayer.ShowText("..", row, 1, new(Rgb.white)));
             }
             else
             {
                 var color = type is DirectoryItemType.File ? new Rgba(40, 200, 40, 0xff) : new Rgba(Rgb.white);
-                itemHandles.Add(ui.ShowText(path[(directory.Length + 1)..], row, 1, color));
+                itemHandles.Add(itemLayer.ShowText(path[(directory.Length + 1)..], row, 1, color));
             }
             row++;
         }
@@ -103,26 +110,26 @@ public class FilePicker
             {
                 case Key.Escape:
                     isSelecting = false;
-                    ui.HideText(selectorHandles);
-                    ui.HideText(itemHandles);
-                    ui.HideText(backgroundHandle);
+                    selectorLayer.HideText(selectorHandles);
+                    itemLayer.HideText(itemHandles);
+                    backgroundLayer.HideText(backgroundHandle);
 
                     onDialogCancelled?.Invoke();
                     break;
                 case Key.Up:
-                    UpdateSelectionIndex(Math.Max(0, currentIndex - 1));
+                    UpdateSelectionIndex(currentIndex - 1);
                     break;
                 case Key.Down:
-                    UpdateSelectionIndex(Math.Min(selectorHandles.Count - 1, Math.Min(itemHandles.Count - 1, currentIndex + 1)));
+                    UpdateSelectionIndex(currentIndex + 1);
                     break;
                 case Key.Enter:
                     var (type, item) = dirItems[currentIndex];
                     if (type is DirectoryItemType.File)
                     {
                         isSelecting = false;
-                        ui.HideText(selectorHandles);
-                        ui.HideText(itemHandles);
-                        ui.HideText(backgroundHandle);
+                        selectorLayer.HideText(selectorHandles);
+                        itemLayer.HideText(itemHandles);
+                        backgroundLayer.HideText(backgroundHandle);
 
                         onFileChosen(item);
                     }
@@ -137,9 +144,36 @@ public class FilePicker
 
     private void UpdateSelectionIndex(int newIndex)
     {
-        ui.HideText(selectorHandles[currentIndex]);
-        currentIndex = newIndex;
-        ui.ShowText(selectorHandles[currentIndex]);
+        selectorLayer.HideText(selectorHandles[currentIndex - scrollOffset]);
+
+        if (newIndex < 0)
+        {
+            currentIndex = dirItems.Count - 1;
+            if (dirItems.Count > selectorHandles.Count)
+            {
+                scrollOffset = currentIndex - (selectorHandles.Count - 1);
+            }
+        }
+        else if (newIndex >= dirItems.Count)
+        {
+            currentIndex = 0;
+            scrollOffset = 0;
+        }
+        else
+        {
+            currentIndex = newIndex;
+            if (currentIndex >= selectorHandles.Count - 1)
+            {
+                scrollOffset = currentIndex - (selectorHandles.Count - 1);
+            }
+            if (currentIndex < scrollOffset)
+            {
+                scrollOffset = 0;
+            }
+        }
+
+        itemLayer.Translate(0, scrollOffset);
+        selectorLayer.ShowText(selectorHandles[currentIndex - scrollOffset]);
     }
 
     public void Render()
@@ -148,6 +182,8 @@ public class FilePicker
         {
             return;
         }
-        ui.Render();
+        backgroundLayer.Render();
+        itemLayer.Render();
+        selectorLayer.Render();
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Gameboi.Graphics;
+using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 
 namespace Gameboi.OpenGL;
@@ -65,6 +66,12 @@ public class Shaders : IDisposable
     {
         Bind();
         gl.Uniform4(GetUniformLocation(name), color.Red / 255f, color.Green / 255f, color.Blue / 255f, color.Alpha / 255f);
+    }
+
+    public unsafe void SetUniform4x4(string name, Matrix4X4<float> matrix)
+    {
+        Bind();
+        gl.UniformMatrix4(GetUniformLocation(name), 1, false, (float*)&matrix);
     }
 
     private int GetUniformLocation(string name)
