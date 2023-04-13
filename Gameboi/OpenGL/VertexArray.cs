@@ -14,12 +14,12 @@ public class VertexArray : IDisposable
         Bind();
     }
 
-    unsafe public void AddBuffer(VertexBuffer buffer)
+    unsafe public void AddBuffer(VertexBuffer buffer, bool isColoredQuads = false)
     {
         Bind();
         buffer.Bind();
 
-        var stride = (uint)(sizeof(float) * 4);
+        var stride = (uint)(sizeof(float) * (isColoredQuads ? ColoredQuad.VertexFloatCount : 4));
         var glType = GLEnum.Float;
 
         gl.EnableVertexAttribArray(0);
@@ -41,6 +41,29 @@ public class VertexArray : IDisposable
             stride,
             (void*)(2 * sizeof(float))
         );
+
+        if (isColoredQuads)
+        {
+            gl.EnableVertexAttribArray(2);
+            gl.VertexAttribPointer(
+                2,
+                4,
+                glType,
+                false,
+                stride,
+                (void*)(4 * sizeof(float))
+            );
+
+            gl.EnableVertexAttribArray(3);
+            gl.VertexAttribPointer(
+                3,
+                4,
+                glType,
+                false,
+                stride,
+                (void*)(8 * sizeof(float))
+            );
+        }
     }
 
     public void Bind()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Gameboi.Graphics;
 using Silk.NET.Input;
 using Silk.NET.OpenGL;
 
@@ -22,10 +23,10 @@ public class FilePicker
     public FilePicker(GL gl)
     {
         ui = new(gl);
-        backgroundHandle = ui.FillScreen();
+        backgroundHandle = ui.FillScreen(new(100, 100, 255, 0xff));
         for (var i = 0; i < 18; i++)
         {
-            selectorHandles.Add(ui.CreateText("*", i, 0));
+            selectorHandles.Add(ui.CreateText("*                   ", i, 0, new(0, 0, 0, 128), new(0, 0, 0, 50)));
         }
         LoadDirectory(Directory.GetCurrentDirectory());
     }
@@ -70,11 +71,11 @@ public class FilePicker
         {
             if (subDir.Length < directory.Length)
             {
-                itemHandles.Add(ui.ShowText("..", row, 1));
+                itemHandles.Add(ui.ShowText("..", row, 1, new(Rgb.white)));
             }
             else
             {
-                itemHandles.Add(ui.ShowText(subDir[(directory.Length + 1)..], row, 1));
+                itemHandles.Add(ui.ShowText(subDir[(directory.Length + 1)..], row, 1, new(Rgb.white)));
             }
             row++;
         }
@@ -96,7 +97,7 @@ public class FilePicker
                     UpdateSelectionIndex(Math.Max(0, currentIndex - 1));
                     break;
                 case Key.Down:
-                    UpdateSelectionIndex(Math.Min(itemHandles.Count, currentIndex + 1));
+                    UpdateSelectionIndex(Math.Min(selectorHandles.Count - 1, Math.Min(itemHandles.Count - 1, currentIndex + 1)));
                     break;
                 case Key.Enter:
                     LoadDirectory(subDirs[currentIndex]);

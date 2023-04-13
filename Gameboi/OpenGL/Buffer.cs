@@ -17,6 +17,11 @@ public class VertexBuffer : Buffer<float>
     {
         FeedSubData(quads.SelectMany(q => q.verticesData).ToArray(), offset);
     }
+
+    public void FeedSubData(IEnumerable<ColoredQuad> quads, int offset)
+    {
+        FeedSubData(quads.SelectMany(q => q.verticesData).ToArray(), offset);
+    }
 }
 
 public class IndexBuffer : Buffer<uint>
@@ -92,7 +97,7 @@ public abstract class Buffer<T> : IDisposable where T : unmanaged
         var lengthOfData = sizeof(T) * data.Length;
         if (lengthOfData + offset > currentCapacity)
         {
-            throw new Exception("Buffer overflow");
+            throw new Exception($"Buffer overflow:\n\tcurrent capacity:{currentCapacity}\n\tneeded capacity:{lengthOfData + offset}");
         }
         fixed (void* dataPointer = data)
         {

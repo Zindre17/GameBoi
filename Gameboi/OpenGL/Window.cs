@@ -69,6 +69,9 @@ public class Window
     {
         gl = GL.GetApi(window);
 
+        gl.Enable(GLEnum.Blend);
+        gl.BlendFunc(GLEnum.SrcAlpha, GLEnum.OneMinusSrcAlpha);
+
         var input = window.CreateInput();
         foreach (var keyboard in input.Keyboards)
         {
@@ -78,12 +81,12 @@ public class Window
 
         uiLayer = new UiLayer(gl);
 
-        uiLayer.FillScreen();
-        uiHandles.Add(uiLayer.ShowText("Hello, World!", 0, 0));
-        uiHandles.Add(uiLayer.ShowText("*(Yes)9", 1, 2));
-        uiHandles.Add(uiLayer.ShowText(".[No]0", 2, 3));
+        uiLayer.FillScreen(new(Rgb.darkGray));
+        uiHandles.Add(uiLayer.ShowText("Hello, World!", 0, 0, new(0xff, 0, 0xff, 0x80), new(0xff, 0, 0xff, 50)));
+        uiHandles.Add(uiLayer.ShowText("*(Yes)9", 1, 2, new(Rgb.lightGray)));
+        uiHandles.Add(uiLayer.ShowText(".[No]0", 2, 3, new(Rgb.white)));
 
-        pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2);
+        pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
 
         picker = new FilePicker(gl);
 
@@ -112,19 +115,22 @@ public class Window
     private void OnKeyPressed(IKeyboard _, Key key, int __)
     {
         gameboy?.Joypad.KeyDown(key);
+
+        var wasOpen = picker?.IsOpen;
+
         if (key is Key.S)
         {
             uiLayer?.ShowText(uiHandles[0]);
         }
-        if (key is Key.H)
+        else if (key is Key.H)
         {
             uiLayer?.HideText(uiHandles[0]);
         }
-        if (key is Key.R)
+        else if (key is Key.R)
         {
             uiLayer?.RemoveText(uiHandles[0]);
         }
-        if (key is Key.Space)
+        else if (key is Key.Space)
         {
             isPlaying = !isPlaying;
             if (isPlaying)
@@ -136,17 +142,18 @@ public class Window
                 uiLayer?.ShowText(pauseTextHandle);
             }
         }
-        if (key is Key.Escape)
+        else if (key is Key.Escape)
         {
+            if (picker?.IsOpen is false)
+            {
+                picker?.SelectFile();
+            }
             //TODO add file picker.
             // var game = RomReader.ReadRom("./roms/Pokemon Red.gb");
             // ChangeGame(game);
         }
-        if (!picker?.IsOpen ?? false && key is Key.Escape)
-        {
-            picker?.SelectFile();
-        }
-        else
+
+        if (wasOpen is true)
         {
             picker?.OnKeyPressed(key);
         }

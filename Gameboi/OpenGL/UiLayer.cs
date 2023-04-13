@@ -32,12 +32,12 @@ public sealed class UiLayer : IDisposable
     private readonly Texture fontTexture;
     private readonly Shaders fontShaders;
 
-    private const int vertexCapacity = 20_000;
-    private const int indexCapacity = 10_000;
+    private const int vertexCapacity = 1 << 17;
+    private const int indexCapacity = 1 << 14;
 
-    private readonly List<Quad> quads = new();
+    private readonly List<ColoredQuad> quads = new();
     private readonly List<uint> indices = new();
-    private readonly List<Quad> orderedVisibleQuads = new();
+    private readonly List<ColoredQuad> orderedVisibleQuads = new();
 
     public UiLayer(GL gl)
     {
@@ -45,7 +45,7 @@ public sealed class UiLayer : IDisposable
 
         vertexArray = new VertexArray(gl);
         vertexBuffer = new VertexBuffer(gl, vertexCapacity);
-        vertexArray.AddBuffer(vertexBuffer);
+        vertexArray.AddBuffer(vertexBuffer, true);
 
         indexBuffer = new IndexBuffer(gl, indexCapacity);
         fontTexture = new Texture(gl, 1, null, (uint)(fontWidth * fontSymbols), fontHeight);
@@ -53,8 +53,6 @@ public sealed class UiLayer : IDisposable
 
         fontShaders = new Shaders(gl, "OpenGL.Text.shader");
         fontShaders.SetUniform("Font", 1);
-        fontShaders.SetUniform4("TextColor", new(Rgb.white));
-        fontShaders.SetUniform4("BackgroundColor", new(Rgb.darkGray));
     }
 
     public void Dispose()
@@ -83,19 +81,19 @@ public sealed class UiLayer : IDisposable
 
     private readonly float fontWidthUnit = 1f / fontSymbols;
 
-    private readonly Dictionary<int, (bool, Quad, int)> loadedText = new();
+    private readonly Dictionary<int, (bool, ColoredQuad, int)> loadedText = new();
     private int currentId = 0;
 
-    public int FillScreen()
+    public int FillScreen(Rgba color)
     {
-        var quad = new Quad(-1, -1, 1, 1, 0, 0, 0, 0);
+        var quad = new ColoredQuad(-1, -1, 1, 1, 0, 0, 0, 0, new(), color);
         var newIndices = GetIndicesForQuad(quads.Count);
 
         var id = currentId;
         loadedText[id] = (true, quad, 1);
         currentId += 1;
 
-        vertexBuffer.FeedSubData(quad.verticesData, quads.Count * Quad.SizeInBytes);
+        vertexBuffer.FeedSubData(quad.verticesData, quads.Count * ColoredQuad.SizeInBytes);
         quads.Add(quad);
 
         indexBuffer.FeedSubData(newIndices, indices.Count * sizeof(uint));
@@ -105,14 +103,14 @@ public sealed class UiLayer : IDisposable
         return id;
     }
 
-    public int ShowText(string text, int row, int column)
+    public int ShowText(string text, int row, int column, Rgba textColor, Rgba backgroundColor = new())
     {
-        var id = CreateText(text, row, column);
+        var id = CreateText(text, row, column, textColor, backgroundColor);
         ShowText(id);
         return id;
     }
 
-    public int CreateText(string text, int row, int column)
+    public int CreateText(string text, int row, int column, Rgba textColor, Rgba backgroundColor = new())
     {
         var yStart = 1f - (tileHeight * row);
         var yEnd = yStart - tileHeight;
@@ -120,7 +118,7 @@ public sealed class UiLayer : IDisposable
         var xStart = -1f + (tileWidth * column);
         var xEnd = xStart + tileWidth;
 
-        var newQuads = new List<Quad>();
+        var newQuads = new List<ColoredQuad>();
 
         foreach (var character in text.ToLower())
         {
@@ -151,7 +149,7 @@ public sealed class UiLayer : IDisposable
             var fontXstart = fontWidthUnit * charIndex;
             var fontXend = fontXstart + fontWidthUnit;
 
-            newQuads.Add(new Quad(xStart, yStart, xEnd, yEnd, fontXstart, 0, fontXend, 1));
+            newQuads.Add(new ColoredQuad(xStart, yStart, xEnd, yEnd, fontXstart, 0, fontXend, 1, textColor, backgroundColor));
 
             xStart += tileWidth;
             xEnd += tileWidth;
@@ -159,7 +157,7 @@ public sealed class UiLayer : IDisposable
 
         loadedText.Add(currentId, (false, newQuads[0], newQuads.Count));
 
-        vertexBuffer.FeedSubData(newQuads, quads.Count * Quad.SizeInBytes);
+        vertexBuffer.FeedSubData(newQuads, quads.Count * ColoredQuad.SizeInBytes);
 
         quads.AddRange(newQuads);
 
