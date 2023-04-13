@@ -21,8 +21,17 @@ out vec4 FragColor;
 in vec2 TexCoord;
 
 uniform sampler2D Font;
+uniform vec4 TextColor;
+uniform vec4 BackgroundColor;
 
 void main()
 {
-    FragColor = texture(Font, TexCoord);
+    float texValue = texture(Font, TexCoord).r;
+    
+    if(texValue == 1){
+        FragColor = TextColor;
+    }
+    else{
+        FragColor = BackgroundColor;
+    }
 }

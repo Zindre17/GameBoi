@@ -53,6 +53,8 @@ public sealed class UiLayer : IDisposable
 
         fontShaders = new Shaders(gl, "OpenGL.Text.shader");
         fontShaders.SetUniform("Font", 1);
+        fontShaders.SetUniform4("TextColor", new(Rgb.white));
+        fontShaders.SetUniform4("BackgroundColor", new(Rgb.darkGray));
     }
 
     public void Dispose()

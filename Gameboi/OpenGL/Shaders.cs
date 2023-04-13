@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using Gameboi.Graphics;
 using Silk.NET.OpenGL;
 
 namespace Gameboi.OpenGL;
@@ -58,6 +59,12 @@ public class Shaders : IDisposable
     {
         Bind();
         gl.Uniform1(GetUniformLocation(name), value);
+    }
+
+    public void SetUniform4(string name, Rgba color)
+    {
+        Bind();
+        gl.Uniform4(GetUniformLocation(name), color.Red / 255f, color.Green / 255f, color.Blue / 255f, color.Alpha / 255f);
     }
 
     private int GetUniformLocation(string name)
