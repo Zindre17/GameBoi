@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
@@ -144,14 +145,40 @@ public class Window
         }
     }
 
+    private string? saveFile;
+
     public void ChangeGame(RomCartridge game)
     {
         isPlaying = false;
 
         var gameHeader = new GameHeader(game.Rom);
-        window.Title = gameHeader.GetTitle();
+        var title = gameHeader.GetTitle();
+        window.Title = title;
 
         state.ChangeGame(game.Rom, game.Ram, gameHeader.IsColorGame);
+
+        if (gameHeader.HasRamAndBattery)
+        {
+            var dir = $"{Directory.GetCurrentDirectory()}/saves";
+            Directory.CreateDirectory(dir);
+
+            saveFile = $"{dir}/{title}.gameboi";
+            if (File.Exists(saveFile))
+            {
+                var ram = File.ReadAllBytes(saveFile);
+                Array.Copy(ram, game.Ram, ram.Length);
+            }
+            else
+            {
+                File.Create(saveFile);
+            }
+        }
+        else
+        {
+            saveFile = null;
+        }
+
+        SaveCurrentGame();
 
         var mbcLogic = MbcFactory.GetMbcLogic(game.Type, state);
         gameboy = new ImprovedGameboy(state, mbcLogic);
@@ -159,6 +186,15 @@ public class Window
 
         isPlaying = true;
         hasStartedAGame = true;
+    }
+
+    private void SaveCurrentGame()
+    {
+        if (gameboy is null || saveFile is null)
+        {
+            return;
+        }
+        File.WriteAllBytes(saveFile, state.CartridgeRam);
     }
 
     public void Pause()
@@ -209,6 +245,8 @@ public class Window
 
     private void OnClose()
     {
+        SaveCurrentGame();
+
         vertexArray?.Dispose();
         indexBuffer?.Dispose();
         vertexBuffer?.Dispose();
