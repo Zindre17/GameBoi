@@ -23,6 +23,7 @@ public class Window
 
     private ImprovedGameboy? gameboy;
     private readonly SystemState state = new();
+    private bool hasStartedAGame;
 
     private bool isPlaying;
 
@@ -114,25 +115,23 @@ public class Window
 
         if (key is Key.Space)
         {
-            isPlaying = !isPlaying;
             if (isPlaying)
             {
-                uiLayer?.HideText(pauseTextHandle);
+                Pause();
             }
             else
             {
-                uiLayer?.ShowText(pauseTextHandle);
+                Unpause();
             }
         }
         else if (key is Key.Escape)
         {
             if (picker?.IsOpen is false)
             {
-                isPlaying = false;
-                uiLayer?.ShowText(pauseTextHandle);
+                Pause();
                 picker?.SelectFile(rom =>
                 {
-                    uiLayer?.HideText(pauseTextHandle);
+                    Unpause();
                     var game = RomReader.ReadRom(rom);
                     ChangeGame(game);
                 });
@@ -159,6 +158,28 @@ public class Window
         gameboy.OnPixelRowReady += UploadPixelRow;
 
         isPlaying = true;
+        hasStartedAGame = true;
+    }
+
+    public void Pause()
+    {
+        if (!hasStartedAGame || !isPlaying)
+        {
+            return;
+        }
+        isPlaying = false;
+        uiLayer?.ShowText(pauseTextHandle);
+    }
+
+
+    public void Unpause()
+    {
+        if (!hasStartedAGame || isPlaying)
+        {
+            return;
+        }
+        isPlaying = true;
+        uiLayer?.HideText(pauseTextHandle);
     }
 
     private void OnUpdate(double obj)
