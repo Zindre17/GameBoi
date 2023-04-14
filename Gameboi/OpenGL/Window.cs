@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
@@ -64,6 +65,11 @@ public class Window
     public void Run() => window.Run();
 
     private int pauseTextHandle;
+    private int savedTextHandle;
+    private int loadedTextHandle;
+    private const long snackbarDuration = 2000;
+    private int snackbarTextHandle;
+    private readonly Stopwatch snackbarTimer = new();
 
     private void OnLoad()
     {
@@ -82,6 +88,8 @@ public class Window
         uiLayer = new UiLayer(gl);
 
         pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
+        savedTextHandle = uiLayer.CreateText("saved", 15, (20 - 5) / 2, new(Rgb.white), new(Rgb.darkGray));
+        loadedTextHandle = uiLayer.CreateText("loaded", 15, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
 
         picker = new FilePicker(gl);
 
@@ -155,6 +163,8 @@ public class Window
 
     private void SaveSnapshot()
     {
+        ShowSnackbarText(savedTextHandle);
+
         var dir = $"{Directory.GetCurrentDirectory()}/snapshots";
         Directory.CreateDirectory(dir);
 
@@ -168,6 +178,8 @@ public class Window
 
     private void LoadSnapshot()
     {
+        ShowSnackbarText(loadedTextHandle);
+
         var dir = $"{Directory.GetCurrentDirectory()}/snapshots";
         Directory.CreateDirectory(dir);
 
@@ -177,6 +189,19 @@ public class Window
         var file = $"{dir}/{title}.snpsht";
 
         state.LoadState(File.ReadAllBytes(file));
+    }
+
+    private void ShowSnackbarText(int textHandle)
+    {
+        if (snackbarTimer.IsRunning)
+        {
+            snackbarTimer.Reset();
+            uiLayer?.HideText(snackbarTextHandle);
+        }
+
+        snackbarTimer.Start();
+        snackbarTextHandle = textHandle;
+        uiLayer?.ShowText(textHandle);
     }
 
     private string? saveFile;
@@ -260,6 +285,12 @@ public class Window
             gameboy?.PlayFrame();
         }
         picker?.Update();
+
+        if (snackbarTimer.IsRunning && snackbarTimer.ElapsedMilliseconds >= snackbarDuration)
+        {
+            snackbarTimer.Reset();
+            uiLayer?.HideText(snackbarTextHandle);
+        }
     }
 
     unsafe private void OnRender(double obj)
