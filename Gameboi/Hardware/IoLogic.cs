@@ -40,6 +40,10 @@ internal class IoLogic
 
         // LCD ----------------------------------
         DMA_index => WriteOnly,
+        BCPS_index => (byte)(state.BCPS | 0b0100_0000),
+        BCPD_index => state.BackgroundColorPaletteData[state.BCPS & 0x3f],
+        OCPS_index => (byte)(state.OCPS | 0b0100_0000),
+        OCPD_index => state.ObjectColorPaletteData[state.OCPS & 0x3f],
 
         _ => state.IoPorts[address]
     };
@@ -67,7 +71,8 @@ internal class IoLogic
             LY_index => 0,
             // Is constantly compared to LY and sets coincidence flag in stat.
             LYC_index => LycWriteLogic(value),
-
+            BCPD_index => BcpdWriteLogic(value),
+            OCPD_index => OcpdWriteLogic(value),
             _ => value
         };
 
@@ -76,6 +81,34 @@ internal class IoLogic
             state.IsDmaInProgress = true;
             state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
+    }
+
+    private byte BcpdWriteLogic(byte value)
+    {
+        var index = state.BCPS & 0x3f;
+        state.BackgroundColorPaletteData[index] = value;
+        if ((state.BCPS & 0x80) is 0x80)
+        {
+            index += 1;
+            index &= 0x3f; // wraparound (0x3f + 1 -> 0)
+            index |= 0x80; // enable autoincrement;
+            state.BCPS = (byte)index;
+        }
+        return value;
+    }
+
+    private byte OcpdWriteLogic(byte value)
+    {
+        var index = state.OCPS & 0x3f;
+        state.ObjectColorPaletteData[index] = value;
+        if ((state.OCPS & 0x80) is 0x80)
+        {
+            index += 1;
+            index &= 0x3f; // wraparound (0x3f + 1 -> 0)
+            index |= 0x80; // enable autoincrement;
+            state.OCPS = (byte)index;
+        }
+        return value;
     }
 
     private byte LcdControlWriteLogic(byte value)

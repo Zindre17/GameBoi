@@ -88,6 +88,9 @@ public class SystemState
     public int TicksSinceLastDivIncrement { get; set; } = 0;
     public int TicksSinceLastTimaIncrement { get; set; } = 0;
 
+    public byte[] BackgroundColorPaletteData = new byte[64];
+    public byte[] ObjectColorPaletteData = new byte[64];
+
     public void ChangeGame(byte[] cartridgeRom, byte[] cartridgeRam, bool isColorGame)
     {
         CartridgeRom = cartridgeRom;
@@ -372,6 +375,10 @@ public class SystemState
     public ref byte BackgroundPalette => ref IoPorts[BGP_index];
     public ref byte ObjectPalette0 => ref IoPorts[OBP_0_index];
     public ref byte ObjectPalette1 => ref IoPorts[OBP_1_index];
+    public ref byte BCPS => ref IoPorts[BCPS_index];
+    public ref byte BCPD => ref IoPorts[BCPD_index];
+    public ref byte OCPS => ref IoPorts[OCPS_index];
+    public ref byte OCPD => ref IoPorts[OCPD_index];
     public ref byte WindowY => ref IoPorts[WY_index];
     public ref byte WindowX => ref IoPorts[WX_index];
 }
@@ -430,6 +437,11 @@ public static class IoIndices
     public const ushort BGP_index = 0x47;
     public const ushort OBP_0_index = 0x48;
     public const ushort OBP_1_index = 0x49;
+    public const ushort BCPS_index = 0x68;
+    public const ushort BCPD_index = 0x69;
+    public const ushort OCPS_index = 0x6a;
+    public const ushort OCPD_index = 0x6b;
+
     public const ushort WY_index = 0x4a;
     public const ushort WX_index = 0x4b;
 }
