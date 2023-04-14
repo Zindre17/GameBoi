@@ -103,6 +103,7 @@ public class Window
     private void OnKeyReleased(IKeyboard _, Key key, int __)
     {
         gameboy?.Joypad.KeyUp(key);
+        picker?.OnKeyReleased(key);
     }
 
     private void OnKeyPressed(IKeyboard _, Key key, int __)
@@ -167,6 +168,7 @@ public class Window
             OnFrameUpdate?.Invoke();
             gameboy?.PlayFrame();
         }
+        picker?.Update();
     }
 
     unsafe private void OnRender(double obj)

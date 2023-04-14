@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Gameboi.Graphics;
 using Silk.NET.Input;
@@ -102,6 +103,11 @@ public class FilePicker
         }
     }
 
+    private readonly Stopwatch upPressedTimer = new();
+    private bool upPressedPassedInitialThreshold;
+    private readonly Stopwatch downPressedTimer = new();
+    private bool downPressedPassedInitialThreshold;
+
     public void OnKeyPressed(Key key)
     {
         if (isSelecting)
@@ -117,9 +123,13 @@ public class FilePicker
                     onDialogCancelled?.Invoke();
                     break;
                 case Key.Up:
+                    upPressedTimer.Restart();
+                    upPressedPassedInitialThreshold = false;
                     UpdateSelectionIndex(currentIndex - 1);
                     break;
                 case Key.Down:
+                    downPressedTimer.Restart();
+                    downPressedPassedInitialThreshold = false;
                     UpdateSelectionIndex(currentIndex + 1);
                     break;
                 case Key.Enter:
@@ -138,6 +148,63 @@ public class FilePicker
                         LoadDirectory(item);
                     }
                     break;
+            }
+        }
+    }
+
+    public void OnKeyReleased(Key key)
+    {
+        switch (key)
+        {
+            case Key.Up:
+                upPressedTimer.Stop();
+                break;
+            case Key.Down:
+                downPressedTimer.Stop();
+                break;
+        }
+    }
+
+    public void Update()
+    {
+        const long initialThreshold = 300;
+        const long threshold = 75;
+        if (upPressedTimer.IsRunning)
+        {
+            if (upPressedPassedInitialThreshold)
+            {
+                if (upPressedTimer.ElapsedMilliseconds >= threshold)
+                {
+                    upPressedTimer.Restart();
+                    UpdateSelectionIndex(currentIndex - 1);
+                }
+            }
+            else
+            {
+                if (upPressedTimer.ElapsedMilliseconds >= initialThreshold)
+                {
+                    upPressedPassedInitialThreshold = true;
+                    UpdateSelectionIndex(currentIndex - 1);
+                }
+            }
+        }
+        else if (downPressedTimer.IsRunning)
+        {
+            if (downPressedPassedInitialThreshold)
+            {
+                if (downPressedTimer.ElapsedMilliseconds >= threshold)
+                {
+                    downPressedTimer.Restart();
+                    UpdateSelectionIndex(currentIndex + 1);
+                }
+            }
+            else
+            {
+                if (downPressedTimer.ElapsedMilliseconds >= initialThreshold)
+                {
+                    downPressedPassedInitialThreshold = true;
+                    UpdateSelectionIndex(currentIndex + 1);
+                }
             }
         }
     }
