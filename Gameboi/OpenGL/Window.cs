@@ -138,11 +138,45 @@ public class Window
                 });
             }
         }
+        else if (key is Key.Number6)
+        {
+            LoadSnapshot();
+        }
+        else if (key is Key.Number9)
+        {
+            SaveSnapshot();
+        }
 
         if (wasOpen is true)
         {
             picker?.OnKeyPressed(key);
         }
+    }
+
+    private void SaveSnapshot()
+    {
+        var dir = $"{Directory.GetCurrentDirectory()}/snapshots";
+        Directory.CreateDirectory(dir);
+
+        var gameHeader = new GameHeader(state.CartridgeRom);
+        var title = gameHeader.GetTitle();
+
+        var file = $"{dir}/{title}.snpsht";
+
+        File.WriteAllBytes(file, state.ToArray());
+    }
+
+    private void LoadSnapshot()
+    {
+        var dir = $"{Directory.GetCurrentDirectory()}/snapshots";
+        Directory.CreateDirectory(dir);
+
+        var gameHeader = new GameHeader(state.CartridgeRom);
+        var title = gameHeader.GetTitle();
+
+        var file = $"{dir}/{title}.snpsht";
+
+        state.LoadState(File.ReadAllBytes(file));
     }
 
     private string? saveFile;

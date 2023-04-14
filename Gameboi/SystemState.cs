@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Gameboi.Extensions;
 using Gameboi.Statics;
 using static Gameboi.IoIndices;
@@ -184,6 +185,146 @@ public class SystemState
         BackgroundPalette = 0xfc;
         ObjectPalette0 = 0xff;
         ObjectPalette1 = 0xff;
+    }
+
+    public byte[] ToArray()
+    {
+        var bytes = new List<byte>();
+
+        // Cartridge state
+        bytes.AddRange(BitConverter.GetBytes(CartridgeRam.Length));
+        bytes.AddRange(CartridgeRam);
+        bytes.AddRange(BitConverter.GetBytes(MbcMode));
+        bytes.Add((byte)(MbcRamDisabled ? 1 : 0));
+        bytes.AddRange(BitConverter.GetBytes(MbcRamOffset));
+        bytes.AddRange(BitConverter.GetBytes(MbcRom0Offset));
+        bytes.AddRange(BitConverter.GetBytes(MbcRom1Offset));
+        bytes.AddRange(BitConverter.GetBytes(MbcRomSelectHigh));
+        bytes.AddRange(BitConverter.GetBytes(MbcRomSelectLow));
+
+        // Gameboy mem/regs
+        bytes.AddRange(BitConverter.GetBytes(VideoRam.Length));
+        bytes.AddRange(VideoRam);
+        bytes.AddRange(BitConverter.GetBytes(WorkRam.Length));
+        bytes.AddRange(WorkRam);
+        bytes.AddRange(BitConverter.GetBytes(Oam.Length));
+        bytes.AddRange(Oam);
+        bytes.AddRange(BitConverter.GetBytes(IoPorts.Length));
+        bytes.AddRange(IoPorts);
+        bytes.AddRange(BitConverter.GetBytes(HighRam.Length));
+        bytes.AddRange(HighRam);
+        bytes.Add(interruptEnableRegister);
+
+        // Cpu regs and state
+        bytes.Add(accumulator);
+        bytes.Add(flags);
+        bytes.Add(b);
+        bytes.Add(c);
+        bytes.Add(d);
+        bytes.Add(e);
+        bytes.Add(high);
+        bytes.Add(low);
+        bytes.AddRange(BitConverter.GetBytes(stackPointer));
+        bytes.AddRange(BitConverter.GetBytes(ProgramCounter));
+        bytes.Add((byte)(InterruptMasterEnable ? 1 : 0));
+        bytes.Add((byte)(IsHalted ? 1 : 0));
+        bytes.Add((byte)(IsInCbMode ? 1 : 0));
+
+        // Misc IO state
+        bytes.Add((byte)(IsDmaInProgress ? 1 : 0));
+        bytes.AddRange(BitConverter.GetBytes(DmaBytesTransferred));
+        bytes.AddRange(BitConverter.GetBytes(DmaStartAddress));
+        bytes.AddRange(BitConverter.GetBytes(DmaTicksElapsed));
+
+        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastDivIncrement));
+        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastTimaIncrement));
+
+        bytes.AddRange(BitConverter.GetBytes(LcdRemainingTicksInMode));
+        bytes.AddRange(BitConverter.GetBytes(LcdLinesOfWindowDrawnThisFrame));
+        bytes.Add((byte)(LcdWindowTriggered ? 1 : 0));
+
+        return bytes.ToArray();
+    }
+
+    public void LoadState(byte[] state)
+    {
+        var index = 0;
+        // Cartridge state
+        ReadByteArray(CartridgeRam);
+        MbcMode = ReadInt();
+        MbcRamDisabled = ReadBool();
+        MbcRamOffset = ReadInt();
+        MbcRom0Offset = ReadInt();
+        MbcRom1Offset = ReadInt();
+        MbcRomSelectHigh = ReadInt();
+        MbcRomSelectLow = ReadInt();
+
+        // Gameboy mem/regs
+        ReadByteArray(VideoRam);
+        ReadByteArray(WorkRam);
+        ReadByteArray(Oam);
+        ReadByteArray(IoPorts);
+        ReadByteArray(HighRam);
+        interruptEnableRegister = ReadByte();
+
+        // Cpu regs and state
+        accumulator = ReadByte();
+        flags = ReadByte();
+        b = ReadByte();
+        c = ReadByte();
+        d = ReadByte();
+        e = ReadByte();
+        high = ReadByte();
+        low = ReadByte();
+        stackPointer = ReadUshort();
+        ProgramCounter = ReadUshort();
+        InterruptMasterEnable = ReadBool();
+        IsHalted = ReadBool();
+        IsInCbMode = ReadBool();
+
+        // Misc IO state
+        IsDmaInProgress = ReadBool();
+        DmaBytesTransferred = ReadInt();
+        DmaStartAddress = ReadUshort();
+        DmaTicksElapsed = ReadInt();
+
+        TicksSinceLastDivIncrement = ReadInt();
+        TicksSinceLastTimaIncrement = ReadInt();
+
+        LcdRemainingTicksInMode = ReadInt();
+        LcdLinesOfWindowDrawnThisFrame = ReadInt();
+        LcdWindowTriggered = ReadBool();
+
+        ushort ReadUshort()
+        {
+            var result = BitConverter.ToUInt16(state, index);
+            index += sizeof(ushort);
+            return result;
+        }
+
+        byte ReadByte()
+        {
+            return state[index++];
+        }
+
+        void ReadByteArray(byte[] destination)
+        {
+            var length = ReadInt();
+            Array.Copy(state, index, destination, 0, length);
+            index += length;
+        }
+
+        bool ReadBool()
+        {
+            return state[index++] is 1;
+        }
+
+        int ReadInt()
+        {
+            var result = BitConverter.ToInt32(state, index);
+            index += sizeof(int);
+            return result;
+        }
     }
 
     public ref byte P1 => ref IoPorts[P1_index];
