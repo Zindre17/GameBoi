@@ -228,10 +228,6 @@ public class Window
                 var ram = File.ReadAllBytes(saveFile);
                 Array.Copy(ram, game.Ram, ram.Length);
             }
-            else
-            {
-                File.Create(saveFile);
-            }
         }
         else
         {
