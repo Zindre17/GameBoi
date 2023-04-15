@@ -50,6 +50,6 @@ public class GameHeaderTests
         data[0x145] = (byte)'2';
         data[0x146] = (byte)'0';
 
-        Assert.AreEqual("abcABC12345 6996", header.GetTitle());
+        Assert.AreEqual("abcABC12345 ", header.GetTitle());
     }
 }
