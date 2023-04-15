@@ -28,7 +28,9 @@ public class SystemState
 
     // Gameboy state (memory and IO)
     public byte[] VideoRam { get; private set; } = new byte[0x4_000]; // Color specs
+    public int VideoRamOffset = 0;
     public byte[] WorkRam { get; private set; } = new byte[0x8_000]; // Color specs
+    public int WorkRamOffset = 0x1000;
     public byte[] Oam { get; private set; } = new byte[0xA0];
     public byte[] IoPorts { get; private set; } = new byte[0x80];
     public byte[] HighRam { get; private set; } = new byte[0x7F];
@@ -135,7 +137,9 @@ public class SystemState
     private void ResetGameboiState()
     {
         VideoRam.Clear();
+        VideoRamOffset = 0;
         WorkRam.Clear();
+        WorkRamOffset = 0x1000;
         HighRam.Clear();
         Oam.Clear();
         ResetIO();
@@ -437,6 +441,8 @@ public static class IoIndices
     public const ushort BGP_index = 0x47;
     public const ushort OBP_0_index = 0x48;
     public const ushort OBP_1_index = 0x49;
+    public const ushort VBK_index = 0x4f;
+    public const ushort SVBK_index = 0x70;
     public const ushort BCPS_index = 0x68;
     public const ushort BCPD_index = 0x69;
     public const ushort OCPS_index = 0x6a;

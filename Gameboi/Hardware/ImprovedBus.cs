@@ -21,9 +21,10 @@ public class ImprovedBus
         return address switch
         {
             < 0x8000 => mbc.ReadRom(address),
-            < 0xA000 => state.VideoRam[address - 0x8000],
+            < 0xA000 => state.VideoRam[state.VideoRamOffset + address - 0x8000],
             < 0xC000 => mbc.ReadRam((ushort)(address - 0xA000)),
-            < 0xE000 => state.WorkRam[address - 0xC000],
+            < 0xD000 => state.WorkRam[address - 0xC000],
+            < 0xE000 => state.WorkRam[state.WorkRamOffset + address - 0xD000],
             < 0xFE00 => state.WorkRam[address - 0xE000], // ECHO 0xC000 - 0xDDFF
             < 0xFEA0 => state.Oam[address - 0xFE00],
             < 0xFF00 => 0xff, // Not used

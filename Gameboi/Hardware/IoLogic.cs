@@ -71,6 +71,8 @@ internal class IoLogic
             LY_index => 0,
             // Is constantly compared to LY and sets coincidence flag in stat.
             LYC_index => LycWriteLogic(value),
+            VBK_index => VramBankSelectLogic(value),
+            SVBK_index => WorkRamBankSelectLogic(value),
             BCPD_index => BcpdWriteLogic(value),
             OCPD_index => OcpdWriteLogic(value),
             _ => value
@@ -81,6 +83,22 @@ internal class IoLogic
             state.IsDmaInProgress = true;
             state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
+    }
+
+    private byte VramBankSelectLogic(byte value)
+    {
+        state.VideoRamOffset = 0x2000 * (value & 1);
+        return value;
+    }
+
+    private byte WorkRamBankSelectLogic(byte value)
+    {
+        state.WorkRamOffset = 0x1000 * (value & 7);
+        if (state.WorkRamOffset is 0)
+        {
+            state.WorkRamOffset = 0x1000;
+        }
+        return value;
     }
 
     private byte BcpdWriteLogic(byte value)
