@@ -71,6 +71,8 @@ public class ImprovedLcdTests
     public ImprovedLcdTests()
     {
         state = new();
+        var fakeGame = new byte[0x150];
+        state.ChangeGame(fakeGame, fakeGame, false);
         lcd = new(state);
         state.Reset(false);
     }
