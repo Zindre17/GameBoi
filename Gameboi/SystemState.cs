@@ -27,8 +27,8 @@ public class SystemState
     public int MbcMode { get; set; } = 0;
 
     // Gameboy state (memory and IO)
-    public byte[] VideoRam { get; private set; } = new byte[0x16_000]; // Color specs
-    public byte[] WorkRam { get; private set; } = new byte[0x32_000]; // Color specs
+    public byte[] VideoRam { get; private set; } = new byte[0x4_000]; // Color specs
+    public byte[] WorkRam { get; private set; } = new byte[0x8_000]; // Color specs
     public byte[] Oam { get; private set; } = new byte[0xA0];
     public byte[] IoPorts { get; private set; } = new byte[0x80];
     public byte[] HighRam { get; private set; } = new byte[0x7F];
