@@ -209,6 +209,7 @@ public class Window
     public void ChangeGame(RomCartridge game)
     {
         isPlaying = false;
+        SaveCurrentGame();
 
         var gameHeader = new GameHeader(game.Rom);
         var title = gameHeader.GetTitle();
@@ -237,7 +238,6 @@ public class Window
             saveFile = null;
         }
 
-        SaveCurrentGame();
 
         var mbcLogic = MbcFactory.GetMbcLogic(game.Type, state);
         gameboy = new ImprovedGameboy(state, mbcLogic);
