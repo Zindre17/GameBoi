@@ -40,6 +40,7 @@ internal class IoLogic
 
         // LCD ----------------------------------
         DMA_index => WriteOnly,
+        VBK_index => (byte)(state.IoPorts[VBK_index] | 0xfe),
         BCPS_index => (byte)(state.BCPS | 0b0100_0000),
         BCPD_index => state.BackgroundColorPaletteData[state.BCPS & 0x3f],
         OCPS_index => (byte)(state.OCPS | 0b0100_0000),
@@ -72,9 +73,9 @@ internal class IoLogic
             // Is constantly compared to LY and sets coincidence flag in stat.
             LYC_index => LycWriteLogic(value),
             VBK_index => VramBankSelectLogic(value),
-            SVBK_index => WorkRamBankSelectLogic(value),
             BCPD_index => BcpdWriteLogic(value),
             OCPD_index => OcpdWriteLogic(value),
+            SVBK_index => WorkRamBankSelectLogic(value),
             _ => value
         };
 
