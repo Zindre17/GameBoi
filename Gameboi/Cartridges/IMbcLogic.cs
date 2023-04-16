@@ -165,7 +165,7 @@ public class MemoryBankController1 : MemoryBankControllerBase
     private void UpdateBankSelects()
     {
         int romBankNr;
-        if (state.MbcMode is 1)
+        if (state.MbcMode is 0)
         {
             state.MbcRamOffset = 0;
             romBankNr = (state.MbcRamSelect << 5) | state.MbcRomSelectLow;
