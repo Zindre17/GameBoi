@@ -211,12 +211,14 @@ public class MemoryBankController2 : MemoryBankControllerBase
         {
             if (address.GetHighByte().IsBitSet(0))
             {
-                var romSelect = (value & 0x0F) % RomBanks;
-                if (romSelect is 0)
+                var bankSelect = value & 0xf;
+                if (bankSelect is 0)
+                    state.MbcRom1Offset = RomBankSize;
+                else
                 {
-                    romSelect = 1;
+                    bankSelect &= RomBankMask;
+                    state.MbcRom1Offset = bankSelect * RomBankSize;
                 }
-                state.MbcRom1Offset = romSelect * RomBankSize;
             }
             else
             {
