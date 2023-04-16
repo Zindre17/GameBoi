@@ -41,11 +41,13 @@ public class ImprovedBus
             case < 0x8000:
                 return ref mbc.GetRomRef(address);
             case < 0xA000:
-                return ref state.VideoRam[address - 0x8000];
+                return ref state.VideoRam[state.VideoRamOffset + address - 0x8000];
             case < 0xC000:
                 return ref mbc.GetRamRef((ushort)(address - 0xA000));
-            case < 0xE000:
+            case < 0xD000:
                 return ref state.WorkRam[address - 0xC000];
+            case < 0xE000:
+                return ref state.WorkRam[state.WorkRamOffset + address - 0xD000];
             case < 0xFE00:
                 return ref state.WorkRam[address - 0xE000]; // ECHO 0xC000 - 0xDDFF
             case < 0xFEA0:
@@ -69,13 +71,16 @@ public class ImprovedBus
                 mbc.WriteRom(address, value);
                 break;
             case < 0xA000:
-                state.VideoRam[address - 0x8000] = value;
+                state.VideoRam[state.VideoRamOffset + address - 0x8000] = value;
                 break;
             case < 0xC000:
                 mbc.WriteRam((ushort)(address - 0xA000), value);
                 break;
-            case < 0xE000:
+            case < 0xD000:
                 state.WorkRam[address - 0xC000] = value;
+                break;
+            case < 0xE000:
+                state.WorkRam[state.WorkRamOffset + address - 0xD000] = value;
                 break;
             case < 0xFE00:
                 state.WorkRam[address - 0xE000] = value;
