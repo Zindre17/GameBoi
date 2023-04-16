@@ -131,13 +131,15 @@ public abstract class MemoryBankControllerBase : IMemoryBankControllerLogic
     protected int RomBanks => state.CartridgeRom.Length / RomBankSize;
     protected int RamBanks => state.CartridgeRam.Length / RamBankSize;
 
+    protected int RomBankMask => RomBanks - 1;
+    protected int RamBankMask => RamBanks - 1;
+
     public abstract void WriteRom(ushort address, byte value);
 }
 
 public class MemoryBankController1 : MemoryBankControllerBase
 {
     // TODO: Emulate bug where bank 0 can appear at 0x4000-0x7fff
-    // TODO: Emulate bug where bank 0x20, 0x40, 0x60 can appear at 0x0000-0x3fff
     public MemoryBankController1(SystemState state) : base(state) { }
 
     public override void WriteRom(ushort address, byte value)
@@ -154,7 +156,7 @@ public class MemoryBankController1 : MemoryBankControllerBase
             case < 0x6000:
                 state.MbcRamSelect = value & 3;
                 break;
-            default:
+            case < 0x8000:
                 state.MbcMode = value & 1;
                 break;
         }
@@ -169,21 +171,23 @@ public class MemoryBankController1 : MemoryBankControllerBase
         {
             state.MbcRamOffset = 0;
             romBankNr = (state.MbcRamSelect << 5) | state.MbcRomSelectLow;
+            state.MbcRom0Offset = 0;
         }
         else
         {
             if (RamBanks is not 0)
             {
-                state.MbcRamOffset = (state.MbcRamSelect % RamBanks) * RamBankSize;
+                state.MbcRamOffset = (state.MbcRamSelect & RamBankMask) * RamBankSize;
             }
             romBankNr = state.MbcRomSelectLow;
+            state.MbcRom0Offset = ((state.MbcRamSelect << 5) & RomBankMask) * RomBankSize;
         }
 
         if (romBankNr is 0 or 0x20 or 0x40 or 0x60)
         {
-            romBankNr++;
+            romBankNr += 1;
         }
-        state.MbcRom1Offset = (romBankNr % RomBanks) * RomBankSize;
+        state.MbcRom1Offset = (romBankNr & RomBankMask) * RomBankSize;
     }
 }
 
