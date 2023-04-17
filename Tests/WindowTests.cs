@@ -124,7 +124,6 @@ public class SpriteLayerTests
         var state = window.State;
 
         var rom = new byte[0x8000];
-
         RomHelper.Enfeeble(rom);
         RomHelper.SetTitle(rom, "Sprites moving");
 
@@ -164,6 +163,42 @@ public class SpriteLayerTests
                 state.LcdControl ^= 0b0000_0100;
             }
         };
+
+        window.Run();
+    }
+
+    [TestMethod]
+    public void ColorBackground()
+    {
+        var window = new Window();
+
+        var rom = new byte[0x8000];
+
+        RomHelper.SetColorMode(rom);
+        RomHelper.SetTitle(rom, "Test Background");
+        RomHelper.Enfeeble(rom);
+
+        window.ChangeGame(RomReader.ReadRom(rom));
+
+        var state = window.State;
+
+        ushort color = 0b0_11111_00000_11111;
+
+        state.BackgroundColorPaletteData[8] = (byte)(color & 0xff);
+        state.BackgroundColorPaletteData[9] = (byte)((color >> 8) & 0xff);
+
+        state.VideoRam[0x3800] = 1;
+        state.VideoRam[0x3801] = 1;
+        state.VideoRam[0x3812] = 1;
+        state.VideoRam[0x3813] = 1;
+        state.VideoRam[0x3820] = 1;
+        state.VideoRam[0x3833] = 1;
+        state.VideoRam[0x3a00] = 1;
+        state.VideoRam[0x3a13] = 1;
+        state.VideoRam[0x3a20] = 1;
+        state.VideoRam[0x3a21] = 1;
+        state.VideoRam[0x3a32] = 1;
+        state.VideoRam[0x3a33] = 1;
 
         window.Run();
     }
@@ -223,5 +258,10 @@ public static class RomHelper
                 break;
             }
         }
+    }
+
+    internal static void SetColorMode(byte[] rom)
+    {
+        rom[0x143] = 0x80;
     }
 }
