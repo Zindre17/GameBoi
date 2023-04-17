@@ -166,13 +166,13 @@ public class ColorRenderer : IRenderer
 
             var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, control.IsDoubleSpriteSize
                 ? (byte)(sprite.TileIndex & 0xfe)
-                : sprite.TileIndex);
+                : sprite.TileIndex, state.VideoRamOffset);
 
             var tileRow = spriteTileRow;
             if (tileRow > 7)
             {
                 tileRow -= 8;
-                tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1));
+                tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1), state.VideoRamOffset);
             }
 
             if (sprite.Yflip)

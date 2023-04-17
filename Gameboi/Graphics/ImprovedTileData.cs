@@ -4,9 +4,9 @@ public static class ImprovedTileData
 {
     private const byte BytesPerTile = 16;
 
-    public static ImprovedTile GetSpriteTileData(byte[] vram, byte tileIndex)
+    public static ImprovedTile GetSpriteTileData(byte[] vram, byte tileIndex, int offset = 0)
     {
-        return new(vram, tileIndex * BytesPerTile);
+        return new(vram, offset + (tileIndex * BytesPerTile));
     }
 
     private const int HighTileDataAreaStart = 0x1000;
