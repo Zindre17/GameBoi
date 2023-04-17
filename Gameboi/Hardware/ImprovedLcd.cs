@@ -11,11 +11,13 @@ namespace Gameboi.Hardware;
 public class ImprovedLcd : IClocked
 {
     private readonly SystemState state;
+    private readonly OldVramDmaWithNewState vramDma;
     private readonly IRenderer renderer;
 
-    public ImprovedLcd(SystemState state)
+    public ImprovedLcd(SystemState state, OldVramDmaWithNewState vramDma)
     {
         this.state = state;
+        this.vramDma = vramDma;
         var header = new GameHeader(state.CartridgeRom);
         renderer = header.IsColorGame
             ? new ColorRenderer(state)
@@ -62,6 +64,10 @@ public class ImprovedLcd : IClocked
                 GeneratePixelLine();
                 OnLineReady?.Invoke(state.LineY, GetPixelLine());
                 SetNextMode(lcdStatus, HorizontalBlank);
+                if (state.IsVramDmaInProgress && state.VramDmaModeIsHblank)
+                {
+                    vramDma.TransferBlock();
+                }
                 break;
             case HorizontalBlank:
                 if (++state.LineY is VerticalBlankLineYStart)

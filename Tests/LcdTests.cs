@@ -1,4 +1,6 @@
 using Gameboi;
+using Gameboi.Cartridges;
+using Gameboi.Graphics;
 using Gameboi.Hardware;
 using Gameboi.Memory.Io;
 using static Gameboi.Hardware.LcdConstants;
@@ -73,8 +75,10 @@ public class ImprovedLcdTests
         state = new();
         var fakeGame = new byte[0x150];
         state.ChangeGame(fakeGame, fakeGame);
-        lcd = new(state);
-        state.Reset(false);
+        var bus = new ImprovedBus(state, new NoMemoryBankController(state));
+        var vramdma = new OldVramDmaWithNewState(state, bus);
+        lcd = new(state, vramdma);
+        state.Reset();
     }
 
     [TestMethod]

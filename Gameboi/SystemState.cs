@@ -87,6 +87,12 @@ public class SystemState
     public int DmaTicksElapsed { get; set; } = 0;
     public int DmaBytesTransferred { get; set; } = 0;
 
+    public bool IsVramDmaInProgress { get; set; } = false;
+    public bool VramDmaModeIsHblank { get; set; } = false;
+    public int VramDmaBlockCount { get; set; } = 0;
+    public int VramDmaBlocksTransferred { get; set; } = 0;
+    public int VramDmaTicksLeftOfBlockTransfer { get; set; } = 0;
+
     public int TicksSinceLastDivIncrement { get; set; } = 0;
     public int TicksSinceLastTimaIncrement { get; set; } = 0;
 
@@ -154,6 +160,12 @@ public class SystemState
         IsDmaInProgress = false;
         DmaBytesTransferred = 0;
         DmaTicksElapsed = 0;
+
+        IsVramDmaInProgress = false;
+        VramDmaModeIsHblank = false;
+        VramDmaBlockCount = 0;
+        VramDmaBlocksTransferred = 0;
+        VramDmaTicksLeftOfBlockTransfer = 0;
 
         TicksSinceLastDivIncrement = 0;
         TicksSinceLastTimaIncrement = 0;
@@ -243,6 +255,12 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(DmaStartAddress));
         bytes.AddRange(BitConverter.GetBytes(DmaTicksElapsed));
 
+        bytes.Add((byte)(IsVramDmaInProgress ? 1 : 0));
+        bytes.Add((byte)(VramDmaModeIsHblank ? 1 : 0));
+        bytes.AddRange(BitConverter.GetBytes(VramDmaBlockCount));
+        bytes.AddRange(BitConverter.GetBytes(VramDmaBlocksTransferred));
+        bytes.AddRange(BitConverter.GetBytes(VramDmaTicksLeftOfBlockTransfer));
+
         bytes.AddRange(BitConverter.GetBytes(TicksSinceLastDivIncrement));
         bytes.AddRange(BitConverter.GetBytes(TicksSinceLastTimaIncrement));
 
@@ -294,6 +312,12 @@ public class SystemState
         DmaBytesTransferred = ReadInt();
         DmaStartAddress = ReadUshort();
         DmaTicksElapsed = ReadInt();
+
+        IsVramDmaInProgress = ReadBool();
+        VramDmaModeIsHblank = ReadBool();
+        VramDmaBlockCount = ReadInt();
+        VramDmaBlocksTransferred = ReadInt();
+        VramDmaTicksLeftOfBlockTransfer = ReadInt();
 
         TicksSinceLastDivIncrement = ReadInt();
         TicksSinceLastTimaIncrement = ReadInt();
@@ -379,6 +403,11 @@ public class SystemState
     public ref byte BackgroundPalette => ref IoPorts[BGP_index];
     public ref byte ObjectPalette0 => ref IoPorts[OBP_0_index];
     public ref byte ObjectPalette1 => ref IoPorts[OBP_1_index];
+    public ref byte HDMA1 => ref IoPorts[HDMA1_index];
+    public ref byte HDMA2 => ref IoPorts[HDMA2_index];
+    public ref byte HDMA3 => ref IoPorts[HDMA3_index];
+    public ref byte HDMA4 => ref IoPorts[HDMA4_index];
+    public ref byte HDMA5 => ref IoPorts[HDMA5_index];
     public ref byte BCPS => ref IoPorts[BCPS_index];
     public ref byte BCPD => ref IoPorts[BCPD_index];
     public ref byte OCPS => ref IoPorts[OCPS_index];
@@ -442,11 +471,17 @@ public static class IoIndices
     public const ushort OBP_0_index = 0x48;
     public const ushort OBP_1_index = 0x49;
     public const ushort VBK_index = 0x4f;
-    public const ushort SVBK_index = 0x70;
+    public const ushort HDMA1_index = 0x51;
+    public const ushort HDMA2_index = 0x52;
+    public const ushort HDMA3_index = 0x53;
+    public const ushort HDMA4_index = 0x54;
+    public const ushort HDMA5_index = 0x55;
+
     public const ushort BCPS_index = 0x68;
     public const ushort BCPD_index = 0x69;
     public const ushort OCPS_index = 0x6a;
     public const ushort OCPD_index = 0x6b;
+    public const ushort SVBK_index = 0x70;
 
     public const ushort WY_index = 0x4a;
     public const ushort WX_index = 0x4b;

@@ -1,3 +1,4 @@
+using Gameboi.Extensions;
 using Gameboi.Memory.Io;
 using static Gameboi.IoIndices;
 
@@ -72,6 +73,7 @@ internal class IoLogic
             LY_index => 0,
             // Is constantly compared to LY and sets coincidence flag in stat.
             LYC_index => LycWriteLogic(value),
+            HDMA5_index => Hdma5WriteLogic(value),
             VBK_index => VramBankSelectLogic(value),
             BCPD_index => BcpdWriteLogic(value),
             OCPD_index => OcpdWriteLogic(value),
@@ -84,6 +86,22 @@ internal class IoLogic
             state.IsDmaInProgress = true;
             state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
+    }
+
+    private byte Hdma5WriteLogic(byte value)
+    {
+        if (state.IsVramDmaInProgress)
+        {
+            state.IsVramDmaInProgress = !value.IsBitSet(7);
+            return (byte)(value | 0x80);
+        }
+
+        state.IsVramDmaInProgress = true;
+        state.VramDmaModeIsHblank = value.IsBitSet(7);
+        state.VramDmaBlockCount = state.HDMA5 & 0x7f + 1;
+        state.VramDmaBlocksTransferred = 0;
+
+        return (byte)(value & 0x7f);
     }
 
     private byte VramBankSelectLogic(byte value)

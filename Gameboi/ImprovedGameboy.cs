@@ -14,6 +14,7 @@ public class ImprovedGameboy
     private readonly ImprovedLcd lcd;
     private readonly ImprovedTimer timer;
     private readonly Dma dma;
+    private readonly OldVramDmaWithNewState vramDma;
     private readonly Joypad joypad;
 
     // cpu and bus
@@ -26,16 +27,17 @@ public class ImprovedGameboy
     {
         this.state = state;
         var bus = new ImprovedBus(state, mbc);
+        cpu = new OldCpuWithNewState(state, bus);
+        dma = new Dma(state, bus);
+        vramDma = new OldVramDmaWithNewState(state, bus);
 
-        lcd = new ImprovedLcd(state);
+        lcd = new ImprovedLcd(state, vramDma);
         lcd.OnLineReady += (line, data) =>
         {
             OnPixelRowReady?.Invoke(line, data);
         };
         timer = new ImprovedTimer(state);
-        dma = new Dma(state, bus);
         joypad = new Joypad(state);
-        cpu = new OldCpuWithNewState(state, bus);
     }
 
     private const int TicksPerFrame = 70224;
@@ -52,8 +54,14 @@ public class ImprovedGameboy
             ticksElapsedThisFrame++;
 
             timer.Tick();
-
-            cpu.Tick();
+            if (state.IsVramDmaInProgress && !state.VramDmaModeIsHblank && state.TicksLeftOfInstruction is 0)
+            {
+                vramDma.Tick();
+            }
+            else
+            {
+                cpu.Tick();
+            }
             lcd.Tick();
             dma.Tick();
 
