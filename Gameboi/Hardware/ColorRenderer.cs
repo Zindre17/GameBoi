@@ -155,9 +155,7 @@ public class ColorRenderer : IRenderer
     {
         LcdControl control = state.LcdControl;
 
-        foreach (var (sprite, spriteTileRow) in spritesOnScanLine
-            .OrderByDescending(pair => pair.Item1.X)
-            .ThenByDescending(pair => pair.Item1.SpriteNr))
+        foreach (var (sprite, spriteTileRow) in spritesOnScanLine)
         {
             if (IsSpriteVisible(sprite) is false)
             {
@@ -169,15 +167,16 @@ public class ColorRenderer : IRenderer
                 : sprite.TileIndex, state.VideoRamOffset);
 
             var tileRow = spriteTileRow;
+
+            if (sprite.Yflip)
+            {
+                tileRow = (control.IsDoubleSpriteSize ? 16 : 7) - tileRow;
+            }
+
             if (tileRow > 7)
             {
                 tileRow -= 8;
                 tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1), state.VideoRamOffset);
-            }
-
-            if (sprite.Yflip)
-            {
-                tileRow = 7 - tileRow;
             }
 
             var palette = new ImprovedColorPalette(state.ObjectColorPaletteData);
