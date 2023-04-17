@@ -47,7 +47,7 @@ public class ColorRenderer : IRenderer
             if (pixelLine[i].Alpha is 0)
             {
                 var (colorIndex, palletNr) = backgroundAndWindowColors[i];
-                var color = palette.DecodeColorIndex(colorIndex, palletNr);
+                var color = palette.DecodeColorIndex(palletNr, colorIndex);
                 pixelLine[i] = new(color);
                 continue;
             }
