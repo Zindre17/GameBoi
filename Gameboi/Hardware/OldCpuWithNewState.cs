@@ -197,6 +197,10 @@ public class OldCpuWithNewState
     private void Stop()
     {
         Fetch();
+        if (state.SpeedControl.IsBitSet(0))
+        {
+            state.SpeedControl ^= 0x80;
+        }
         //TODO: display white line in center and do nothing untill any button is pressed. 
     }
     private void Halt()

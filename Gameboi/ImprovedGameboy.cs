@@ -65,6 +65,16 @@ public class ImprovedGameboy
             lcd.Tick();
             dma.Tick();
 
+            if (state.IsInDoubleSpeedMode)
+            {
+                if (!state.IsVramDmaInProgress)
+                {
+                    cpu.Tick();
+                }
+                timer.Tick();
+                dma.Tick();
+            }
+
             joypad.CheckInputs();
         }
     }

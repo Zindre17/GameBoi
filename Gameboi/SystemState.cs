@@ -75,6 +75,7 @@ public class SystemState
     // etc
     public bool InterruptMasterEnable { get; set; } = true;
     public bool IsHalted { get; set; } = false;
+    public bool IsInDoubleSpeedMode => SpeedControl.IsBitSet(7);
 
     public int LcdRemainingTicksInMode { get; set; } = ScreenTimings.mode2Clocks;
     public int LcdLinesOfWindowDrawnThisFrame { get; set; } = 0;
@@ -248,6 +249,7 @@ public class SystemState
         bytes.Add((byte)(InterruptMasterEnable ? 1 : 0));
         bytes.Add((byte)(IsHalted ? 1 : 0));
         bytes.Add((byte)(IsInCbMode ? 1 : 0));
+        bytes.Add((byte)(IsInDoubleSpeedMode ? 1 : 0));
 
         // Misc IO state
         bytes.Add((byte)(IsDmaInProgress ? 1 : 0));
@@ -403,6 +405,7 @@ public class SystemState
     public ref byte BackgroundPalette => ref IoPorts[BGP_index];
     public ref byte ObjectPalette0 => ref IoPorts[OBP_0_index];
     public ref byte ObjectPalette1 => ref IoPorts[OBP_1_index];
+    public ref byte SpeedControl => ref IoPorts[KEY1_index];
     public ref byte HDMA1 => ref IoPorts[HDMA1_index];
     public ref byte HDMA2 => ref IoPorts[HDMA2_index];
     public ref byte HDMA3 => ref IoPorts[HDMA3_index];
@@ -470,6 +473,7 @@ public static class IoIndices
     public const ushort BGP_index = 0x47;
     public const ushort OBP_0_index = 0x48;
     public const ushort OBP_1_index = 0x49;
+    public const ushort KEY1_index = 0x4d;
     public const ushort VBK_index = 0x4f;
     public const ushort HDMA1_index = 0x51;
     public const ushort HDMA2_index = 0x52;
