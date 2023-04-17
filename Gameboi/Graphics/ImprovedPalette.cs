@@ -31,12 +31,13 @@ public readonly struct ImprovedColorPalette
     private const byte BitsPerColorChannel = 5;
     private const byte BytesPerColor = 2;
     private const byte ColorsPerPalette = 4;
+    private const int BytesPerPalette = ColorsPerPalette * BytesPerColor;
 
     public ImprovedColorPalette(byte[] data) => paletteData = data;
 
     public Rgb DecodeColorIndex(int palette, int colorIndex)
     {
-        var colorDataIndex = (palette * BytesPerColor * ColorsPerPalette) + (colorIndex * BytesPerColor);
+        var colorDataIndex = (palette * BytesPerPalette) + (colorIndex * BytesPerColor);
         var colorData = BitConverter.ToUInt16(paletteData, colorDataIndex);
         var red = colorData & 0x1f;
         var green = (colorData >> BitsPerColorChannel) & 0x1f;
