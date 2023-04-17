@@ -215,7 +215,7 @@ public class Window
         var title = gameHeader.GetTitle();
         window.Title = title;
 
-        state.ChangeGame(game.Rom, game.Ram, gameHeader.IsColorGame);
+        state.ChangeGame(game.Rom, game.Ram);
 
         if (gameHeader.HasRamAndBattery)
         {

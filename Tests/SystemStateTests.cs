@@ -32,7 +32,7 @@ public class SystemStateTests
 
         // Ram should be reset on game change;
         var gameRam = new byte[] { 2 };
-        state.ChangeGame(gameRom, gameRam, false);
+        state.ChangeGame(gameRom, gameRam);
 
         Assert.AreEqual(1, state.CartridgeRom[0]);
         Assert.AreEqual(0, state.CartridgeRam[0]);

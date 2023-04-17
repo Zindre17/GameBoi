@@ -13,7 +13,7 @@ public class BusTests
     public BusTests()
     {
         state = new SystemState();
-        state.ChangeGame(new byte[0x8000], new byte[0x2000], false);
+        state.ChangeGame(new byte[0x8000], new byte[0x2000]);
         bus = new(state, new NoMemoryBankController(state));
     }
 

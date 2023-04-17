@@ -11,7 +11,7 @@ public class NoMbcTests
     public NoMbcTests()
     {
         mbc = new NoMemoryBankController(state);
-        state.ChangeGame(new byte[0x8000], new byte[0x2000], false);
+        state.ChangeGame(new byte[0x8000], new byte[0x2000]);
     }
 
     [TestMethod]
@@ -65,7 +65,7 @@ public class Mbc1Tests
     public Mbc1Tests()
     {
         mbc = new MemoryBankController1(state);
-        state.ChangeGame(new byte[0x4000 * 0x80], new byte[0x8000], false);
+        state.ChangeGame(new byte[0x4000 * 0x80], new byte[0x8000]);
     }
 
     [TestMethod]
@@ -226,7 +226,7 @@ public class Mbc2Tests
     public Mbc2Tests()
     {
         mbc = new MemoryBankController2(state);
-        state.ChangeGame(new byte[0x4000 * 16], new byte[0x200], false);
+        state.ChangeGame(new byte[0x4000 * 16], new byte[0x200]);
     }
 
     [TestMethod]
@@ -324,7 +324,7 @@ public class Mbc3Tests
     public Mbc3Tests()
     {
         mbc = new MemoryBankController3(state);
-        state.ChangeGame(new byte[0x4000 * 128], new byte[0x2000 * 8], false);
+        state.ChangeGame(new byte[0x4000 * 128], new byte[0x2000 * 8]);
     }
 
     [TestMethod]
@@ -458,7 +458,7 @@ public class Mbc5Tests
     public Mbc5Tests()
     {
         mbc = new MemoryBankController5(state);
-        state.ChangeGame(new byte[0x4000 * 0x200], new byte[0x2000 * 0xf], false);
+        state.ChangeGame(new byte[0x4000 * 0x200], new byte[0x2000 * 0xf]);
     }
 
     [TestMethod]

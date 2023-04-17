@@ -93,33 +93,33 @@ public class SystemState
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
 
-    public void ChangeGame(byte[] cartridgeRom, byte[] cartridgeRam, bool isColorGame)
+    public void ChangeGame(byte[] cartridgeRom, byte[] cartridgeRam)
     {
         CartridgeRom = cartridgeRom;
         CartridgeRam = cartridgeRam;
 
-        Reset(isColorGame);
+        Reset();
     }
 
-    public void Reset(bool isColorGame)
+    public void Reset()
     {
-        ResetCpu(isColorGame);
+        ResetCpu();
         ResetCartridge();
         ResetGameboiState();
     }
 
-    private void ResetCpu(bool color)
+    private void ResetCpu()
     {
-        Accumulator = (byte)(color ? 0x11 : 0x01);
+        Accumulator = 0x11;
         ProgramCounter = 0x100;
         StackPointer = 0xFFFE;
-        Flags = 0xB0;
+        Flags = 0x80;
         B = 0;
-        C = 0x13;
+        C = 0;
         D = 0;
-        E = 0xD8;
-        High = 1;
-        Low = 0x4D;
+        E = 0x08;
+        High = 0;
+        Low = 0x7c;
     }
 
     private void ResetCartridge()
