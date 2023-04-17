@@ -158,6 +158,8 @@ internal class IoLogic
         if (newControl.IsLcdEnabled && control.IsLcdEnabled is false)
         {
             state.LineY = 0;
+            state.LcdLinesOfWindowDrawnThisFrame = 0;
+            state.LcdWindowTriggered = false;
             state.LcdRemainingTicksInMode = 80;
             state.LcdStatus = status.WithMode(2);
         }
