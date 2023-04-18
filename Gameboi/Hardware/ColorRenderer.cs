@@ -155,16 +155,17 @@ public class ColorRenderer : IRenderer
     {
         LcdControl control = state.LcdControl;
 
-        foreach (var (sprite, spriteTileRow) in spritesOnScanLine)
+        foreach (var (sprite, spriteTileRow) in spritesOnScanLine.Reverse())
         {
             if (IsSpriteVisible(sprite) is false)
             {
                 continue;
             }
-
-            var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, control.IsDoubleSpriteSize
+            var tileDataIndex = control.IsDoubleSpriteSize
                 ? (byte)(sprite.TileIndex & 0xfe)
-                : sprite.TileIndex, state.VideoRamOffset);
+                : sprite.TileIndex;
+            var tileAttribute = TileMap.GetTileAttributes(state.VideoRam, false, tileDataIndex);
+            var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, tileDataIndex, state.VideoRamOffset);
 
             var tileRow = spriteTileRow;
 
@@ -176,7 +177,9 @@ public class ColorRenderer : IRenderer
             if (tileRow > 7)
             {
                 tileRow -= 8;
-                tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1), state.VideoRamOffset);
+                tileDataIndex = (byte)(sprite.TileIndex | 1);
+                tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, tileDataIndex, state.VideoRamOffset);
+                tileAttribute = TileMap.GetTileAttributes(state.VideoRam, false, tileDataIndex);
             }
 
             var palette = new ImprovedColorPalette(state.ObjectColorPaletteData);
@@ -199,7 +202,15 @@ public class ColorRenderer : IRenderer
                     continue;
                 }
 
-                if (sprite.Hidden && backgroundAndWindowColors[rowPixelIndex].Item1 > 0)
+                if (!control.IsBackgroundEnabled || (!sprite.Hidden && !tileAttribute.Priority))
+                {
+                    // Sprites have priority
+                    pixelLine[rowPixelIndex] = new(palette.DecodeColorIndex(sprite.ColorPalette, colorIndex));
+                    continue;
+                }
+
+                // BG color 1-3 has priority
+                if (backgroundAndWindowColors[rowPixelIndex].Item1 > 0)
                 {
                     continue;
                 }
