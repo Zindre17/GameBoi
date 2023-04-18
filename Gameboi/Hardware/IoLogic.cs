@@ -14,15 +14,21 @@ internal class IoLogic
     {
         // Joypad -------------------------------
         P1_index => (byte)(state.P1 | 0b1100_0000),
-
+        //----------------------------------------
+        2 => (byte)(state.IoPorts[2] | 0b0111_1110),
+        3 => Unused,
+        TAC_index => (byte)(state.Tac | 0b1111_1100),
+        8 or 9 or 0xa or 0xb or 0xc or 0xd or 0xe => Unused,
         // Interrupts ---------------------------
         IF_index => (byte)(state.InterruptFlags | 0b1110_0000),
 
         // Sound --------------------------------
         // Ch1
+        NR10_index => (byte)(state.NR10 | 0x80),
         NR11_index => (byte)(state.NR11 | 0b0001_1111),
         NR13_index => WriteOnly,
         NR14_index => (byte)(state.NR14 | 0b1011_1111),
+        0x15 => Unused,
         // Ch2
         NR21_index => (byte)(state.NR21 | 0b0001_1111),
         NR23_index => WriteOnly,
@@ -33,20 +39,28 @@ internal class IoLogic
         NR32_index => (byte)(state.NR32 | 0b1001_1111),
         NR33_index => WriteOnly,
         NR34_index => (byte)(state.NR34 | 0b1011_1111),
+        0x1f => Unused,
         // Ch4
         NR41_index => WriteOnly,
         NR44_index => (byte)(state.NR44 | 0b1011_1111),
         // Global control
         NR52_index => (byte)(state.NR52 | 0b0111_0000),
+        0x27 or 0x28 or 0x29 => Unused,
 
         // LCD ----------------------------------
-        DMA_index => WriteOnly,
+        STAT_index => (byte)(state.LcdStatus | 0x80),
+        0x4c => Unused,
+        0x4e => Unused,
         VBK_index => (byte)(state.IoPorts[VBK_index] | 0xfe),
+        0x50 => Unused,
+        0x57 or 0x58 or 0x59 or 0x5a or 0x5b or 0x5c or 0x5d or 0x5e or 0x5f => Unused,
+        0x60 or 0x61 or 0x62 or 0x63 or 0x64 or 0x65 or 0x66 or 0x67 => Unused,
         BCPS_index => (byte)(state.BCPS | 0b0100_0000),
         BCPD_index => state.BackgroundColorPaletteData[state.BCPS & 0x3f],
         OCPS_index => (byte)(state.OCPS | 0b0100_0000),
         OCPD_index => state.ObjectColorPaletteData[state.OCPS & 0x3f],
-
+        0x6d or 0x6e or 0x6f => Unused,
+        > 0x70 and < 0xff => Unused,
         _ => state.IoPorts[address]
     };
 
@@ -184,4 +198,5 @@ internal class IoLogic
     }
 
     private const byte WriteOnly = 0xff;
+    private const byte Unused = 0xff;
 }
