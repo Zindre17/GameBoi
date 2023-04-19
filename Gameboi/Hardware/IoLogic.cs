@@ -17,6 +17,7 @@ internal class IoLogic
         //----------------------------------------
         2 => (byte)(state.IoPorts[2] | 0b0111_1110),
         3 => Unused,
+        DIV_index => state.TimerCounter.GetHighByte(),
         TAC_index => (byte)(state.Tac | 0b1111_1100),
         8 or 9 or 0xa or 0xb or 0xc or 0xd or 0xe => Unused,
         // Interrupts ---------------------------
@@ -74,7 +75,8 @@ internal class IoLogic
 
             // Timer ---------------------------
             // Resets when written to.
-            DIV_index => 0,
+            DIV_index => DivWriteLogic(value),
+            TAC_index => TacWriteLogic(value),
 
             // Sound ---------------------------
             NR52_index => (byte)((value & 0b1000_0000) | (state.NR52 & 0b0111_1111)),
@@ -100,6 +102,38 @@ internal class IoLogic
             state.IsDmaInProgress = true;
             state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
+    }
+
+    private byte TacWriteLogic(byte value)
+    {
+        var oldTac = new Tac(state.Tac);
+        var newTac = new Tac(value);
+
+        var wasMultiplexerHigh = ImprovedTimer.IsMultiplexerHigh(oldTac.TimerSpeedSelect, state.TimerCounter);
+
+        if (oldTac.IsTimerEnabled && wasMultiplexerHigh)
+        {
+            var isMultiplexerLow = ImprovedTimer.IsMultiplexerLow(newTac.TimerSpeedSelect, state.TimerCounter);
+            if (!newTac.IsTimerEnabled || isMultiplexerLow)
+            {
+                ImprovedTimer.IncrementTima(state);
+                return value;
+            }
+        }
+
+        return value;
+    }
+
+    private byte DivWriteLogic(byte value)
+    {
+        var tac = new Tac(state.Tac);
+        var IsMultiplexerHigh = ImprovedTimer.IsMultiplexerHigh(tac.TimerSpeedSelect, state.TimerCounter);
+        if (IsMultiplexerHigh && tac.IsTimerEnabled)
+        {
+            ImprovedTimer.IncrementTima(state);
+        }
+        state.TimerCounter = 0;
+        return value;
     }
 
     private byte Hdma5WriteLogic(byte value)

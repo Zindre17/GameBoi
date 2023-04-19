@@ -1,6 +1,6 @@
+using Gameboi.Extensions;
 using Gameboi.Memory.Io;
 using Gameboi.Memory.Specials;
-using static Gameboi.Statics.Frequencies;
 
 namespace Gameboi.Hardware;
 
@@ -12,44 +12,62 @@ public class ImprovedTimer : IClocked
 
     public void Tick()
     {
-        // TODO: Add bugs/quirks of timer
-        state.TicksSinceLastDivIncrement++;
-        if (ShouldDivIncrement())
-        {
-            state.Div++;
-            state.TicksSinceLastDivIncrement = 0;
-        }
-
         var tac = new Tac(state.Tac);
-        if (tac.IsTimerEnabled is false)
+        if (!tac.IsTimerEnabled)
         {
             return;
         }
 
-        state.TicksSinceLastTimaIncrement++;
-        if (ShouldTimerIncrement(tac) is false)
+        if (state.TicksUntilTimerInterrupt > 0)
         {
-            return;
+            state.TicksUntilTimerInterrupt -= 1;
+            if (state.TicksUntilTimerInterrupt is 0)
+            {
+                var interruptRequests = new InterruptState(state.InterruptFlags);
+                state.InterruptFlags = interruptRequests.WithTimerSet();
+                state.Tima = state.NextTima;
+            }
         }
 
-        state.TicksSinceLastTimaIncrement = 0;
+        var preTick = state.TimerCounter;
+        var postTick = (ushort)(preTick + 1);
+        if (IsMultiplexerHigh(tac.TimerSpeedSelect, preTick)
+            && IsMultiplexerLow(tac.TimerSpeedSelect, postTick))
+        {
+            IncrementTima(state);
+        }
+
+        state.TimerCounter = postTick;
+    }
+
+    public static void IncrementTima(SystemState state)
+    {
         if (state.Tima is AboutToOverflow)
         {
-            state.Tima = state.Tma;
-            var interruptRequests = new InterruptState(state.InterruptFlags);
-            state.InterruptFlags = interruptRequests.WithTimerSet();
+            state.Tima = 0;
+            state.NextTima = state.Tma;
+            state.TicksUntilTimerInterrupt = 4;
+
             return;
         }
         state.Tima++;
     }
 
-    private bool ShouldDivIncrement()
-        => state.TicksSinceLastDivIncrement == ticksPerDivIncrement;
-
-    private bool ShouldTimerIncrement(Tac tac)
+    public static bool IsMultiplexerHigh(int timerSpeedSelect, ushort timerCounter)
     {
-        var ticksPerIncrement = ticksPerIncrementPerTimerSpeed[tac.TimerSpeedSelect];
-        return state.TicksSinceLastTimaIncrement >= ticksPerIncrement;
+        return timerSpeedSelect switch
+        {
+            0 => timerCounter.GetHighByte().IsBitSet(1),
+            1 => timerCounter.GetLowByte().IsBitSet(3),
+            2 => timerCounter.GetLowByte().IsBitSet(5),
+            3 => timerCounter.GetLowByte().IsBitSet(7),
+            _ => false,
+        };
+    }
+
+    public static bool IsMultiplexerLow(int timerSpeedSelect, ushort timerCounter)
+    {
+        return !IsMultiplexerHigh(timerSpeedSelect, timerCounter);
     }
 
     private const byte AboutToOverflow = 0xff;

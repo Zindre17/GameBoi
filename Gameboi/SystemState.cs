@@ -94,8 +94,9 @@ public class SystemState
     public int VramDmaBlocksTransferred { get; set; } = 0;
     public int VramDmaTicksLeftOfBlockTransfer { get; set; } = 0;
 
-    public int TicksSinceLastDivIncrement { get; set; } = 0;
-    public int TicksSinceLastTimaIncrement { get; set; } = 0;
+    public ushort TimerCounter { get; set; } = 0;
+    public int TicksUntilTimerInterrupt { get; set; } = -1;
+    public byte NextTima { get; set; } = 0;
 
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
@@ -168,8 +169,9 @@ public class SystemState
         VramDmaBlocksTransferred = 0;
         VramDmaTicksLeftOfBlockTransfer = 0;
 
-        TicksSinceLastDivIncrement = 0;
-        TicksSinceLastTimaIncrement = 0;
+        TimerCounter = 0;
+        NextTima = 0;
+        TicksUntilTimerInterrupt = 0;
     }
 
     private void ResetIO()
@@ -263,8 +265,9 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(VramDmaBlocksTransferred));
         bytes.AddRange(BitConverter.GetBytes(VramDmaTicksLeftOfBlockTransfer));
 
-        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastDivIncrement));
-        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastTimaIncrement));
+        bytes.AddRange(BitConverter.GetBytes(TimerCounter));
+        bytes.Add(NextTima);
+        bytes.AddRange(BitConverter.GetBytes(TicksUntilTimerInterrupt));
 
         bytes.AddRange(BitConverter.GetBytes(LcdRemainingTicksInMode));
         bytes.AddRange(BitConverter.GetBytes(LcdLinesOfWindowDrawnThisFrame));
@@ -321,8 +324,9 @@ public class SystemState
         VramDmaBlocksTransferred = ReadInt();
         VramDmaTicksLeftOfBlockTransfer = ReadInt();
 
-        TicksSinceLastDivIncrement = ReadInt();
-        TicksSinceLastTimaIncrement = ReadInt();
+        TimerCounter = ReadUshort();
+        NextTima = ReadByte();
+        TicksUntilTimerInterrupt = ReadInt();
 
         LcdRemainingTicksInMode = ReadInt();
         LcdLinesOfWindowDrawnThisFrame = ReadInt();

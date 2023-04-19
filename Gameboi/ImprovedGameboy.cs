@@ -53,7 +53,6 @@ public class ImprovedGameboy
         {
             ticksElapsedThisFrame++;
 
-            timer.Tick();
             if (state.IsVramDmaInProgress && !state.VramDmaModeIsHblank && state.TicksLeftOfInstruction is 0)
             {
                 vramDma.Tick();
@@ -62,6 +61,7 @@ public class ImprovedGameboy
             {
                 cpu.Tick();
             }
+            timer.Tick();
             lcd.Tick();
             dma.Tick();
 
