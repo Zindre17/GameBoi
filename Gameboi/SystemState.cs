@@ -366,7 +366,7 @@ public class SystemState
 
     public ref byte P1 => ref IoPorts[P1_index];
 
-    public ref byte Div => ref IoPorts[DIV_index];
+    public byte Div => TimerCounter.GetHighByte();
     public ref byte Tima => ref IoPorts[TIMA_index];
     public ref byte Tma => ref IoPorts[TMA_index];
     public ref byte Tac => ref IoPorts[TAC_index];

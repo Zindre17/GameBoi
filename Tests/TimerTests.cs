@@ -13,7 +13,7 @@ public class TimerTests
     {
         var timer = new ImprovedTimer(state);
 
-        state.Div = 0;
+        state.TimerCounter = 0;
         state.Tima = 0;
         state.Tma = 40;
 
