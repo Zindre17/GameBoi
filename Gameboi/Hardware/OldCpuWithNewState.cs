@@ -65,7 +65,7 @@ public class OldCpuWithNewState
         {
             // Fetch, Decode, Execute
             byte opCode = Fetch();
-            state.TicksLeftOfInstruction = durations[opCode];
+            state.TicksLeftOfInstruction = durations[opCode] - 1;
             instructions[opCode]();
         }
     }
