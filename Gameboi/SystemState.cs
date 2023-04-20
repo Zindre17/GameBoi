@@ -74,6 +74,7 @@ public class SystemState
 
     // etc
     public bool InterruptMasterEnable { get; set; } = true;
+    public bool IsInterruptMasterEnablePreparing { get; set; } = false;
     public bool IsHalted { get; set; } = false;
     public bool IsInDoubleSpeedMode => SpeedControl.IsBitSet(7);
 
@@ -154,6 +155,7 @@ public class SystemState
         InterruptEnableRegister = 0;
 
         InterruptMasterEnable = true;
+        IsInterruptMasterEnablePreparing = false;
 
         IsHalted = false;
 
@@ -249,6 +251,7 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(stackPointer));
         bytes.AddRange(BitConverter.GetBytes(ProgramCounter));
         bytes.Add((byte)(InterruptMasterEnable ? 1 : 0));
+        bytes.Add((byte)(IsInterruptMasterEnablePreparing ? 1 : 0));
         bytes.Add((byte)(IsHalted ? 1 : 0));
         bytes.Add((byte)(IsInCbMode ? 1 : 0));
         bytes.Add((byte)(IsInDoubleSpeedMode ? 1 : 0));
@@ -309,6 +312,7 @@ public class SystemState
         stackPointer = ReadUshort();
         ProgramCounter = ReadUshort();
         InterruptMasterEnable = ReadBool();
+        IsInterruptMasterEnablePreparing = ReadBool();
         IsHalted = ReadBool();
         IsInCbMode = ReadBool();
 

@@ -73,6 +73,13 @@ public class OldCpuWithNewState
     #region Interrupts
     private void HandleInterrupts()
     {
+        if (state.IsInterruptMasterEnablePreparing)
+        {
+            state.IsInterruptMasterEnablePreparing = false;
+            state.InterruptMasterEnable = true;
+            return;
+        }
+
         // if IF is 0 there are no interrupt requests => exit
         if (IF.HasNone)
         {
@@ -215,7 +222,7 @@ public class OldCpuWithNewState
     }
     private void EnableInterrupt()
     {
-        state.InterruptMasterEnable = true;
+        state.IsInterruptMasterEnablePreparing = true;
     }
 
     private void Prefix_CB()
