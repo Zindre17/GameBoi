@@ -284,7 +284,12 @@ public class MemoryBankController3 : MemoryBankControllerBase
 
 public class MemoryBankController5 : MemoryBankControllerBase
 {
-    public MemoryBankController5(SystemState state) : base(state) { }
+    private readonly bool hasRumble;
+    public MemoryBankController5(SystemState state) : base(state)
+    {
+        var header = new GameHeader(state.CartridgeRom);
+        hasRumble = header.HasRumble;
+    }
 
     public override void WriteRom(ushort address, byte value)
     {
@@ -309,7 +314,14 @@ public class MemoryBankController5 : MemoryBankControllerBase
         }
         else if (address < 0x6000)
         {
-            state.MbcRamOffset = (value & 0xF) * RamBankSize;
+            if (hasRumble)
+            {
+                state.MbcRamOffset = (value & 7) % RamBanks * RamBankSize;
+            }
+            else
+            {
+                state.MbcRamOffset = (value & 0xF) % RamBanks * RamBankSize;
+            }
         }
 
         var romSelect = (state.MbcRomSelectHigh << 8 | state.MbcRomSelectLow) % RomBanks;

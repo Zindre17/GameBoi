@@ -15,6 +15,8 @@ public class GameHeader
 
     public bool HasRamAndBattery => rom[0x147] is 3 or 6 or 9 or 0x10 or 0x13 or 0x1b or 0x1e;
 
+    public bool HasRumble => rom[0x147] is 0x1c or 0x1d or 0x1e;
+
     public string GetTitle()
     {
         var titleBytes = new List<byte>();
