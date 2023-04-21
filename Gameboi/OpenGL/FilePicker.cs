@@ -32,7 +32,7 @@ public class FilePicker
     private bool isSelecting = false;
     public bool IsOpen => isSelecting;
 
-    public FilePicker(GL gl)
+    public FilePicker(GL gl, string startDirectory)
     {
         itemLayer = new(gl);
         selectorLayer = new(gl);
@@ -43,7 +43,7 @@ public class FilePicker
         {
             selectorHandles.Add(selectorLayer.CreateText("*                   ", i, 0, new(0, 0, 0, 128), new(0, 0, 0, 50)));
         }
-        LoadDirectory(Directory.GetCurrentDirectory());
+        LoadDirectory(startDirectory);
     }
 
     private Action<string> onFileChosen = null!;

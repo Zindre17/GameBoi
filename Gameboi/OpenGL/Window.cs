@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
@@ -56,6 +57,8 @@ public class Window
         window.Render += OnRender;
         window.Closing += OnClose;
         window.Resize += OnResize;
+
+        configFile = $"{Directory.GetCurrentDirectory()}/gameboi.ini";
     }
 
     public SystemState State => state;
@@ -70,6 +73,7 @@ public class Window
     private const long snackbarDuration = 2000;
     private int snackbarTextHandle;
     private readonly Stopwatch snackbarTimer = new();
+    private readonly string configFile;
 
     private void OnLoad()
     {
@@ -91,7 +95,14 @@ public class Window
         savedTextHandle = uiLayer.CreateText("saved", 15, (20 - 5) / 2, new(Rgb.white), new(Rgb.darkGray));
         loadedTextHandle = uiLayer.CreateText("loaded", 15, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
 
-        picker = new FilePicker(gl);
+        var startDir = Directory.GetCurrentDirectory();
+
+        if (File.Exists(configFile))
+        {
+            startDir = File.ReadLines(configFile).First().Split("=")[1];
+        }
+
+        picker = new FilePicker(gl, startDir);
 
         vertexArray = new(gl);
         vertexBuffer = new(gl, vertices);
@@ -141,6 +152,8 @@ public class Window
                 picker?.SelectFile(rom =>
                 {
                     Unpause();
+
+                    File.WriteAllLines(configFile, new string[] { $"lastRomDir={Directory.GetParent(rom)?.FullName ?? Directory.GetCurrentDirectory()}" });
                     var game = RomReader.ReadRom(rom);
                     ChangeGame(game);
                 });
