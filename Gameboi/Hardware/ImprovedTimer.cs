@@ -13,6 +13,9 @@ public class ImprovedTimer : IClocked
     public void Tick()
     {
         var tac = new Tac(state.Tac);
+        var preTick = state.TimerCounter;
+        state.TimerCounter += 1;
+
         if (!tac.IsTimerEnabled)
         {
             return;
@@ -25,19 +28,20 @@ public class ImprovedTimer : IClocked
             {
                 var interruptRequests = new InterruptState(state.InterruptFlags);
                 state.InterruptFlags = interruptRequests.WithTimerSet();
-                state.Tima = state.NextTima;
+                state.Tima = state.Tma;
             }
         }
+        else if (state.TicksLeftOfTimaReload > 0)
+        {
+            state.TicksLeftOfTimaReload -= 1;
+        }
 
-        var preTick = state.TimerCounter;
-        var postTick = (ushort)(preTick + 1);
+        var postTick = state.TimerCounter;
         if (IsMultiplexerHigh(tac.TimerSpeedSelect, preTick)
             && IsMultiplexerLow(tac.TimerSpeedSelect, postTick))
         {
             IncrementTima(state);
         }
-
-        state.TimerCounter = postTick;
     }
 
     public static void IncrementTima(SystemState state)
@@ -45,9 +49,8 @@ public class ImprovedTimer : IClocked
         if (state.Tima is AboutToOverflow)
         {
             state.Tima = 0;
-            state.NextTima = state.Tma;
             state.TicksUntilTimerInterrupt = 4;
-
+            state.TicksLeftOfTimaReload = 4;
             return;
         }
         state.Tima++;

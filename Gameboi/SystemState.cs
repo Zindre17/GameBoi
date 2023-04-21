@@ -97,7 +97,7 @@ public class SystemState
 
     public ushort TimerCounter { get; set; } = 0;
     public int TicksUntilTimerInterrupt { get; set; } = -1;
-    public byte NextTima { get; set; } = 0;
+    public int TicksLeftOfTimaReload { get; set; } = -1;
 
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
@@ -172,8 +172,8 @@ public class SystemState
         VramDmaTicksLeftOfBlockTransfer = 0;
 
         TimerCounter = 0;
-        NextTima = 0;
         TicksUntilTimerInterrupt = 0;
+        TicksLeftOfTimaReload = 0;
     }
 
     private void ResetIO()
@@ -269,8 +269,8 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(VramDmaTicksLeftOfBlockTransfer));
 
         bytes.AddRange(BitConverter.GetBytes(TimerCounter));
-        bytes.Add(NextTima);
         bytes.AddRange(BitConverter.GetBytes(TicksUntilTimerInterrupt));
+        bytes.AddRange(BitConverter.GetBytes(TicksLeftOfTimaReload));
 
         bytes.AddRange(BitConverter.GetBytes(LcdRemainingTicksInMode));
         bytes.AddRange(BitConverter.GetBytes(LcdLinesOfWindowDrawnThisFrame));
@@ -329,8 +329,8 @@ public class SystemState
         VramDmaTicksLeftOfBlockTransfer = ReadInt();
 
         TimerCounter = ReadUshort();
-        NextTima = ReadByte();
         TicksUntilTimerInterrupt = ReadInt();
+        TicksLeftOfTimaReload = ReadInt();
 
         LcdRemainingTicksInMode = ReadInt();
         LcdLinesOfWindowDrawnThisFrame = ReadInt();

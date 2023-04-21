@@ -77,6 +77,7 @@ internal class IoLogic
             // Resets when written to.
             DIV_index => DivWriteLogic(value),
             TAC_index => TacWriteLogic(value),
+            TIMA_index => TimaWriteLogic(value),
 
             // Sound ---------------------------
             NR52_index => (byte)((value & 0b1000_0000) | (state.NR52 & 0b0111_1111)),
@@ -102,6 +103,21 @@ internal class IoLogic
             state.IsDmaInProgress = true;
             state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
+    }
+
+    private byte TimaWriteLogic(byte value)
+    {
+        if (state.TicksUntilTimerInterrupt > 0)
+        {
+            state.TicksUntilTimerInterrupt = 0;
+            return value;
+        }
+        if (state.TicksLeftOfTimaReload > 0)
+        {
+            return state.Tima;
+        }
+
+        return value;
     }
 
     private byte TacWriteLogic(byte value)
