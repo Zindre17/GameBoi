@@ -222,6 +222,10 @@ public class OldCpuWithNewState
     }
     private void EnableInterrupt()
     {
+        if (state.InterruptMasterEnable)
+        {
+            return;
+        }
         state.IsInterruptMasterEnablePreparing = true;
     }
 
