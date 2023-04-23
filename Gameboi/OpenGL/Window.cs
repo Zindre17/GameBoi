@@ -22,6 +22,7 @@ public class Window
     private Shaders? shaders;
 
     private UiLayer? uiLayer;
+    private StartScreen? startScreen;
     private FilePicker? picker;
 
     private ImprovedGameboy? gameboy;
@@ -89,6 +90,9 @@ public class Window
             keyboard.KeyUp += OnKeyReleased;
         }
 
+        startScreen = new StartScreen(gl);
+        startScreen.Show();
+
         uiLayer = new UiLayer(gl);
 
         pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
@@ -151,6 +155,8 @@ public class Window
                 Pause();
                 picker?.SelectFile(rom =>
                 {
+                    startScreen?.Hide();
+
                     Unpause();
 
                     File.WriteAllLines(configFile, new string[] { $"lastRomDir={Directory.GetParent(rom)?.FullName ?? Directory.GetCurrentDirectory()}" });
@@ -311,6 +317,8 @@ public class Window
         indexBuffer!.Bind();
         shaders!.Bind();
         gl!.DrawElements(GLEnum.Triangles, indexBuffer!.Count, GLEnum.UnsignedInt, null);
+
+        startScreen?.Render();
 
         uiLayer?.Render();
 
