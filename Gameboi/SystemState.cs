@@ -152,6 +152,9 @@ public class SystemState
         HighRam.Clear();
         Oam.Clear();
         ResetIO();
+
+        TicksLeftOfInstruction = 0;
+
         InterruptEnableRegister = 0;
 
         InterruptMasterEnable = true;
@@ -250,6 +253,9 @@ public class SystemState
         bytes.Add(low);
         bytes.AddRange(BitConverter.GetBytes(stackPointer));
         bytes.AddRange(BitConverter.GetBytes(ProgramCounter));
+
+        bytes.AddRange(BitConverter.GetBytes(TicksLeftOfInstruction));
+
         bytes.Add((byte)(InterruptMasterEnable ? 1 : 0));
         bytes.Add((byte)(IsInterruptMasterEnablePreparing ? 1 : 0));
         bytes.Add((byte)(IsHalted ? 1 : 0));
@@ -311,6 +317,9 @@ public class SystemState
         low = ReadByte();
         stackPointer = ReadUshort();
         ProgramCounter = ReadUshort();
+
+        TicksLeftOfInstruction = ReadInt();
+
         InterruptMasterEnable = ReadBool();
         IsInterruptMasterEnablePreparing = ReadBool();
         IsHalted = ReadBool();

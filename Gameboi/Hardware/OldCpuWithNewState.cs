@@ -46,28 +46,39 @@ public class OldCpuWithNewState
     public byte Read(ushort address) => bus.Read(address);
     public void Write(ushort address, byte value) => bus.Write(address, value);
 
+    public void Init()
+    {
+        state.TicksLeftOfInstruction = GetDurationOfNextInstruction();
+    }
+
     public void Tick()
     {
-        if (state.TicksLeftOfInstruction is not 0)
+        if (state.TicksLeftOfInstruction is 0)
         {
-            state.TicksLeftOfInstruction -= 1;
-            return;
+            if (state.IsHalted)
+            {
+                HandleInterrupts();
+                if (state.IsHalted)
+                {
+                    state.TicksLeftOfInstruction += durations[0];
+                }
+                else
+                {
+                    state.TicksLeftOfInstruction += GetDurationOfNextInstruction();
+                }
+            }
+            else
+            {
+                var opCode = Fetch();
+                instructions[opCode]();
+
+                HandleInterrupts();
+
+                state.TicksLeftOfInstruction += GetDurationOfNextInstruction();
+            }
         }
 
-        HandleInterrupts();
-
-        if (state.IsHalted)
-        {
-            state.TicksLeftOfInstruction = 4;
-            NoOperation();
-        }
-        else
-        {
-            // Fetch, Decode, Execute
-            byte opCode = Fetch();
-            state.TicksLeftOfInstruction = durations[opCode] - 1;
-            instructions[opCode]();
-        }
+        state.TicksLeftOfInstruction -= 1;
     }
 
     #region Interrupts
@@ -233,9 +244,6 @@ public class OldCpuWithNewState
     {
         byte opCode = Fetch();
         cbInstructions[opCode]();
-        var modded = opCode % 8;
-        var duration = modded == 6 ? 16 : 8;
-        state.TicksLeftOfInstruction += duration;
     }
 
     private void SetCarryFlagInstruction()
@@ -585,7 +593,6 @@ public class OldCpuWithNewState
     {
         if (condition)
         {
-            state.TicksLeftOfInstruction += 4;
             JumpBy(increment);
         }
     }
@@ -598,7 +605,6 @@ public class OldCpuWithNewState
     {
         if (condition)
         {
-            state.TicksLeftOfInstruction += 4;
             JumpTo(address);
         }
     }
@@ -610,7 +616,6 @@ public class OldCpuWithNewState
     {
         if (condition)
         {
-            state.TicksLeftOfInstruction += 12;
             Return();
         }
     }
@@ -629,7 +634,6 @@ public class OldCpuWithNewState
     {
         if (condition)
         {
-            state.TicksLeftOfInstruction += 12;
             Call(address);
         }
     }
@@ -1370,6 +1374,40 @@ public class OldCpuWithNewState
             () => Set(7, state.HL),
             () => Set(7, ref state.Accumulator),
         };
+    }
+
+    private int GetDurationOfNextInstruction()
+    {
+        var opCode = bus.Read(state.ProgramCounter);
+        return opCode switch
+        {
+            0x20 => Flags.IsNotSet(CpuFlags.Zero) ? 12 : 8,
+            0x28 => Flags.IsSet(CpuFlags.Zero) ? 12 : 8,
+            0x30 => Flags.IsNotSet(CpuFlags.Carry) ? 12 : 8,
+            0x38 => Flags.IsSet(CpuFlags.Carry) ? 12 : 8,
+            0xc0 => Flags.IsNotSet(CpuFlags.Zero) ? 20 : 8,
+            0xc2 => Flags.IsNotSet(CpuFlags.Zero) ? 16 : 12,
+            0xc4 => Flags.IsNotSet(CpuFlags.Zero) ? 24 : 12,
+            0xc8 => Flags.IsSet(CpuFlags.Zero) ? 20 : 8,
+            0xca => Flags.IsSet(CpuFlags.Zero) ? 16 : 12,
+            0xcb => GetCbDuration(),
+            0xcc => Flags.IsSet(CpuFlags.Zero) ? 24 : 12,
+            0xd0 => Flags.IsNotSet(CpuFlags.Carry) ? 20 : 8,
+            0xd2 => Flags.IsNotSet(CpuFlags.Carry) ? 16 : 12,
+            0xd4 => Flags.IsNotSet(CpuFlags.Carry) ? 24 : 12,
+            0xd8 => Flags.IsSet(CpuFlags.Carry) ? 20 : 8,
+            0xda => Flags.IsSet(CpuFlags.Carry) ? 16 : 12,
+            0xdc => Flags.IsSet(CpuFlags.Carry) ? 24 : 12,
+            _ => durations[opCode]
+        };
+    }
+
+    private int GetCbDuration()
+    {
+        var cbOpCode = bus.Read((ushort)(state.ProgramCounter + 1));
+        var modded = cbOpCode % 8;
+        var duration = modded == 6 ? 16 : 8;
+        return duration + 4;
     }
 
     // GB-docs source: http://marc.rawer.state.DE/Gameboy/Docs/GBCPUman.pdf

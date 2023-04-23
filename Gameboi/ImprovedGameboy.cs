@@ -27,7 +27,10 @@ public class ImprovedGameboy
     {
         this.state = state;
         var bus = new ImprovedBus(state, mbc);
+
         cpu = new OldCpuWithNewState(state, bus);
+        cpu.Init();
+
         dma = new Dma(state, bus);
         vramDma = new OldVramDmaWithNewState(state, bus);
 
