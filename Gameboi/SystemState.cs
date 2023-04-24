@@ -85,9 +85,7 @@ public class SystemState
     public bool IsInCbMode { get; set; } = false;
 
     public bool IsDmaInProgress { get; set; } = false;
-    public ushort DmaStartAddress { get; set; }
     public int DmaTicksElapsed { get; set; } = 0;
-    public int DmaBytesTransferred { get; set; } = 0;
 
     public bool IsVramDmaInProgress { get; set; } = false;
     public bool VramDmaModeIsHblank { get; set; } = false;
@@ -167,7 +165,6 @@ public class SystemState
         IsInCbMode = false;
 
         IsDmaInProgress = false;
-        DmaBytesTransferred = 0;
         DmaTicksElapsed = 0;
 
         IsVramDmaInProgress = false;
@@ -268,8 +265,6 @@ public class SystemState
 
         // Misc IO state
         bytes.Add((byte)(IsDmaInProgress ? 1 : 0));
-        bytes.AddRange(BitConverter.GetBytes(DmaBytesTransferred));
-        bytes.AddRange(BitConverter.GetBytes(DmaStartAddress));
         bytes.AddRange(BitConverter.GetBytes(DmaTicksElapsed));
 
         bytes.Add((byte)(IsVramDmaInProgress ? 1 : 0));
@@ -333,8 +328,6 @@ public class SystemState
 
         // Misc IO state
         IsDmaInProgress = ReadBool();
-        DmaBytesTransferred = ReadInt();
-        DmaStartAddress = ReadUshort();
         DmaTicksElapsed = ReadInt();
 
         IsVramDmaInProgress = ReadBool();

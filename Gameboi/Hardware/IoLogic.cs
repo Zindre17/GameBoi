@@ -106,9 +106,7 @@ internal class IoLogic
     private byte DmaWriteLogic(byte value)
     {
         state.IsDmaInProgress = true;
-        state.DmaStartAddress = (ushort)(value << 8);
         state.DmaTicksElapsed = 0;
-        state.DmaBytesTransferred = 0;
         return value;
     }
 

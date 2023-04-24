@@ -23,16 +23,15 @@ public class Dma
 
             if (state.DmaTicksElapsed % TicksPerTransfer is 0)
             {
-                var nextSourceAddress = state.DmaStartAddress + state.DmaBytesTransferred;
-                state.Oam[state.DmaBytesTransferred] = bus.Read((ushort)nextSourceAddress);
-                state.DmaBytesTransferred++;
+                var currentByte = state.DmaTicksElapsed / TicksPerTransfer - 1;
+                var nextSourceAddress = (state.Dma << 8) + currentByte;
+                state.Oam[currentByte] = bus.Read((ushort)nextSourceAddress);
             }
 
             if (state.DmaTicksElapsed is DmaDurationInTicks)
             {
                 state.IsDmaInProgress = false;
                 state.DmaTicksElapsed = 0;
-                state.DmaBytesTransferred = 0;
             }
         }
     }
