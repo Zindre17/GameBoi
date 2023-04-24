@@ -99,6 +99,8 @@ public class SystemState
     public int TicksUntilTimerInterrupt { get; set; } = -1;
     public int TicksLeftOfTimaReload { get; set; } = -1;
 
+    public int SerialTransferBitsLeft { get; set; } = 0;
+
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
 
@@ -177,6 +179,8 @@ public class SystemState
         TimerCounter = 0;
         TicksUntilTimerInterrupt = 0;
         TicksLeftOfTimaReload = 0;
+
+        SerialTransferBitsLeft = 0;
     }
 
     private void ResetIO()
@@ -282,6 +286,8 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(LcdLinesOfWindowDrawnThisFrame));
         bytes.Add((byte)(LcdWindowTriggered ? 1 : 0));
 
+        bytes.AddRange(BitConverter.GetBytes(SerialTransferBitsLeft));
+
         return bytes.ToArray();
     }
 
@@ -345,6 +351,8 @@ public class SystemState
         LcdLinesOfWindowDrawnThisFrame = ReadInt();
         LcdWindowTriggered = ReadBool();
 
+        SerialTransferBitsLeft = ReadInt();
+
         ushort ReadUshort()
         {
             var result = BitConverter.ToUInt16(state, index);
@@ -378,6 +386,8 @@ public class SystemState
     }
 
     public ref byte P1 => ref IoPorts[P1_index];
+    public ref byte SerialTransferData => ref IoPorts[SB_index];
+    public ref byte SerialTransferControl => ref IoPorts[SC_index];
 
     public byte Div => TimerCounter.GetHighByte();
     public ref byte Tima => ref IoPorts[TIMA_index];
@@ -446,6 +456,9 @@ public static class IoIndices
 {
 
     public const ushort P1_index = 0x00;
+
+    public const ushort SB_index = 0x01;
+    public const ushort SC_index = 0x02;
 
     public const ushort DIV_index = 0x04;
     public const ushort TIMA_index = 0x05;

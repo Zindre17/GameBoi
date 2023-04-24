@@ -1,5 +1,6 @@
 using Gameboi.Extensions;
 using Gameboi.Memory.Io;
+using Gameboi.Memory.Specials;
 using static Gameboi.IoIndices;
 
 namespace Gameboi.Hardware;
@@ -73,6 +74,8 @@ internal class IoLogic
             // Bits 0-3 are readonly, and 6-7 is don't care.
             P1_index => (byte)((value & 0b0011_0000) | (state.P1 & 0b0000_1111)),
 
+            SC_index => SerialControlWriteLogic(value),
+
             // Timer ---------------------------
             // Resets when written to.
             DIV_index => DivWriteLogic(value),
@@ -103,6 +106,15 @@ internal class IoLogic
             state.IsDmaInProgress = true;
             state.DmaStartAddress = (ushort)(state.Dma << 8);
         }
+    }
+
+    private byte SerialControlWriteLogic(byte value)
+    {
+        if (value.IsBitSet(7) && value.IsBitSet(0))
+        {
+            state.SerialTransferBitsLeft = 8;
+        }
+        return value;
     }
 
     private byte TimaWriteLogic(byte value)

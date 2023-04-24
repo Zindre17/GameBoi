@@ -16,6 +16,7 @@ public class ImprovedGameboy
     private readonly Dma dma;
     private readonly OldVramDmaWithNewState vramDma;
     private readonly Joypad joypad;
+    private readonly SerialTransfer serial;
 
     // cpu and bus
     private readonly OldCpuWithNewState cpu;
@@ -41,6 +42,7 @@ public class ImprovedGameboy
         };
         timer = new ImprovedTimer(state);
         joypad = new Joypad(state);
+        serial = new SerialTransfer(state);
     }
 
     private const int TicksPerFrame = 70224;
@@ -64,6 +66,7 @@ public class ImprovedGameboy
             {
                 cpu.Tick();
             }
+            serial.Tick();
             timer.Tick();
             lcd.Tick();
             dma.Tick();
