@@ -43,8 +43,23 @@ public class OldCpuWithNewState
         state.Flags = Flags.SetTo(flags, on);
     }
 
-    public byte Read(ushort address) => bus.Read(address);
-    public void Write(ushort address, byte value) => bus.Write(address, value);
+    public byte Read(ushort address)
+    {
+        if (state.IsDmaInProgress && address < 0xff00)
+        {
+            return 0xff;
+        }
+        return bus.Read(address);
+    }
+
+    public void Write(ushort address, byte value)
+    {
+        if (state.IsDmaInProgress && address < 0xff00)
+        {
+            return;
+        }
+        bus.Write(address, value);
+    }
 
     public void Init()
     {
@@ -1378,7 +1393,7 @@ public class OldCpuWithNewState
 
     private int GetDurationOfNextInstruction()
     {
-        var opCode = bus.Read(state.ProgramCounter);
+        var opCode = Read(state.ProgramCounter);
         return opCode switch
         {
             0x20 => Flags.IsNotSet(CpuFlags.Zero) ? 12 : 8,
@@ -1404,7 +1419,7 @@ public class OldCpuWithNewState
 
     private int GetCbDuration()
     {
-        var cbOpCode = bus.Read((ushort)(state.ProgramCounter + 1));
+        var cbOpCode = Read((ushort)(state.ProgramCounter + 1));
         var modded = cbOpCode % 8;
         var duration = modded == 6 ? 16 : 8;
         return duration + 4;
