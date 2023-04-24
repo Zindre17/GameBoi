@@ -93,6 +93,7 @@ internal class IoLogic
             LY_index => 0,
             // Is constantly compared to LY and sets coincidence flag in stat.
             LYC_index => LycWriteLogic(value),
+            DMA_index => DmaWriteLogic(value),
             HDMA5_index => Hdma5WriteLogic(value),
             VBK_index => VramBankSelectLogic(value),
             BCPD_index => BcpdWriteLogic(value),
@@ -100,12 +101,15 @@ internal class IoLogic
             SVBK_index => WorkRamBankSelectLogic(value),
             _ => value
         };
+    }
 
-        if (address is DMA_index)
-        {
-            state.IsDmaInProgress = true;
-            state.DmaStartAddress = (ushort)(state.Dma << 8);
-        }
+    private byte DmaWriteLogic(byte value)
+    {
+        state.IsDmaInProgress = true;
+        state.DmaStartAddress = (ushort)(value << 8);
+        state.DmaTicksElapsed = 0;
+        state.DmaBytesTransferred = 0;
+        return value;
     }
 
     private byte SerialControlWriteLogic(byte value)
