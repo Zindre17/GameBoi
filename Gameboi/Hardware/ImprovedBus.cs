@@ -25,8 +25,8 @@ public class ImprovedBus
             < 0xC000 => mbc.ReadRam((ushort)(address - 0xA000)),
             < 0xD000 => state.WorkRam[address - 0xC000],
             < 0xE000 => state.WorkRam[state.WorkRamOffset + address - 0xD000],
-            < 0xF000 => state.WorkRam[address - 0xE000], // ECHO 0xC000 - 0xD000
-            < 0xFE00 => state.WorkRam[state.WorkRamOffset + address - 0xF000], // ECHO 0xC000 - 0xDDFF
+            < 0xF000 => state.WorkRam[address - 0xE000], // ECHO 0xC000 - 0xCFFF
+            < 0xFE00 => state.WorkRam[state.WorkRamOffset + address - 0xF000], // ECHO 0xD000 - 0xDDFF
             < 0xFEA0 => state.Oam[address - 0xFE00],
             < 0xFF00 => 0xff, // Not used
             < 0xFF80 => ioLogic.Read((ushort)(address - 0xFF00)),
@@ -50,9 +50,9 @@ public class ImprovedBus
             case < 0xE000:
                 return ref state.WorkRam[state.WorkRamOffset + address - 0xD000];
             case < 0xF000:
-                return ref state.WorkRam[address - 0xE000]; // ECHO 0xC000 - 0xDDFF
+                return ref state.WorkRam[address - 0xE000]; // ECHO 0xC000 - 0xCFFF
             case < 0xFE00:
-                return ref state.WorkRam[state.WorkRamOffset + address - 0xF000]; // ECHO 0xC000 - 0xDDFF
+                return ref state.WorkRam[state.WorkRamOffset + address - 0xF000]; // ECHO 0xD000 - 0xDDFF
             case < 0xFEA0:
                 return ref state.Oam[address - 0xFE00];
             case < 0xFF00:
