@@ -105,7 +105,9 @@ internal class IoLogic
 
     private byte DmaWriteLogic(byte value)
     {
-        state.IsDmaInProgress = true;
+        // OAM DMA start 4 clock later (1 cycle) 
+        //but since the cpu has ticked one more than dma at this point we need an extra tick here
+        state.TicksUntilDmaStarts = 5; // 4 + 1
         state.DmaTicksElapsed = 0;
         return value;
     }

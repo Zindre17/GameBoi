@@ -34,5 +34,15 @@ public class Dma
                 state.DmaTicksElapsed = 0;
             }
         }
+
+        if (state.TicksUntilDmaStarts > 0)
+        {
+            state.TicksUntilDmaStarts -= 1;
+            if (state.TicksUntilDmaStarts is 0)
+            {
+                state.IsDmaInProgress = true;
+                state.DmaTicksElapsed = 0;
+            }
+        }
     }
 }

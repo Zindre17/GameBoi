@@ -84,6 +84,7 @@ public class SystemState
 
     public bool IsInCbMode { get; set; } = false;
 
+    public int TicksUntilDmaStarts { get; set; } = 0;
     public bool IsDmaInProgress { get; set; } = false;
     public int DmaTicksElapsed { get; set; } = 0;
 
@@ -164,6 +165,7 @@ public class SystemState
 
         IsInCbMode = false;
 
+        TicksUntilDmaStarts = 0;
         IsDmaInProgress = false;
         DmaTicksElapsed = 0;
 
@@ -264,6 +266,7 @@ public class SystemState
         bytes.Add((byte)(IsInDoubleSpeedMode ? 1 : 0));
 
         // Misc IO state
+        bytes.AddRange(BitConverter.GetBytes(TicksUntilDmaStarts));
         bytes.Add((byte)(IsDmaInProgress ? 1 : 0));
         bytes.AddRange(BitConverter.GetBytes(DmaTicksElapsed));
 
@@ -327,6 +330,7 @@ public class SystemState
         IsInCbMode = ReadBool();
 
         // Misc IO state
+        TicksUntilDmaStarts = ReadInt();
         IsDmaInProgress = ReadBool();
         DmaTicksElapsed = ReadInt();
 
