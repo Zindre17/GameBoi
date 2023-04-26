@@ -179,7 +179,7 @@ public class MemoryBankController1 : MemoryBankControllerBase
             {
                 state.MbcRamOffset = (state.MbcRamSelect & RamBankMask) * RamBankSize;
             }
-            romBankNr = state.MbcRomSelectLow;
+            romBankNr = (state.MbcRamSelect << 5) | state.MbcRomSelectLow;
             state.MbcRom0Offset = ((state.MbcRamSelect << 5) & RomBankMask) * RomBankSize;
         }
 
@@ -314,13 +314,16 @@ public class MemoryBankController5 : MemoryBankControllerBase
         }
         else if (address < 0x6000)
         {
-            if (hasRumble)
+            if (RamBanks is not 0)
             {
-                state.MbcRamOffset = (value & 7) % RamBanks * RamBankSize;
-            }
-            else
-            {
-                state.MbcRamOffset = (value & 0xF) % RamBanks * RamBankSize;
+                if (hasRumble)
+                {
+                    state.MbcRamOffset = (value & 7) % RamBanks * RamBankSize;
+                }
+                else
+                {
+                    state.MbcRamOffset = (value & 0xF) % RamBanks * RamBankSize;
+                }
             }
         }
 
