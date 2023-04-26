@@ -143,6 +143,7 @@ public class SystemState
         MbcRom1Offset = MbcCartridgeBankSizes.RomBankSize;
         MbcRomSelectHigh = 0;
         MbcRomSelectLow = 0;
+        MbcRamSelect = 0;
     }
 
     private void ResetGameboiState()
@@ -232,12 +233,15 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(MbcRom1Offset));
         bytes.AddRange(BitConverter.GetBytes(MbcRomSelectHigh));
         bytes.AddRange(BitConverter.GetBytes(MbcRomSelectLow));
+        bytes.AddRange(BitConverter.GetBytes(MbcRamSelect));
 
         // Gameboy mem/regs
         bytes.AddRange(BitConverter.GetBytes(VideoRam.Length));
         bytes.AddRange(VideoRam);
+        bytes.AddRange(BitConverter.GetBytes(VideoRamOffset));
         bytes.AddRange(BitConverter.GetBytes(WorkRam.Length));
         bytes.AddRange(WorkRam);
+        bytes.AddRange(BitConverter.GetBytes(WorkRamOffset));
         bytes.AddRange(BitConverter.GetBytes(Oam.Length));
         bytes.AddRange(Oam);
         bytes.AddRange(BitConverter.GetBytes(IoPorts.Length));
@@ -264,7 +268,6 @@ public class SystemState
         bytes.Add((byte)(IsInterruptMasterEnablePreparing ? 1 : 0));
         bytes.Add((byte)(IsHalted ? 1 : 0));
         bytes.Add((byte)(IsInCbMode ? 1 : 0));
-        bytes.Add((byte)(IsInDoubleSpeedMode ? 1 : 0));
 
         // Misc IO state
         bytes.AddRange(BitConverter.GetBytes(TicksUntilDmaStarts));
@@ -303,10 +306,13 @@ public class SystemState
         MbcRom1Offset = ReadInt();
         MbcRomSelectHigh = ReadInt();
         MbcRomSelectLow = ReadInt();
+        MbcRamSelect = ReadInt();
 
         // Gameboy mem/regs
         ReadByteArray(VideoRam);
+        VideoRamOffset = ReadInt();
         ReadByteArray(WorkRam);
+        WorkRamOffset = ReadInt();
         ReadByteArray(Oam);
         ReadByteArray(IoPorts);
         ReadByteArray(HighRam);
