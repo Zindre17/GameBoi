@@ -81,6 +81,7 @@ public class SystemState
     public int LcdRemainingTicksInMode { get; set; } = ScreenTimings.mode2Clocks;
     public int LcdLinesOfWindowDrawnThisFrame { get; set; } = 0;
     public bool LcdWindowTriggered { get; set; } = false;
+    public bool SuppressCoincidenceInterrupt { get; set; } = false;
 
     public bool IsInCbMode { get; set; } = false;
 
@@ -283,6 +284,7 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(LcdRemainingTicksInMode));
         bytes.AddRange(BitConverter.GetBytes(LcdLinesOfWindowDrawnThisFrame));
         bytes.Add((byte)(LcdWindowTriggered ? 1 : 0));
+        bytes.Add((byte)(SuppressCoincidenceInterrupt ? 1 : 0));
 
         bytes.AddRange(BitConverter.GetBytes(SerialTransferBitsLeft));
 
@@ -347,6 +349,7 @@ public class SystemState
         LcdRemainingTicksInMode = ReadInt();
         LcdLinesOfWindowDrawnThisFrame = ReadInt();
         LcdWindowTriggered = ReadBool();
+        SuppressCoincidenceInterrupt = ReadBool();
 
         SerialTransferBitsLeft = ReadInt();
 

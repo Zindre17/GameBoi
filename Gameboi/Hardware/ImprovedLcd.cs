@@ -35,10 +35,11 @@ public class ImprovedLcd : IClocked
         }
 
         LcdStatus lcdStatus = state.LcdStatus;
-        if (lcdStatus.CoincidenceFlag && lcdStatus.IsCoincidenceInterruptEnabled)
+        if (lcdStatus.CoincidenceFlag && lcdStatus.IsCoincidenceInterruptEnabled && !state.SuppressCoincidenceInterrupt)
         {
             var interruptRequests = new InterruptState(state.InterruptFlags);
             state.InterruptFlags = interruptRequests.WithLcdStatusSet();
+            state.SuppressCoincidenceInterrupt = true;
         }
 
         if (--state.LcdRemainingTicksInMode is not 0)
@@ -75,15 +76,29 @@ public class ImprovedLcd : IClocked
                     SetNextMode(lcdStatus, VerticalBlank);
                     break;
                 }
+                UpdateCoincidenceFlag();
                 SetNextMode(lcdStatus, SearchingOam);
                 break;
             case VerticalBlank:
-                SetNextMode(lcdStatus, SearchingOam);
                 state.LcdLinesOfWindowDrawnThisFrame = 0;
                 state.LcdWindowTriggered = false;
                 state.LineY = 0;
+                UpdateCoincidenceFlag();
+                SetNextMode(lcdStatus, SearchingOam);
                 break;
         }
+    }
+
+    private void UpdateCoincidenceFlag()
+    {
+        LcdStatus status = state.LcdStatus;
+        var hadCoincidence = status.CoincidenceFlag;
+        var hasCoincidence = state.LineY == state.LineYCompare;
+        if (hasCoincidence != hadCoincidence)
+        {
+            state.SuppressCoincidenceInterrupt = false;
+        }
+        state.LcdStatus = status.WithCoincidenceFlag(hasCoincidence);
     }
 
     private void SetNextMode(LcdStatus status, byte nextMode)

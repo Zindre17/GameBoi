@@ -88,7 +88,7 @@ internal class IoLogic
             // LCD -----------------------------
             // Bits 0-2 are readonly.
             LCDC_index => LcdControlWriteLogic(value),
-            STAT_index => (byte)((value & 0xf8) | (state.LcdStatus & 7)),
+            STAT_index => LcdStatusWriteLogic(value),
             // Resets when written to.
             LY_index => 0,
             // Is constantly compared to LY and sets coincidence flag in stat.
@@ -234,6 +234,11 @@ internal class IoLogic
         LcdControl newControl = value;
         LcdStatus status = state.LcdStatus;
 
+        if (!newControl.IsLcdEnabled)
+        {
+            state.LcdStatus = status.WithMode(0);
+        }
+
         // disabled => enabled
         if (newControl.IsLcdEnabled && control.IsLcdEnabled is false)
         {
@@ -242,18 +247,62 @@ internal class IoLogic
             state.LcdWindowTriggered = false;
             state.LcdRemainingTicksInMode = 80;
             state.LcdStatus = status.WithMode(2);
+            var hadCoincidence = status.CoincidenceFlag;
+            var hasCoincidence = state.LineY == state.LineYCompare;
+            if (hasCoincidence != hadCoincidence)
+            {
+                state.SuppressCoincidenceInterrupt = false;
+            }
+            state.LcdStatus = status.WithCoincidenceFlag(hasCoincidence);
         }
 
         return value;
     }
 
+    private byte LcdStatusWriteLogic(byte value)
+    {
+        LcdStatus status = state.LcdStatus;
+        LcdStatus newStatus = value;
+
+        var interruptFlags = new InterruptState(state.InterruptFlags);
+
+        switch (status.Mode)
+        {
+            case 0:
+                if (newStatus.IsHblankInterruptEnabled)
+                {
+                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                }
+                break;
+            case 1:
+                if (newStatus.IsVblankInterruptEnabled)
+                {
+                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                }
+                break;
+            case 2:
+                if (newStatus.IsOAMInterruptEnabled)
+                {
+                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                }
+                break;
+        }
+
+        return (byte)((value & 0xf8) | (state.LcdStatus & 7));
+    }
+
     private byte LycWriteLogic(byte value)
     {
-        if (value == state.LineY)
+        LcdControl control = state.LcdControl;
+        if (control.IsLcdEnabled)
         {
             // set Stat coincident flag
             LcdStatus stat = state.LcdStatus;
-            state.LcdStatus = stat.WithCoincidenceFlag(true);
+            state.LcdStatus = stat.WithCoincidenceFlag(value == state.LineY);
+        }
+        else if (!control.IsLcdEnabled)
+        {
+            state.SuppressCoincidenceInterrupt = true;
         }
         return value;
     }

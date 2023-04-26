@@ -70,6 +70,7 @@ public class ImprovedGameboy
             timer.Tick();
             lcd.Tick();
             dma.Tick();
+            cpu.CheckForInterrupts();
 
             if (state.IsInDoubleSpeedMode)
             {

@@ -72,22 +72,12 @@ public class OldCpuWithNewState
         {
             if (state.IsHalted)
             {
-                HandleInterrupts();
-                if (state.IsHalted)
-                {
-                    state.TicksLeftOfInstruction += durations[0];
-                }
-                else
-                {
-                    state.TicksLeftOfInstruction += GetDurationOfNextInstruction();
-                }
+                state.TicksLeftOfInstruction += durations[0];
             }
             else
             {
                 var opCode = Fetch();
                 instructions[opCode]();
-
-                HandleInterrupts();
 
                 state.TicksLeftOfInstruction += GetDurationOfNextInstruction();
             }
@@ -96,20 +86,33 @@ public class OldCpuWithNewState
         state.TicksLeftOfInstruction -= 1;
     }
 
+    public void CheckForInterrupts()
+    {
+        var preInterruptDuration = GetDurationOfNextInstruction() - 1;
+        if (preInterruptDuration == state.TicksLeftOfInstruction)
+        {
+            if (HandleInterrupts())
+            {
+                state.TicksLeftOfInstruction -= preInterruptDuration;
+                state.TicksLeftOfInstruction += GetDurationOfNextInstruction() - 1;
+            }
+        }
+    }
+
     #region Interrupts
-    private void HandleInterrupts()
+    private bool HandleInterrupts()
     {
         if (state.IsInterruptMasterEnablePreparing)
         {
             state.IsInterruptMasterEnablePreparing = false;
             state.InterruptMasterEnable = true;
-            return;
+            return false;
         }
 
         // if IF is 0 there are no interrupt requests => exit
         if (IF.HasNone)
         {
-            return;
+            return false;
         }
 
         // any interrupt request should remove halt-state (even if events are not enabled)
@@ -119,10 +122,11 @@ public class OldCpuWithNewState
             || IE.HasNone
             || new InterruptState(IF & IE).HasNone)
         {
-            return;
+            return false;
         }
 
         Interrupt();
+        return true;
     }
 
     // type             :   prio    : address   : bit
