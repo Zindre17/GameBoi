@@ -73,7 +73,7 @@ public class SystemState
     public ref ushort StackPointer => ref stackPointer;
 
     // etc
-    public bool InterruptMasterEnable { get; set; } = true;
+    public bool InterruptMasterEnable { get; set; } = false;
     public bool IsInterruptMasterEnablePreparing { get; set; } = false;
     public bool IsHalted { get; set; } = false;
     public bool IsInDoubleSpeedMode => SpeedControl.IsBitSet(7);
@@ -158,7 +158,7 @@ public class SystemState
 
         InterruptEnableRegister = 0;
 
-        InterruptMasterEnable = true;
+        InterruptMasterEnable = false;
         IsInterruptMasterEnablePreparing = false;
 
         IsHalted = false;
@@ -207,7 +207,7 @@ public class SystemState
         NR52 = 0xf1;
 
         LcdControl = 0x91;
-        LcdStatus = 0x80;
+        LcdStatus = 0x82;
         LcdRemainingTicksInMode = ScreenTimings.mode2Clocks;
         LcdLinesOfWindowDrawnThisFrame = 0;
         LcdWindowTriggered = false;
