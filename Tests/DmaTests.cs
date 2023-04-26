@@ -23,7 +23,6 @@ public class DmaTests
     {
         state.IsDmaInProgress = false;
         state.DmaTicksElapsed = 0;
-        state.DmaBytesTransferred = 0;
 
         dma.Tick();
         dma.Tick();
@@ -31,7 +30,6 @@ public class DmaTests
 
         Assert.AreEqual(false, state.IsDmaInProgress);
         Assert.AreEqual(0, state.DmaTicksElapsed);
-        Assert.AreEqual(0, state.DmaBytesTransferred);
     }
 
     [TestMethod]
@@ -39,8 +37,6 @@ public class DmaTests
     {
         state.IsDmaInProgress = true;
         state.DmaTicksElapsed = 0;
-        state.DmaBytesTransferred = 0;
-        state.DmaStartAddress = 0x8000;
 
         dma.Tick();
         dma.Tick();
@@ -49,7 +45,6 @@ public class DmaTests
 
         Assert.AreEqual(true, state.IsDmaInProgress);
         Assert.AreEqual(4, state.DmaTicksElapsed);
-        Assert.AreEqual(1, state.DmaBytesTransferred);
     }
 
     [TestMethod]
@@ -57,8 +52,6 @@ public class DmaTests
     {
         state.IsDmaInProgress = true;
         state.DmaTicksElapsed = 0;
-        state.DmaBytesTransferred = 0;
-        state.DmaStartAddress = 0x8000;
 
         state.VideoRam[0] = 1;
         state.VideoRam[0x9f] = 2;
@@ -72,7 +65,6 @@ public class DmaTests
         dma.Tick();
         Assert.AreEqual(false, state.IsDmaInProgress);
         Assert.AreEqual(0, state.DmaTicksElapsed);
-        Assert.AreEqual(0, state.DmaBytesTransferred);
 
         Assert.AreEqual(1, state.Oam[0]);
         Assert.AreEqual(0, state.Oam[1]);
@@ -85,8 +77,6 @@ public class DmaTests
     {
         state.IsDmaInProgress = false;
         state.DmaTicksElapsed = 0;
-        state.DmaBytesTransferred = 0;
-        state.DmaStartAddress = 0;
 
         state.VideoRam[0] = 1;
         state.VideoRam[0x9f] = 2;
@@ -94,9 +84,7 @@ public class DmaTests
         bus.Write(0xff46, 0x80);
 
         Assert.AreEqual(true, state.IsDmaInProgress);
-        Assert.AreEqual(0x8000, state.DmaStartAddress);
         Assert.AreEqual(0, state.DmaTicksElapsed);
-        Assert.AreEqual(0, state.DmaBytesTransferred);
 
         for (var i = 0; i < (0xa0 * 4) - 1; i++)
         {
@@ -107,7 +95,6 @@ public class DmaTests
         dma.Tick();
         Assert.AreEqual(false, state.IsDmaInProgress);
         Assert.AreEqual(0, state.DmaTicksElapsed);
-        Assert.AreEqual(0, state.DmaBytesTransferred);
 
         Assert.AreEqual(1, state.Oam[0]);
         Assert.AreEqual(0, state.Oam[1]);
