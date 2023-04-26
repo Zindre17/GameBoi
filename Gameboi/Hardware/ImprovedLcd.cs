@@ -51,6 +51,7 @@ public class ImprovedLcd : IClocked
             return;
         }
 
+        var interruptFlags = new InterruptState(state.InterruptFlags);
         switch (lcdStatus.Mode)
         {
             case SearchingOam:
@@ -59,12 +60,18 @@ public class ImprovedLcd : IClocked
                 {
                     state.LcdWindowTriggered = true;
                 }
-                SetNextMode(lcdStatus, TransferringDataToLcd);
+                state.LcdStatus = lcdStatus.WithMode(TransferringDataToLcd);
+                state.LcdRemainingTicksInMode = modeDurations[TransferringDataToLcd];
                 break;
             case TransferringDataToLcd:
                 GeneratePixelLine();
                 OnLineReady?.Invoke(state.LineY, GetPixelLine());
-                SetNextMode(lcdStatus, HorizontalBlank);
+                if (lcdStatus.IsHblankInterruptEnabled)
+                {
+                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                }
+                state.LcdStatus = lcdStatus.WithMode(HorizontalBlank);
+                state.LcdRemainingTicksInMode = modeDurations[HorizontalBlank];
                 if (state.IsVramDmaInProgress && state.VramDmaModeIsHblank)
                 {
                     vramDma.TransferBlock();
@@ -73,18 +80,35 @@ public class ImprovedLcd : IClocked
             case HorizontalBlank:
                 if (++state.LineY is VerticalBlankLineYStart)
                 {
-                    SetNextMode(lcdStatus, VerticalBlank);
+                    state.InterruptFlags = interruptFlags.WithVerticalBlankSet();
+                    if (lcdStatus.IsVblankInterruptEnabled)
+                    {
+                        interruptFlags = new InterruptState(state.InterruptFlags);
+                        state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                    }
+                    state.LcdStatus = lcdStatus.WithMode(VerticalBlank);
+                    state.LcdRemainingTicksInMode = modeDurations[VerticalBlank];
                     break;
                 }
                 UpdateCoincidenceFlag();
-                SetNextMode(lcdStatus, SearchingOam);
+                if (lcdStatus.IsOAMInterruptEnabled)
+                {
+                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                }
+                state.LcdStatus = lcdStatus.WithMode(SearchingOam);
+                state.LcdRemainingTicksInMode = modeDurations[SearchingOam];
                 break;
             case VerticalBlank:
                 state.LcdLinesOfWindowDrawnThisFrame = 0;
                 state.LcdWindowTriggered = false;
                 state.LineY = 0;
                 UpdateCoincidenceFlag();
-                SetNextMode(lcdStatus, SearchingOam);
+                if (lcdStatus.IsOAMInterruptEnabled)
+                {
+                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                }
+                state.LcdStatus = lcdStatus.WithMode(SearchingOam);
+                state.LcdRemainingTicksInMode = modeDurations[SearchingOam];
                 break;
         }
     }
@@ -99,28 +123,6 @@ public class ImprovedLcd : IClocked
             state.SuppressCoincidenceInterrupt = false;
         }
         state.LcdStatus = status.WithCoincidenceFlag(hasCoincidence);
-    }
-
-    private void SetNextMode(LcdStatus status, byte nextMode)
-    {
-        state.LcdStatus = status.WithMode(nextMode);
-        state.LcdRemainingTicksInMode = modeDurations[nextMode];
-
-        var interruptRequests = new InterruptState(state.InterruptFlags);
-        if (nextMode is VerticalBlank)
-        {
-            state.InterruptFlags = interruptRequests.WithVerticalBlankSet();
-            if (status.IsVblankInterruptEnabled)
-            {
-                state.InterruptFlags = interruptRequests.WithLcdStatusSet();
-            }
-        }
-        else if ((nextMode is HorizontalBlank && status.IsHblankInterruptEnabled)
-            || (nextMode is SearchingOam && status.IsOAMInterruptEnabled)
-            )
-        {
-            state.InterruptFlags = interruptRequests.WithLcdStatusSet();
-        }
     }
 
     private readonly List<(ImprovedSprite, int)> spritesOnScanLine = new();
