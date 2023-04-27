@@ -72,31 +72,28 @@ public class OldCpuWithNewState
         {
             if (state.IsHalted)
             {
-                state.TicksLeftOfInstruction += durations[0];
+                HandleInterrupts();
+                if (state.IsHalted)
+                {
+                    state.TicksLeftOfInstruction += durations[0];
+                }
+                else
+                {
+                    state.TicksLeftOfInstruction += GetDurationOfNextInstruction();
+                }
             }
             else
             {
                 var opCode = Fetch();
                 instructions[opCode]();
 
+                HandleInterrupts();
+
                 state.TicksLeftOfInstruction += GetDurationOfNextInstruction();
             }
         }
 
         state.TicksLeftOfInstruction -= 1;
-    }
-
-    public void CheckForInterrupts()
-    {
-        var preInterruptDuration = GetDurationOfNextInstruction() - 1;
-        if (preInterruptDuration == state.TicksLeftOfInstruction)
-        {
-            if (HandleInterrupts())
-            {
-                state.TicksLeftOfInstruction -= preInterruptDuration;
-                state.TicksLeftOfInstruction += GetDurationOfNextInstruction() - 1;
-            }
-        }
     }
 
     #region Interrupts

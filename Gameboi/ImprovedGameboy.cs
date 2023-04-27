@@ -58,6 +58,12 @@ public class ImprovedGameboy
         {
             ticksElapsedThisFrame++;
 
+            joypad.CheckInputs();
+
+            serial.Tick();
+            timer.Tick();
+            lcd.Tick();
+            dma.Tick();
             if (state.IsVramDmaInProgress && !state.VramDmaModeIsHblank && state.TicksLeftOfInstruction is 0)
             {
                 vramDma.Tick();
@@ -66,23 +72,16 @@ public class ImprovedGameboy
             {
                 cpu.Tick();
             }
-            serial.Tick();
-            timer.Tick();
-            lcd.Tick();
-            dma.Tick();
-            cpu.CheckForInterrupts();
 
             if (state.IsInDoubleSpeedMode)
             {
+                timer.Tick();
+                dma.Tick();
                 if (!state.IsVramDmaInProgress)
                 {
                     cpu.Tick();
                 }
-                timer.Tick();
-                dma.Tick();
             }
-
-            joypad.CheckInputs();
         }
     }
 }

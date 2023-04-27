@@ -237,17 +237,24 @@ internal class IoLogic
         if (!newControl.IsLcdEnabled)
         {
             state.LcdStatus = status.WithMode(0);
-        }
-
-        // disabled => enabled
-        if (newControl.IsLcdEnabled && control.IsLcdEnabled is false)
-        {
             state.LineY = 0;
             state.LcdLinesOfWindowDrawnThisFrame = 0;
             state.LcdWindowTriggered = false;
-            state.LcdRemainingTicksInMode = 80;
-            state.LcdStatus = status.WithMode(2);
+            state.LcdRemainingTicksInMode = 208;
+        }
+        else if (control.IsLcdEnabled is false)
+        {
             state.LcdStatus = status.WithCoincidenceFlag(state.LineY == state.LineYCompare);
+            status = state.LcdStatus;
+            if (status.IsCoincidenceInterruptEnabled && status.CoincidenceFlag)
+            {
+                if (!state.WasPreviousLcdInterruptLineHigh)
+                {
+                    var interruptFlags = new InterruptState(state.InterruptFlags);
+                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                }
+                state.WasPreviousLcdInterruptLineHigh = true;
+            }
         }
 
         return value;
