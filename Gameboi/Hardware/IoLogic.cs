@@ -247,13 +247,7 @@ internal class IoLogic
             state.LcdWindowTriggered = false;
             state.LcdRemainingTicksInMode = 80;
             state.LcdStatus = status.WithMode(2);
-            var hadCoincidence = status.CoincidenceFlag;
-            var hasCoincidence = state.LineY == state.LineYCompare;
-            if (hasCoincidence != hadCoincidence)
-            {
-                state.SuppressCoincidenceInterrupt = false;
-            }
-            state.LcdStatus = status.WithCoincidenceFlag(hasCoincidence);
+            state.LcdStatus = status.WithCoincidenceFlag(state.LineY == state.LineYCompare);
         }
 
         return value;
@@ -269,21 +263,24 @@ internal class IoLogic
         switch (status.Mode)
         {
             case 0:
-                if (newStatus.IsHblankInterruptEnabled)
+                if (newStatus.IsHblankInterruptEnabled && !state.WasPreviousLcdInterruptLineHigh)
                 {
                     state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                    state.WasPreviousLcdInterruptLineHigh = true;
                 }
                 break;
             case 1:
-                if (newStatus.IsVblankInterruptEnabled)
+                if (newStatus.IsVblankInterruptEnabled && !state.WasPreviousLcdInterruptLineHigh)
                 {
                     state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                    state.WasPreviousLcdInterruptLineHigh = true;
                 }
                 break;
             case 2:
-                if (newStatus.IsOAMInterruptEnabled)
+                if (newStatus.IsOAMInterruptEnabled && !state.WasPreviousLcdInterruptLineHigh)
                 {
                     state.InterruptFlags = interruptFlags.WithLcdStatusSet();
+                    state.WasPreviousLcdInterruptLineHigh = true;
                 }
                 break;
         }
@@ -300,10 +297,7 @@ internal class IoLogic
             LcdStatus stat = state.LcdStatus;
             state.LcdStatus = stat.WithCoincidenceFlag(value == state.LineY);
         }
-        else if (!control.IsLcdEnabled)
-        {
-            state.SuppressCoincidenceInterrupt = true;
-        }
+
         return value;
     }
 

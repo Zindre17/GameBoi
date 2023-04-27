@@ -35,11 +35,24 @@ public class ImprovedLcd : IClocked
         }
 
         LcdStatus lcdStatus = state.LcdStatus;
-        if (lcdStatus.CoincidenceFlag && lcdStatus.IsCoincidenceInterruptEnabled && !state.SuppressCoincidenceInterrupt)
+        state.LcdStatus = lcdStatus.WithCoincidenceFlag(state.LineY == state.LineYCompare);
+        lcdStatus = state.LcdStatus;
+
+        if (lcdStatus.CoincidenceFlag && lcdStatus.IsCoincidenceInterruptEnabled)
         {
-            var interruptRequests = new InterruptState(state.InterruptFlags);
-            state.InterruptFlags = interruptRequests.WithLcdStatusSet();
-            state.SuppressCoincidenceInterrupt = true;
+            if (!state.WasPreviousLcdInterruptLineHigh)
+            {
+                var interruptRequests = new InterruptState(state.InterruptFlags);
+                state.InterruptFlags = interruptRequests.WithLcdStatusSet();
+            }
+            state.WasPreviousLcdInterruptLineHigh = true;
+        }
+        else
+        {
+            if (lcdStatus.Mode is TransferringDataToLcd)
+            {
+                state.WasPreviousLcdInterruptLineHigh = false;
+            }
         }
 
         if (--state.LcdRemainingTicksInMode is not 0)
@@ -51,7 +64,6 @@ public class ImprovedLcd : IClocked
             return;
         }
 
-        var interruptFlags = new InterruptState(state.InterruptFlags);
         switch (lcdStatus.Mode)
         {
             case SearchingOam:
@@ -66,10 +78,7 @@ public class ImprovedLcd : IClocked
             case TransferringDataToLcd:
                 GeneratePixelLine();
                 OnLineReady?.Invoke(state.LineY, GetPixelLine());
-                if (lcdStatus.IsHblankInterruptEnabled)
-                {
-                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
-                }
+                TrySetLcdStatusInterrupt(lcdStatus.IsHblankInterruptEnabled);
                 state.LcdStatus = lcdStatus.WithMode(HorizontalBlank);
                 state.LcdRemainingTicksInMode = modeDurations[HorizontalBlank];
                 if (state.IsVramDmaInProgress && state.VramDmaModeIsHblank)
@@ -80,21 +89,14 @@ public class ImprovedLcd : IClocked
             case HorizontalBlank:
                 if (++state.LineY is VerticalBlankLineYStart)
                 {
+                    var interruptFlags = new InterruptState(state.InterruptFlags);
                     state.InterruptFlags = interruptFlags.WithVerticalBlankSet();
-                    if (lcdStatus.IsVblankInterruptEnabled)
-                    {
-                        interruptFlags = new InterruptState(state.InterruptFlags);
-                        state.InterruptFlags = interruptFlags.WithLcdStatusSet();
-                    }
+                    TrySetLcdStatusInterrupt(lcdStatus.IsVblankInterruptEnabled);
                     state.LcdStatus = lcdStatus.WithMode(VerticalBlank);
                     state.LcdRemainingTicksInMode = modeDurations[VerticalBlank];
                     break;
                 }
-                UpdateCoincidenceFlag();
-                if (lcdStatus.IsOAMInterruptEnabled)
-                {
-                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
-                }
+                TrySetLcdStatusInterrupt(lcdStatus.IsOAMInterruptEnabled);
                 state.LcdStatus = lcdStatus.WithMode(SearchingOam);
                 state.LcdRemainingTicksInMode = modeDurations[SearchingOam];
                 break;
@@ -102,27 +104,28 @@ public class ImprovedLcd : IClocked
                 state.LcdLinesOfWindowDrawnThisFrame = 0;
                 state.LcdWindowTriggered = false;
                 state.LineY = 0;
-                UpdateCoincidenceFlag();
-                if (lcdStatus.IsOAMInterruptEnabled)
-                {
-                    state.InterruptFlags = interruptFlags.WithLcdStatusSet();
-                }
+                TrySetLcdStatusInterrupt(lcdStatus.IsOAMInterruptEnabled);
                 state.LcdStatus = lcdStatus.WithMode(SearchingOam);
                 state.LcdRemainingTicksInMode = modeDurations[SearchingOam];
                 break;
         }
     }
 
-    private void UpdateCoincidenceFlag()
+    private void TrySetLcdStatusInterrupt(bool condition)
     {
-        LcdStatus status = state.LcdStatus;
-        var hadCoincidence = status.CoincidenceFlag;
-        var hasCoincidence = state.LineY == state.LineYCompare;
-        if (hasCoincidence != hadCoincidence)
+        if (condition)
         {
-            state.SuppressCoincidenceInterrupt = false;
+            if (!state.WasPreviousLcdInterruptLineHigh)
+            {
+                var interruptRequests = new InterruptState(state.InterruptFlags);
+                state.InterruptFlags = interruptRequests.WithLcdStatusSet();
+            }
+            state.WasPreviousLcdInterruptLineHigh = true;
         }
-        state.LcdStatus = status.WithCoincidenceFlag(hasCoincidence);
+        else
+        {
+            state.WasPreviousLcdInterruptLineHigh = false;
+        }
     }
 
     private readonly List<(ImprovedSprite, int)> spritesOnScanLine = new();
@@ -164,9 +167,7 @@ public class ImprovedLcd : IClocked
         return tileRow >= 0 && tileRow < spriteHeight;
     }
 
-    private const int TileSize = 8;
     private const int ScreenWidth = 160;
-    private const int TileMapSize = 32;
 
     private readonly Rgba[] spritePixels = new Rgba[ScreenWidth];
     private readonly int[] backgroundAndWindowColors = new int[ScreenWidth];
@@ -206,8 +207,8 @@ public static class LcdConstants
     public const byte VerticalBlank = 1;
 
     public const int SearchingOamDurationInTicks = 80;
-    public const int GeneratePixelLineDurationInTicks = 172; // Minimum
-    public const int HorizontalBlankDurationInTicks = 204; // Maximum
+    public const int GeneratePixelLineDurationInTicks = 168; // Minimum
+    public const int HorizontalBlankDurationInTicks = 208; // Maximum
     public const int VerticalBlankDurationInTicks = ScanLineDurationInTicks * 10;
     public const int ScanLineDurationInTicks = 456;
 
