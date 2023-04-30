@@ -154,7 +154,7 @@ public class ImprovedLcd : IClocked
     private bool SpriteShowsOnScanLine(ImprovedSprite sprite, out int tileRow)
     {
         var spriteStart = sprite.Y - DoublelSpriteHeight;
-        if (spriteStart is < 0 or > 143)
+        if (spriteStart > 143 || sprite.Y < 0)
         {
             tileRow = -1;
             return false;
