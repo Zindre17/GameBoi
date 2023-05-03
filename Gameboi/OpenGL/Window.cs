@@ -34,6 +34,7 @@ public unsafe class Window
 
     private readonly ALContext alc;
     private readonly AL al;
+    private readonly Device* device;
 
     private readonly uint soundSource;
     private readonly uint soundBuffer;
@@ -75,7 +76,7 @@ public unsafe class Window
 
         alc = ALContext.GetApi();
         al = AL.GetApi();
-        var device = alc.OpenDevice("");
+        device = alc.OpenDevice("");
         if (device is null)
         {
             throw new Exception("Failed to open audio device");
@@ -422,6 +423,8 @@ public unsafe class Window
 
         al.DeleteSource(soundSource);
         al.DeleteBuffer(soundBuffer);
+
+        alc.CloseDevice(device);
 
         al.Dispose();
     }
