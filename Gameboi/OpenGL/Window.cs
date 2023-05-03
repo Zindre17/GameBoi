@@ -6,12 +6,13 @@ using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Silk.NET.Input;
 using Silk.NET.Maths;
+using Silk.NET.OpenAL;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 
 namespace Gameboi.OpenGL;
 
-public class Window
+public unsafe class Window
 {
     private readonly IWindow window;
     private GL? gl;
@@ -30,6 +31,17 @@ public class Window
     private bool hasStartedAGame;
 
     private bool isPlaying;
+
+    private readonly ALContext alc;
+    private readonly AL al;
+
+    private readonly uint soundSource;
+    private readonly uint soundBuffer;
+
+    private readonly BufferFormat soundBufferFormat;
+    private readonly int soundBufferSize;
+    private const int soundBufferFrequency = 44100;
+
 
     private static readonly float[] vertices = new float[]{
     //    x,   y, tx, ty,
@@ -60,8 +72,31 @@ public class Window
         window.Resize += OnResize;
 
         configFile = $"{Directory.GetCurrentDirectory()}/gameboi.ini";
-    }
 
+        alc = ALContext.GetApi();
+        al = AL.GetApi();
+        var device = alc.OpenDevice("");
+        if (device is null)
+        {
+            throw new Exception("Failed to open audio device");
+        }
+
+        var context = alc.CreateContext(device, null);
+        alc.MakeContextCurrent(context);
+
+        var error = al.GetError();
+        if (error != AudioError.NoError)
+        {
+            throw new Exception($"Failed to create audio context: {error}");
+        }
+
+        soundSource = al.GenSource();
+        al.SetSourceProperty(soundSource, SourceBoolean.Looping, false);
+
+        soundBuffer = al.GenBuffer();
+        soundBufferFormat = BufferFormat.Stereo16;
+        soundBufferSize = soundBufferFrequency * sizeof(short) * 2 / 20;
+    }
     public SystemState State => state;
 
     public Action? OnFrameUpdate { get; set; }
@@ -292,6 +327,7 @@ public class Window
         uiLayer?.HideText(pauseTextHandle);
     }
 
+    private int frame = 0;
     private void OnUpdate(double obj)
     {
         if (isPlaying)
@@ -305,6 +341,51 @@ public class Window
         {
             snackbarTimer.Reset();
             uiLayer?.HideText(snackbarTextHandle);
+        }
+
+        frame += 1;
+        if (frame is 3)
+        {
+            frame = 0;
+            GenerateSoundSamples();
+        }
+    }
+
+    private double currentFreq = 440.0;
+
+    private void GenerateSoundSamples()
+    {
+        var newBuffer = new short[soundBufferSize / sizeof(short)];
+        for (var i = 0; i < newBuffer.Length; i++)
+        {
+            newBuffer[i] = (short)(short.MaxValue * Math.Sin(2.0 * Math.PI * currentFreq * i / 44100.0));
+        }
+
+        al.GetSourceProperty(soundSource, GetSourceInteger.BuffersProcessed, out var processed);
+        if (processed is 0)
+        {
+            al.SourceStop(soundSource);
+        }
+
+        fixed (uint* ptr = &soundBuffer)
+        {
+            al.SourceUnqueueBuffers(soundSource, 1, ptr);
+            fixed (void* data = newBuffer)
+            {
+                al.BufferData(soundBuffer, soundBufferFormat, data, soundBufferSize, soundBufferFrequency);
+            }
+            al.SourceQueueBuffers(soundSource, 1, ptr);
+        }
+
+        al.SourcePlay(soundSource);
+
+        if (currentFreq < 1000.0)
+        {
+            currentFreq += 10.0;
+        }
+        else
+        {
+            currentFreq = 0;
         }
     }
 
@@ -336,6 +417,13 @@ public class Window
         gameTexture?.Dispose();
 
         uiLayer?.Dispose();
+
+        al.SourceStop(soundSource);
+
+        al.DeleteSource(soundSource);
+        al.DeleteBuffer(soundBuffer);
+
+        al.Dispose();
     }
 
     private void OnResize(Vector2D<int> newScreenSize)
