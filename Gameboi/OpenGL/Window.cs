@@ -63,7 +63,6 @@ public unsafe class Window
         options.FramesPerSecond = 60;
         options.UpdatesPerSecond = 60;
         options.Size = new Vector2D<int>(800, 600);
-        options.Title = "Gameboi";
         window = Silk.NET.Windowing.Window.Create(options);
 
         window.Load += OnLoad;
@@ -112,6 +111,16 @@ public unsafe class Window
     private readonly Stopwatch snackbarTimer = new();
     private readonly string configFile;
 
+    private readonly Stopwatch fpsStopWatch = new();
+
+    private string currentTitle = "Gameboi";
+
+    private void SetTitle(string title)
+    {
+        currentTitle = title;
+        window.Title = title;
+    }
+
     private void OnLoad()
     {
         gl = GL.GetApi(window);
@@ -154,6 +163,10 @@ public unsafe class Window
 
         shaders = new Shaders(gl, "OpenGL.Basic.shader");
         shaders.SetUniform("Game", 0);
+
+        SetTitle(currentTitle);
+
+        fpsStopWatch.Start();
     }
 
     private void UploadPixelRow(byte line, Rgba[] pixelRow)
@@ -268,7 +281,7 @@ public unsafe class Window
 
         var gameHeader = new GameHeader(game.Rom);
         var title = gameHeader.GetTitle();
-        window.Title = title;
+        SetTitle(title);
 
         state.ChangeGame(game.Rom, game.Ram);
 
@@ -331,6 +344,8 @@ public unsafe class Window
     private int frame = 0;
     private void OnUpdate(double obj)
     {
+        UpdateFpsInTitle();
+
         if (isPlaying)
         {
             OnFrameUpdate?.Invoke();
@@ -350,6 +365,14 @@ public unsafe class Window
             frame = 0;
             GenerateSoundSamples();
         }
+    }
+
+    private void UpdateFpsInTitle()
+    {
+        var elapsedTime = fpsStopWatch.ElapsedTicks / (double)Stopwatch.Frequency;
+        fpsStopWatch.Restart();
+        var fps = 1 / elapsedTime;
+        window.Title = $"{currentTitle} - {fps:F0} FPS";
     }
 
     private double currentFreq = 440.0;
