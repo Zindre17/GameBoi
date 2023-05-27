@@ -101,6 +101,8 @@ public class SystemState
 
     public int SerialTransferBitsLeft { get; set; } = 0;
 
+    public short[] SampleBuffer { get; set; } = new short[44100 * 2 / 10]; // 6 frames of sound at 44.1khz stereo 16bit samples
+
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
 

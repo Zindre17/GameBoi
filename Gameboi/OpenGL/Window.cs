@@ -37,11 +37,12 @@ public unsafe class Window
     private readonly Device* device;
 
     private readonly uint soundSource;
-    private readonly uint soundBuffer;
+    private readonly uint[] soundBuffers = new uint[2];
 
     private readonly BufferFormat soundBufferFormat;
-    private readonly int soundBufferSize;
+    private const int soundBufferSizeBytes = soundBufferFrequency * sizeof(short) * 2 * soundLatencyMs / 1000;
     private const int soundBufferFrequency = 44100;
+    private const int soundLatencyMs = 50;
 
 
     private static readonly float[] vertices = new float[]{
@@ -93,9 +94,12 @@ public unsafe class Window
         soundSource = al.GenSource();
         al.SetSourceProperty(soundSource, SourceBoolean.Looping, false);
 
-        soundBuffer = al.GenBuffer();
+        fixed (uint* sbuffs = soundBuffers)
+        {
+            al.GenBuffers(soundBuffers.Length, sbuffs);
+        }
+
         soundBufferFormat = BufferFormat.Stereo16;
-        soundBufferSize = soundBufferFrequency * sizeof(short) * 2 / 20;
     }
     public SystemState State => state;
 
@@ -309,6 +313,8 @@ public unsafe class Window
 
         isPlaying = true;
         hasStartedAGame = true;
+
+        InitSound();
     }
 
     private void SaveCurrentGame()
@@ -328,6 +334,7 @@ public unsafe class Window
         }
         isPlaying = false;
         uiLayer?.ShowText(pauseTextHandle);
+        al.SourcePause(soundSource);
     }
 
 
@@ -339,9 +346,9 @@ public unsafe class Window
         }
         isPlaying = true;
         uiLayer?.HideText(pauseTextHandle);
+        al.SourcePlay(soundSource);
     }
 
-    private int frame = 0;
     private void OnUpdate(double obj)
     {
         UpdateFpsInTitle();
@@ -350,6 +357,7 @@ public unsafe class Window
         {
             OnFrameUpdate?.Invoke();
             gameboy?.PlayFrame();
+            UpdateSound();
         }
         picker?.Update();
 
@@ -357,13 +365,6 @@ public unsafe class Window
         {
             snackbarTimer.Reset();
             uiLayer?.HideText(snackbarTextHandle);
-        }
-
-        frame += 1;
-        if (frame is 3)
-        {
-            frame = 0;
-            GenerateSoundSamples();
         }
     }
 
@@ -375,41 +376,71 @@ public unsafe class Window
         window.Title = $"{currentTitle} - {fps:F0} FPS";
     }
 
-    private double currentFreq = 440.0;
-
-    private void GenerateSoundSamples()
+    private void InitSound()
     {
-        var newBuffer = new short[soundBufferSize / sizeof(short)];
-        for (var i = 0; i < newBuffer.Length; i++)
+        // Remove any buffers that might be queued
+        al.SourceStop(soundSource);
+        fixed (uint* sbuffs = soundBuffers)
         {
-            newBuffer[i] = (short)(short.MaxValue * Math.Sin(2.0 * Math.PI * currentFreq * i / 44100.0));
+            al.SourceUnqueueBuffers(soundSource, soundBuffers.Length, sbuffs);
         }
 
-        al.GetSourceProperty(soundSource, GetSourceInteger.BuffersProcessed, out var processed);
-        if (processed is 0)
+        // Queue silent buffers
+        var bufferData = new short[soundBufferSizeBytes / sizeof(short)];
+        fixed (short* buffData = bufferData)
         {
-            al.SourceStop(soundSource);
+            al.BufferData(soundBuffers[0], soundBufferFormat, buffData, soundBufferSizeBytes, soundBufferFrequency);
+            al.BufferData(soundBuffers[1], soundBufferFormat, buffData, soundBufferSizeBytes, soundBufferFrequency);
+        }
+        fixed (uint* sbuffs = soundBuffers)
+        {
+            al.SourceQueueBuffers(soundSource, 2, sbuffs);
         }
 
-        fixed (uint* ptr = &soundBuffer)
-        {
-            al.SourceUnqueueBuffers(soundSource, 1, ptr);
-            fixed (void* data = newBuffer)
-            {
-                al.BufferData(soundBuffer, soundBufferFormat, data, soundBufferSize, soundBufferFrequency);
-            }
-            al.SourceQueueBuffers(soundSource, 1, ptr);
-        }
-
+        // Start playing
         al.SourcePlay(soundSource);
+        nextBufferToQueue = 2 % soundBuffers.Length;
+    }
 
-        if (currentFreq < 1000.0)
+    private int nextBufferToQueue = 0;
+    private int oldestBufferInQueue = 0;
+    private int nextStartIndex = 0;
+
+    private void UpdateSound()
+    {
+        al.GetSourceProperty(soundSource, GetSourceInteger.BuffersProcessed, out var buffersProcessed);
+        if (buffersProcessed > 1)
         {
-            currentFreq += 10.0;
+            Console.WriteLine($"Warning: {buffersProcessed} buffers were processed since last frame. Expected at most {soundBuffers.Length - 1}.");
         }
-        else
+        for (var i = 0; i < buffersProcessed; i++)
         {
-            currentFreq = 0;
+            fixed (uint* ptr = &soundBuffers[oldestBufferInQueue])
+            {
+                al.SourceUnqueueBuffers(soundSource, 1, ptr);
+                oldestBufferInQueue += 1;
+                oldestBufferInQueue %= soundBuffers.Length;
+            }
+
+            fixed (short* data = &state.SampleBuffer[nextStartIndex])
+            {
+                al.BufferData(soundBuffers[nextBufferToQueue], soundBufferFormat, data, soundBufferSizeBytes, soundBufferFrequency);
+                nextStartIndex += soundBufferSizeBytes / sizeof(short);
+                nextStartIndex %= state.SampleBuffer.Length;
+            }
+
+            fixed (uint* ptr = &soundBuffers[nextBufferToQueue])
+            {
+                al.SourceQueueBuffers(soundSource, 1, ptr);
+                nextBufferToQueue += 1;
+                nextBufferToQueue %= soundBuffers.Length;
+            }
+        }
+
+        al.GetSourceProperty(soundSource, GetSourceInteger.SourceState, out var sourceState);
+        if ((SourceState)sourceState is SourceState.Stopped)
+        {
+            al.SourcePlay(soundSource);
         }
     }
 
@@ -445,7 +476,7 @@ public unsafe class Window
         al.SourceStop(soundSource);
 
         al.DeleteSource(soundSource);
-        al.DeleteBuffer(soundBuffer);
+        al.DeleteBuffers(soundBuffers);
 
         alc.CloseDevice(device);
 
