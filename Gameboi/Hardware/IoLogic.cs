@@ -86,6 +86,8 @@ internal class IoLogic
             NR52_index => (byte)((value & 0b1000_0000) | (state.NR52 & 0b0111_1111)),
             NR12_index => Nr12WriteLogic(value),
             NR14_index => Nr14WriteLogic(value),
+            NR22_index => Nr22WriteLogic(value),
+            NR24_index => Nr24WriteLogic(value),
             // LCD -----------------------------
             // Bits 0-2 are readonly.
             LCDC_index => LcdControlWriteLogic(value),
@@ -104,17 +106,41 @@ internal class IoLogic
         };
     }
 
+    private byte Nr24WriteLogic(byte value)
+    {
+        if (value.IsBitSet(7))
+        {
+            state.NR52 = state.NR52.SetBit(1);
+            state.Channel2Envelope = state.NR22;
+        }
+        if (value.IsBitSet(6))
+        {
+            // TODO: This actually counts upwards to 64, but we count down to 0 so we suptract duration from 64.
+            state.Channel2Duration = 64 - (state.NR21 & 0b0011_1111);
+        }
+        return value;
+    }
+
     private byte Nr14WriteLogic(byte value)
     {
         if (value.IsBitSet(7))
         {
-            state.NR52.SetBit(0);
+            state.NR52 = state.NR52.SetBit(0);
             state.Channel1Envelope = state.NR12;
         }
         if (value.IsBitSet(6))
         {
             // TODO: This actually counts upwards to 64, but we count down to 0 so we suptract duration from 64.
-            state.Channel1Duration = 64 - state.NR11 & 0b0011_1111;
+            state.Channel1Duration = 64 - (state.NR11 & 0b0011_1111);
+        }
+        return value;
+    }
+
+    private byte Nr22WriteLogic(byte value)
+    {
+        if ((value & 0xf8) is 0)
+        {
+            state.NR52 = state.NR52.UnsetBit(1);
         }
         return value;
     }
@@ -123,7 +149,7 @@ internal class IoLogic
     {
         if ((value & 0xf8) is 0)
         {
-            state.NR52.UnsetBit(0);
+            state.NR52 = state.NR52.UnsetBit(0);
         }
         return value;
     }

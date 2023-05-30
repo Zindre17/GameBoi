@@ -112,6 +112,10 @@ public class SystemState
     public int TicksSinceLastChannel1Envelope { get; set; } = 0;
     public int TicksSinceLastSweep { get; set; } = 0;
 
+    public byte Channel2Envelope { get; set; } = 0;
+    public int Channel2Duration { get; set; } = 0;
+    public int TicksSinceLastChannel2Envelope { get; set; } = 0;
+
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
 
@@ -203,6 +207,10 @@ public class SystemState
         Channel1Duration = 0;
         TicksSinceLastChannel1Envelope = 0;
         TicksSinceLastSweep = 0;
+
+        Channel2Envelope = 0;
+        Channel2Duration = 0;
+        TicksSinceLastChannel2Envelope = 0;
     }
 
     private void ResetIO()
@@ -328,6 +336,10 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(TicksSinceLastChannel1Envelope));
         bytes.AddRange(BitConverter.GetBytes(TicksSinceLastSweep));
 
+        bytes.Add(Channel2Envelope);
+        bytes.AddRange(BitConverter.GetBytes(Channel2Duration));
+        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastChannel2Envelope));
+
         return bytes.ToArray();
     }
 
@@ -409,6 +421,10 @@ public class SystemState
         Channel1Duration = ReadInt();
         TicksSinceLastChannel1Envelope = ReadInt();
         TicksSinceLastSweep = ReadInt();
+
+        Channel2Envelope = ReadByte();
+        Channel2Duration = ReadInt();
+        TicksSinceLastChannel2Envelope = ReadInt();
 
         ushort ReadUshort()
         {
