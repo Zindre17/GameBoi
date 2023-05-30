@@ -16,6 +16,12 @@ public class ImprovedTimer : IClocked
         var preTick = state.TimerCounter;
         state.TimerCounter += 1;
 
+        if (IsSoundClockMultiplexerHigh(preTick, state.IsInDoubleSpeedMode)
+            && IsSoundClockMultiplexerLow(state.TimerCounter, state.IsInDoubleSpeedMode))
+        {
+            state.SoundTicks += 1;
+        }
+
         if (!tac.IsTimerEnabled)
         {
             return;
@@ -54,6 +60,18 @@ public class ImprovedTimer : IClocked
             return;
         }
         state.Tima++;
+    }
+
+    public static bool IsSoundClockMultiplexerHigh(ushort timerCounter, bool doubleSpeedMode)
+    {
+        return doubleSpeedMode
+            ? timerCounter.GetHighByte().IsBitSet(5)
+            : timerCounter.GetHighByte().IsBitSet(4);
+    }
+
+    public static bool IsSoundClockMultiplexerLow(ushort timerCounter, bool doubleSpeedMode)
+    {
+        return !IsSoundClockMultiplexerHigh(timerCounter, doubleSpeedMode);
     }
 
     public static bool IsMultiplexerHigh(int timerSpeedSelect, ushort timerCounter)

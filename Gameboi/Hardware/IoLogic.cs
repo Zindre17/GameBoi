@@ -84,7 +84,8 @@ internal class IoLogic
 
             // Sound ---------------------------
             NR52_index => (byte)((value & 0b1000_0000) | (state.NR52 & 0b0111_1111)),
-
+            NR12_index => Nr12WriteLogic(value),
+            NR14_index => Nr14WriteLogic(value),
             // LCD -----------------------------
             // Bits 0-2 are readonly.
             LCDC_index => LcdControlWriteLogic(value),
@@ -101,6 +102,30 @@ internal class IoLogic
             SVBK_index => WorkRamBankSelectLogic(value),
             _ => value
         };
+    }
+
+    private byte Nr14WriteLogic(byte value)
+    {
+        if (value.IsBitSet(7))
+        {
+            state.NR52.SetBit(0);
+            state.Channel1Envelope = state.NR12;
+        }
+        if (value.IsBitSet(6))
+        {
+            // TODO: This actually counts upwards to 64, but we count down to 0 so we suptract duration from 64.
+            state.Channel1Duration = 64 - state.NR11 & 0b0011_1111;
+        }
+        return value;
+    }
+
+    private byte Nr12WriteLogic(byte value)
+    {
+        if ((value & 0xf8) is 0)
+        {
+            state.NR52.UnsetBit(0);
+        }
+        return value;
     }
 
     private byte DmaWriteLogic(byte value)
@@ -164,6 +189,12 @@ internal class IoLogic
         {
             ImprovedTimer.IncrementTima(state);
         }
+
+        if (ImprovedTimer.IsSoundClockMultiplexerHigh(state.TimerCounter, state.IsInDoubleSpeedMode))
+        {
+            state.SoundTicks += 1;
+        }
+
         state.TimerCounter = 0;
         return value;
     }

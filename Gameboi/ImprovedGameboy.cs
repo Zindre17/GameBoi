@@ -2,6 +2,7 @@ using System;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Gameboi.Hardware;
+using Gameboi.Sound;
 
 namespace Gameboi;
 
@@ -17,6 +18,7 @@ public class ImprovedGameboy
     private readonly OldVramDmaWithNewState vramDma;
     private readonly Joypad joypad;
     private readonly SerialTransfer serial;
+    private readonly OldSpuWithNewState spu;
 
     // cpu and bus
     private readonly OldCpuWithNewState cpu;
@@ -43,6 +45,8 @@ public class ImprovedGameboy
         timer = new ImprovedTimer(state);
         joypad = new Joypad(state);
         serial = new SerialTransfer(state);
+
+        spu = new OldSpuWithNewState(state);
     }
 
     private const int TicksPerFrame = 70224;
@@ -57,6 +61,8 @@ public class ImprovedGameboy
         while (ticksElapsedThisFrame < TicksPerFrame)
         {
             ticksElapsedThisFrame++;
+
+            spu.Tick();
 
             joypad.CheckInputs();
 
@@ -83,5 +89,6 @@ public class ImprovedGameboy
                 }
             }
         }
+        spu.GenerateNextFrameOfSamples();
     }
 }

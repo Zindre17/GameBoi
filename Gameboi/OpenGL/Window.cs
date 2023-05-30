@@ -400,6 +400,8 @@ public unsafe class Window
         // Start playing
         al.SourcePlay(soundSource);
         nextBufferToQueue = 2 % soundBuffers.Length;
+        oldestBufferInQueue = 0;
+        nextStartIndex = 0;
     }
 
     private int nextBufferToQueue = 0;
@@ -438,7 +440,7 @@ public unsafe class Window
         }
 
         al.GetSourceProperty(soundSource, GetSourceInteger.SourceState, out var sourceState);
-        if ((SourceState)sourceState is SourceState.Stopped)
+        if ((SourceState)sourceState is not SourceState.Playing)
         {
             al.SourcePlay(soundSource);
         }

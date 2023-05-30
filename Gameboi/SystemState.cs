@@ -101,7 +101,16 @@ public class SystemState
 
     public int SerialTransferBitsLeft { get; set; } = 0;
 
-    public short[] SampleBuffer { get; set; } = new short[44100 * 2 / 10]; // 6 frames of sound at 44.1khz stereo 16bit samples
+    public byte SoundTicks { get; set; } = 0;
+    public byte PreviousSoundTicks { get; set; } = 0;
+
+    public short[] SampleBuffer { get; set; } = new short[44100 * 2 / 20]; // 3 frames of sound at 44.1khz stereo 16bit samples
+    public int SampleBufferIndex { get; set; } = 0;
+
+    public byte Channel1Envelope { get; set; } = 0;
+    public int Channel1Duration { get; set; } = 0;
+    public int TicksSinceLastChannel1Envelope { get; set; } = 0;
+    public int TicksSinceLastSweep { get; set; } = 0;
 
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
@@ -184,6 +193,16 @@ public class SystemState
         TicksLeftOfTimaReload = 0;
 
         SerialTransferBitsLeft = 0;
+
+        SoundTicks = 0;
+        PreviousSoundTicks = 0;
+        SampleBufferIndex = 0;
+        Array.Clear(SampleBuffer);
+
+        Channel1Envelope = 0;
+        Channel1Duration = 0;
+        TicksSinceLastChannel1Envelope = 0;
+        TicksSinceLastSweep = 0;
     }
 
     private void ResetIO()
@@ -294,6 +313,21 @@ public class SystemState
 
         bytes.AddRange(BitConverter.GetBytes(SerialTransferBitsLeft));
 
+        bytes.Add(SoundTicks);
+        bytes.Add(PreviousSoundTicks);
+        bytes.AddRange(BitConverter.GetBytes(SampleBufferIndex));
+        bytes.AddRange(BitConverter.GetBytes(SampleBuffer.Length * sizeof(short)));
+        foreach (var sample in SampleBuffer)
+        {
+            bytes.Add((byte)sample);
+            bytes.Add((byte)(sample >> 8));
+        }
+
+        bytes.Add(Channel1Envelope);
+        bytes.AddRange(BitConverter.GetBytes(Channel1Duration));
+        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastChannel1Envelope));
+        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastSweep));
+
         return bytes.ToArray();
     }
 
@@ -361,6 +395,20 @@ public class SystemState
         WasPreviousLcdInterruptLineHigh = ReadBool();
 
         SerialTransferBitsLeft = ReadInt();
+
+        SoundTicks = ReadByte();
+        PreviousSoundTicks = ReadByte();
+        SampleBufferIndex = ReadInt();
+        var sampleBufferLength = ReadInt();
+        for (var i = 0; i < sampleBufferLength / sizeof(short); i++)
+        {
+            SampleBuffer[i] = (short)(ReadByte() | (ReadByte() << 8));
+        }
+
+        Channel1Envelope = ReadByte();
+        Channel1Duration = ReadInt();
+        TicksSinceLastChannel1Envelope = ReadInt();
+        TicksSinceLastSweep = ReadInt();
 
         ushort ReadUshort()
         {
