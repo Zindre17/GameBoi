@@ -88,6 +88,8 @@ internal class IoLogic
             NR14_index => Nr14WriteLogic(value),
             NR22_index => Nr22WriteLogic(value),
             NR24_index => Nr24WriteLogic(value),
+            NR30_index => Nr30WriteLogic(value),
+            NR34_index => Nr34WriteLogic(value),
             // LCD -----------------------------
             // Bits 0-2 are readonly.
             LCDC_index => LcdControlWriteLogic(value),
@@ -104,6 +106,33 @@ internal class IoLogic
             SVBK_index => WorkRamBankSelectLogic(value),
             _ => value
         };
+    }
+
+    private byte Nr34WriteLogic(byte value)
+    {
+        if (value.IsBitSet(7))
+        {
+            state.NR52 = state.NR52.SetBit(2);
+            state.Channel3SampleNr = 0;
+            state.Channel3SamplesForCurrentWaveSample = 0;
+        }
+        if (value.IsBitSet(6))
+        {
+            // DOCs say this uses all 8 bits, but that does not make sense considering we count to 64.
+            // TODO: This actually counts upwards to 64, but we count down to 0 so we suptract duration from 64.
+            // state.Channel3Duration = 64 - (state.NR31 & 0b0011_1111);
+            state.Channel3Duration = 0x100 - state.NR31;
+        }
+        return value;
+    }
+
+    private byte Nr30WriteLogic(byte value)
+    {
+        if (!value.IsBitSet(7))
+        {
+            state.NR52 = state.NR52.UnsetBit(2);
+        }
+        return value;
     }
 
     private byte Nr24WriteLogic(byte value)

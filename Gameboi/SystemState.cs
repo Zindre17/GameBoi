@@ -116,6 +116,10 @@ public class SystemState
     public int Channel2Duration { get; set; } = 0;
     public int TicksSinceLastChannel2Envelope { get; set; } = 0;
 
+    public int Channel3SampleNr { get; set; } = 0;
+    public int Channel3Duration { get; set; } = 0;
+    public int Channel3SamplesForCurrentWaveSample { get; set; } = 0;
+
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
 
@@ -211,6 +215,10 @@ public class SystemState
         Channel2Envelope = 0;
         Channel2Duration = 0;
         TicksSinceLastChannel2Envelope = 0;
+
+        Channel3SampleNr = 0;
+        Channel3Duration = 0;
+        Channel3SamplesForCurrentWaveSample = 0;
     }
 
     private void ResetIO()
@@ -340,6 +348,10 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(Channel2Duration));
         bytes.AddRange(BitConverter.GetBytes(TicksSinceLastChannel2Envelope));
 
+        bytes.AddRange(BitConverter.GetBytes(Channel3SampleNr));
+        bytes.AddRange(BitConverter.GetBytes(Channel3Duration));
+        bytes.AddRange(BitConverter.GetBytes(Channel3SamplesForCurrentWaveSample));
+
         return bytes.ToArray();
     }
 
@@ -425,6 +437,10 @@ public class SystemState
         Channel2Envelope = ReadByte();
         Channel2Duration = ReadInt();
         TicksSinceLastChannel2Envelope = ReadInt();
+
+        Channel3SampleNr = ReadInt();
+        Channel3Duration = ReadInt();
+        Channel3SamplesForCurrentWaveSample = ReadInt();
 
         ushort ReadUshort()
         {
@@ -565,6 +581,8 @@ public static class IoIndices
     public const ushort NR50_index = 0x24;
     public const ushort NR51_index = 0x25;
     public const ushort NR52_index = 0x26;
+
+    public const ushort WAVE_RAM_START_index = 0x30;
 
     public const ushort LCDC_index = 0x40;
     public const ushort STAT_index = 0x41;
