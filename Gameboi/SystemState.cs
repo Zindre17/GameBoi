@@ -120,6 +120,11 @@ public class SystemState
     public int Channel3Duration { get; set; } = 0;
     public int Channel3SamplesForCurrentWaveSample { get; set; } = 0;
 
+    public byte Channel4Envelope { get; set; } = 0;
+    public int Channel4Duration { get; set; } = 0;
+    public int TicksSinceLastChannel4Envelope { get; set; } = 0;
+    public int Lfsr { get; set; } = 0;
+
     public byte[] BackgroundColorPaletteData = new byte[64];
     public byte[] ObjectColorPaletteData = new byte[64];
 
@@ -219,6 +224,11 @@ public class SystemState
         Channel3SampleNr = 0;
         Channel3Duration = 0;
         Channel3SamplesForCurrentWaveSample = 0;
+
+        Channel4Envelope = 0;
+        Channel4Duration = 0;
+        TicksSinceLastChannel4Envelope = 0;
+        Lfsr = 0;
     }
 
     private void ResetIO()
@@ -352,6 +362,11 @@ public class SystemState
         bytes.AddRange(BitConverter.GetBytes(Channel3Duration));
         bytes.AddRange(BitConverter.GetBytes(Channel3SamplesForCurrentWaveSample));
 
+        bytes.Add(Channel4Envelope);
+        bytes.AddRange(BitConverter.GetBytes(Channel4Duration));
+        bytes.AddRange(BitConverter.GetBytes(TicksSinceLastChannel4Envelope));
+        bytes.AddRange(BitConverter.GetBytes(Lfsr));
+
         return bytes.ToArray();
     }
 
@@ -441,6 +456,11 @@ public class SystemState
         Channel3SampleNr = ReadInt();
         Channel3Duration = ReadInt();
         Channel3SamplesForCurrentWaveSample = ReadInt();
+
+        Channel4Envelope = ReadByte();
+        Channel4Duration = ReadInt();
+        TicksSinceLastChannel4Envelope = ReadInt();
+        Lfsr = ReadInt();
 
         ushort ReadUshort()
         {

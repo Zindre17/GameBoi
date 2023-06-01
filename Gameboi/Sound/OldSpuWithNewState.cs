@@ -8,6 +8,7 @@ public class OldSpuWithNewState
     private readonly ImprovedChannel1 channel1;
     private readonly ImprovedChannel2 channel2;
     private readonly ImprovedChannel3 channel3;
+    private readonly ImprovedChannel4 channel4;
     private readonly SystemState state;
 
     public OldSpuWithNewState(SystemState state)
@@ -16,18 +17,11 @@ public class OldSpuWithNewState
         channel1 = new(state);
         channel2 = new(state);
         channel3 = new(state);
+        channel4 = new(state);
     }
-
-    private int ticks = 0;
 
     public void Tick()
     {
-        // ticks++;
-        // if (ticks is 8192)
-        // {
-        //     ticks = 0;
-        //     AddNextSampleBatch(87);
-        // }
         if (state.SoundTicks == state.PreviousSoundTicks)
         {
             return;
@@ -36,7 +30,7 @@ public class OldSpuWithNewState
         channel1.Tick();
         channel2.Tick();
         channel3.Tick();
-        // channel4.Tick();
+        channel4.Tick();
         state.PreviousSoundTicks = state.SoundTicks;
     }
 
@@ -57,6 +51,7 @@ public class OldSpuWithNewState
         var channel1Samples = channel1.GetNextSamples(sampleCount);
         var channel2Samples = channel2.GetNextSamples(sampleCount);
         var channel3Samples = channel3.GetNextSamples(sampleCount);
+        var channel4Samples = channel4.GetNextSamples(sampleCount);
 
         var samples = new short[sampleCount * 2];
 
@@ -78,11 +73,11 @@ public class OldSpuWithNewState
                 c1Sample += channel2Samples[i];
             if (nr51.Is3Out1)
                 c1Sample += channel3Samples[i];
-            // if (nr51.Is4Out1)
-            //     c1Sample += (short)(channel4Samples[i] / 4);
+            if (nr51.Is4Out1)
+                c1Sample += channel4Samples[i];
 
 
-            c1Sample = (int)(c1Sample * out1volume / (7d * 15 * 3) * short.MaxValue);
+            c1Sample = (int)(c1Sample * out1volume / (7d * 15 * 4) * short.MaxValue);
 
             samples[index++] = (short)c1Sample;
 
@@ -95,10 +90,10 @@ public class OldSpuWithNewState
                 c2Sample += channel2Samples[i];
             if (nr51.Is3Out2)
                 c2Sample += channel3Samples[i];
-            // if (nr51.Is4Out2)
-            //     c2Sample += (short)(channel4Samples[i] / 4);
+            if (nr51.Is4Out2)
+                c2Sample += channel4Samples[i];
 
-            c2Sample = (short)(c2Sample * out2volume / (7d * 15 * 3) * short.MaxValue);
+            c2Sample = (short)(c2Sample * out2volume / (7d * 15 * 4) * short.MaxValue);
 
             samples[index++] = (short)c2Sample;
         }

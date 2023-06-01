@@ -90,6 +90,7 @@ internal class IoLogic
             NR24_index => Nr24WriteLogic(value),
             NR30_index => Nr30WriteLogic(value),
             NR34_index => Nr34WriteLogic(value),
+            NR44_index => Nr44WriteLogic(value),
             // LCD -----------------------------
             // Bits 0-2 are readonly.
             LCDC_index => LcdControlWriteLogic(value),
@@ -106,6 +107,22 @@ internal class IoLogic
             SVBK_index => WorkRamBankSelectLogic(value),
             _ => value
         };
+    }
+
+    private byte Nr44WriteLogic(byte value)
+    {
+        if (value.IsBitSet(7))
+        {
+            state.NR52 = state.NR52.SetBit(3);
+            state.TicksSinceLastChannel4Envelope = 0;
+            state.Channel4Envelope = state.NR42;
+            state.Lfsr = 0;
+        }
+        if (value.IsBitSet(6))
+        {
+            state.Channel4Duration = 64 - (state.NR41 & 0b0011_1111);
+        }
+        return value;
     }
 
     private byte Nr34WriteLogic(byte value)
