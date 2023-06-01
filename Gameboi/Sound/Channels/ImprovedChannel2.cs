@@ -73,7 +73,7 @@ public class ImprovedChannel2
         sampleNr %= samplesPerPeriod;
         for (int i = 0; i < count; i++)
         {
-            samples[i] = (short)((sampleNr > lowToHigh ? 1 : -1) * volume);
+            samples[i] = (short)((sampleNr > lowToHigh ? 1 : 0) * volume);
             sampleNr++;
             sampleNr %= samplesPerPeriod;
         }

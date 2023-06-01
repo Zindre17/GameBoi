@@ -40,6 +40,8 @@ public class OldSpuWithNewState
         AddNextSampleBatch(735);
     }
 
+    private const int analogConversionFactor = (short.MaxValue - short.MinValue - 1) / (4 * 0xf);
+
     private void AddNextSampleBatch(int sampleCount)
     {
         var nr52 = new SimpleNr52(state.NR52);
@@ -56,8 +58,8 @@ public class OldSpuWithNewState
         var samples = new short[sampleCount * 2];
 
         var nr50 = new SimpleNr50(state.NR50);
-        var out1volume = nr50.VolumeOut1;
-        var out2volume = nr50.VolumeOut2;
+        var out1volume = nr50.VolumeOut1 / 7d;
+        var out2volume = nr50.VolumeOut2 / 7d;
 
         var nr51 = new SimpleNr51(state.NR51);
 
@@ -76,10 +78,11 @@ public class OldSpuWithNewState
             if (nr51.Is4Out1)
                 c1Sample += channel4Samples[i];
 
+            var analogSampleValue = short.MaxValue - (c1Sample * analogConversionFactor);
 
-            c1Sample = (int)(c1Sample * out1volume / (7d * 15 * 4) * short.MaxValue);
+            // c1Sample = (int)(c1Sample * out1volume / (7d * 15 * 4) * short.MaxValue);
 
-            samples[index++] = (short)c1Sample;
+            samples[index++] = (short)(analogSampleValue * out1volume);
 
             //channel2
             var c2Sample = 0;
@@ -93,9 +96,10 @@ public class OldSpuWithNewState
             if (nr51.Is4Out2)
                 c2Sample += channel4Samples[i];
 
-            c2Sample = (short)(c2Sample * out2volume / (7d * 15 * 4) * short.MaxValue);
+            var analogSampleValue2 = short.MaxValue - (c2Sample * analogConversionFactor);
+            // c2Sample = (short)(c2Sample * out2volume / (7d * 15 * 4) * short.MaxValue);
 
-            samples[index++] = (short)c2Sample;
+            samples[index++] = (short)(analogSampleValue2 * out2volume);
         }
 
         var copyIndex = 0;
