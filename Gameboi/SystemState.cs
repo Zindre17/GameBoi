@@ -118,7 +118,6 @@ public class SystemState
 
     public int Channel3SampleNr { get; set; } = 0;
     public int Channel3Duration { get; set; } = 0;
-    public int Channel3SamplesForCurrentWaveSample { get; set; } = 0;
 
     public byte Channel4Envelope { get; set; } = 0;
     public int Channel4Duration { get; set; } = 0;
@@ -223,7 +222,6 @@ public class SystemState
 
         Channel3SampleNr = 0;
         Channel3Duration = 0;
-        Channel3SamplesForCurrentWaveSample = 0;
 
         Channel4Envelope = 0;
         Channel4Duration = 0;
@@ -360,7 +358,6 @@ public class SystemState
 
         bytes.AddRange(BitConverter.GetBytes(Channel3SampleNr));
         bytes.AddRange(BitConverter.GetBytes(Channel3Duration));
-        bytes.AddRange(BitConverter.GetBytes(Channel3SamplesForCurrentWaveSample));
 
         bytes.Add(Channel4Envelope);
         bytes.AddRange(BitConverter.GetBytes(Channel4Duration));
@@ -455,7 +452,6 @@ public class SystemState
 
         Channel3SampleNr = ReadInt();
         Channel3Duration = ReadInt();
-        Channel3SamplesForCurrentWaveSample = ReadInt();
 
         Channel4Envelope = ReadByte();
         Channel4Duration = ReadInt();

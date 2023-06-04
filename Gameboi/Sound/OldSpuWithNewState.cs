@@ -80,8 +80,6 @@ public class OldSpuWithNewState
 
             var analogSampleValue = short.MaxValue - (c1Sample * analogConversionFactor);
 
-            // c1Sample = (int)(c1Sample * out1volume / (7d * 15 * 4) * short.MaxValue);
-
             samples[index++] = (short)(analogSampleValue * out1volume);
 
             //channel2
@@ -97,7 +95,6 @@ public class OldSpuWithNewState
                 c2Sample += channel4Samples[i];
 
             var analogSampleValue2 = short.MaxValue - (c2Sample * analogConversionFactor);
-            // c2Sample = (short)(c2Sample * out2volume / (7d * 15 * 4) * short.MaxValue);
 
             samples[index++] = (short)(analogSampleValue2 * out2volume);
         }

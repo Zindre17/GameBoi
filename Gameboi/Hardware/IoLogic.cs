@@ -131,7 +131,6 @@ internal class IoLogic
         {
             state.NR52 = state.NR52.SetBit(2);
             state.Channel3SampleNr = 0;
-            state.Channel3SamplesForCurrentWaveSample = 0;
         }
         if (value.IsBitSet(6))
         {

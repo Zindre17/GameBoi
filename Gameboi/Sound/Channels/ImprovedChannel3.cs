@@ -28,17 +28,6 @@ public class ImprovedChannel3
         }
     }
 
-    private byte GetWaveRamSample()
-    {
-        var sampleNr = state.Channel3SampleNr;
-        state.Channel3SamplesForCurrentWaveSample += 1;
-        var index = IoIndices.WAVE_RAM_START_index + (sampleNr / 2);
-        var waveRamSample = state.IoPorts[index];
-        return (byte)((sampleNr % 2) is 0
-            ? (waveRamSample >> 0) & 0x0F
-            : (waveRamSample >> 4) & 0x0F);
-    }
-
     private int GetVolumeShift()
     {
         return ((state.NR32 & 0b0110_0000) >> 5) switch
@@ -61,23 +50,22 @@ public class ImprovedChannel3
         }
 
         // NOTE: half the frequency of channel 1 and 2
-        var frequency = 0x10000 / (0x800 - FrequencyData);
+        var frequency = 0x10000 / (double)(0x800 - FrequencyData);
         var frequencyPerWaveSample = frequency * 32d;
-        var samplesPerWaveRamSample = (int)(Statics.WavSettings.SAMPLE_RATE / frequencyPerWaveSample);
+        var samplesPerWaveRamSample = Statics.WavSettings.SAMPLE_RATE / frequencyPerWaveSample;
 
         var volumeShift = GetVolumeShift();
 
         for (int i = 0; i < sampleCount; i++)
         {
-            var waveRamSample = GetWaveRamSample();
-            samples[i] = (short)(waveRamSample >> volumeShift);
-
-            if (state.Channel3SamplesForCurrentWaveSample >= samplesPerWaveRamSample)
-            {
-                state.Channel3SamplesForCurrentWaveSample = 0;
-                state.Channel3SampleNr++;
-                state.Channel3SampleNr %= 32;
-            }
+            var index = (int)(state.Channel3SampleNr++ / samplesPerWaveRamSample);
+            index %= 32;
+            var pair = state.IoPorts[0x30 + (index / 2)];
+            var sample = (index % 2) is 0
+                ? (pair >> 4) & 0xf
+                : pair & 0xf;
+            var volumeAdjustedSample = (short)(sample >> volumeShift);
+            samples[i] = volumeAdjustedSample;
         }
         return samples;
     }
