@@ -298,6 +298,11 @@ public class SystemState
         bytes.AddRange(HighRam);
         bytes.Add(interruptEnableRegister);
 
+        bytes.AddRange(BitConverter.GetBytes(BackgroundColorPaletteData.Length));
+        bytes.AddRange(BackgroundColorPaletteData);
+        bytes.AddRange(BitConverter.GetBytes(ObjectColorPaletteData.Length));
+        bytes.AddRange(ObjectColorPaletteData);
+
         // Cpu regs and state
         bytes.Add(accumulator);
         bytes.Add(flags);
@@ -401,6 +406,9 @@ public class SystemState
         ReadByteArray(IoPorts);
         ReadByteArray(HighRam);
         interruptEnableRegister = ReadByte();
+
+        ReadByteArray(BackgroundColorPaletteData);
+        ReadByteArray(ObjectColorPaletteData);
 
         // Cpu regs and state
         accumulator = ReadByte();
