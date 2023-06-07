@@ -407,6 +407,7 @@ public unsafe class Window
     private int nextBufferToQueue = 0;
     private int oldestBufferInQueue = 0;
     private int nextStartIndex = 0;
+    private short[] lastSampleBuffer = new short[soundBufferSizeBytes / sizeof(short)];
 
     private void UpdateSound()
     {
@@ -415,7 +416,15 @@ public unsafe class Window
         {
             Console.WriteLine($"Warning: {buffersProcessed} buffers were processed since last frame. Expected at most {soundBuffers.Length - 1}.");
         }
-        for (var i = 0; i < buffersProcessed; i++)
+        var buffersToQueue = buffersProcessed;
+        al.GetSourceProperty(soundSource, GetSourceInteger.BuffersQueued, out var buffersQueued);
+        if (buffersQueued < soundBuffers.Length)
+        {
+            Console.WriteLine($"Warning: {buffersQueued} buffers are queued. Expected at least {soundBuffers.Length}.");
+            buffersToQueue = soundBuffers.Length - buffersQueued;
+        }
+
+        for (var i = 0; i < buffersToQueue; i++)
         {
             fixed (uint* ptr = &soundBuffers[oldestBufferInQueue])
             {
@@ -423,12 +432,19 @@ public unsafe class Window
                 oldestBufferInQueue += 1;
                 oldestBufferInQueue %= soundBuffers.Length;
             }
+            short[] sampleBuffer;
+            if (state.SampleBufferQueue.Count is 0)
+            {
+                sampleBuffer = lastSampleBuffer;
+            }
+            else
+            {
+                sampleBuffer = state.SampleBufferQueue.Dequeue();
+            }
 
-            fixed (short* data = &state.SampleBuffer[nextStartIndex])
+            fixed (short* data = sampleBuffer)
             {
                 al.BufferData(soundBuffers[nextBufferToQueue], soundBufferFormat, data, soundBufferSizeBytes, soundBufferFrequency);
-                nextStartIndex += soundBufferSizeBytes / sizeof(short);
-                nextStartIndex %= state.SampleBuffer.Length;
             }
 
             fixed (uint* ptr = &soundBuffers[nextBufferToQueue])
@@ -437,6 +453,8 @@ public unsafe class Window
                 nextBufferToQueue += 1;
                 nextBufferToQueue %= soundBuffers.Length;
             }
+
+            lastSampleBuffer = sampleBuffer;
         }
 
         al.GetSourceProperty(soundSource, GetSourceInteger.SourceState, out var sourceState);

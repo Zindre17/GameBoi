@@ -100,14 +100,18 @@ public class OldSpuWithNewState
         }
 
         var copyIndex = 0;
-        if (state.SampleBufferIndex + samples.Length > state.SampleBuffer.Length)
+        if (state.SampleBufferIndex + samples.Length > state.CurrentSampleBuffer.Length)
         {
-            var remaining = state.SampleBuffer.Length - state.SampleBufferIndex;
-            Array.Copy(samples, copyIndex, state.SampleBuffer, state.SampleBufferIndex, remaining);
+            var remaining = state.CurrentSampleBuffer.Length - state.SampleBufferIndex;
+            Array.Copy(samples, copyIndex, state.CurrentSampleBuffer, state.SampleBufferIndex, remaining);
             copyIndex = remaining;
             state.SampleBufferIndex = 0;
+
+            var bufferCopy = new short[state.CurrentSampleBuffer.Length];
+            Array.Copy(state.CurrentSampleBuffer, bufferCopy, state.CurrentSampleBuffer.Length);
+            state.SampleBufferQueue.Enqueue(bufferCopy);
         }
-        Array.Copy(samples, copyIndex, state.SampleBuffer, state.SampleBufferIndex, samples.Length - copyIndex);
+        Array.Copy(samples, copyIndex, state.CurrentSampleBuffer, state.SampleBufferIndex, samples.Length - copyIndex);
         state.SampleBufferIndex += samples.Length - copyIndex;
     }
 }

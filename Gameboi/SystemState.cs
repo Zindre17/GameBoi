@@ -104,8 +104,9 @@ public class SystemState
     public byte SoundTicks { get; set; } = 0;
     public byte PreviousSoundTicks { get; set; } = 0;
 
-    public short[] SampleBuffer { get; set; } = new short[44100 * 2 / 20]; // 3 frames of sound at 44.1khz stereo 16bit samples
+    public Queue<short[]> SampleBufferQueue { get; set; } = new Queue<short[]>();
     public int SampleBufferIndex { get; set; } = 0;
+    public short[] CurrentSampleBuffer { get; set; } = new short[44100 * 2 / 20];
 
     public byte Channel1Envelope { get; set; } = 0;
     public int Channel1Duration { get; set; } = 0;
@@ -209,7 +210,8 @@ public class SystemState
         SoundTicks = 0;
         PreviousSoundTicks = 0;
         SampleBufferIndex = 0;
-        Array.Clear(SampleBuffer);
+        Array.Clear(CurrentSampleBuffer);
+        SampleBufferQueue.Clear();
 
         Channel1Envelope = 0;
         Channel1Duration = 0;
@@ -340,11 +342,20 @@ public class SystemState
         bytes.Add(SoundTicks);
         bytes.Add(PreviousSoundTicks);
         bytes.AddRange(BitConverter.GetBytes(SampleBufferIndex));
-        bytes.AddRange(BitConverter.GetBytes(SampleBuffer.Length * sizeof(short)));
-        foreach (var sample in SampleBuffer)
+        bytes.AddRange(BitConverter.GetBytes(CurrentSampleBuffer.Length * sizeof(short)));
+        foreach (var sample in CurrentSampleBuffer)
         {
             bytes.Add((byte)sample);
             bytes.Add((byte)(sample >> 8));
+        }
+        bytes.AddRange(BitConverter.GetBytes(SampleBufferQueue.Count));
+        foreach (var buffer in SampleBufferQueue)
+        {
+            foreach (var sample in buffer)
+            {
+                bytes.Add((byte)sample);
+                bytes.Add((byte)(sample >> 8));
+            }
         }
 
         bytes.Add(Channel1Envelope);
@@ -438,7 +449,18 @@ public class SystemState
         var sampleBufferLength = ReadInt();
         for (var i = 0; i < sampleBufferLength / sizeof(short); i++)
         {
-            SampleBuffer[i] = (short)(ReadByte() | (ReadByte() << 8));
+            CurrentSampleBuffer[i] = (short)(ReadByte() | (ReadByte() << 8));
+        }
+
+        var bufferCount = ReadInt();
+        for (var _ = 0; _ < bufferCount; _++)
+        {
+            var buffer = new short[sampleBufferLength / sizeof(short)];
+            for (var i = 0; i < sampleBufferLength / sizeof(short); i++)
+            {
+                buffer[i] = (short)(ReadByte() | (ReadByte() << 8));
+            }
+            SampleBufferQueue.Enqueue(buffer);
         }
 
         Channel1Envelope = ReadByte();
