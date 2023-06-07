@@ -401,12 +401,10 @@ public unsafe class Window
         al.SourcePlay(soundSource);
         nextBufferToQueue = 2 % soundBuffers.Length;
         oldestBufferInQueue = 0;
-        nextStartIndex = 0;
     }
 
     private int nextBufferToQueue = 0;
     private int oldestBufferInQueue = 0;
-    private int nextStartIndex = 0;
     private short[] lastSampleBuffer = new short[soundBufferSizeBytes / sizeof(short)];
 
     private void UpdateSound()
@@ -423,7 +421,11 @@ public unsafe class Window
             Console.WriteLine($"Warning: {buffersQueued} buffers are queued. Expected at least {soundBuffers.Length}.");
             buffersToQueue = soundBuffers.Length - buffersQueued;
         }
-
+        while (buffersToQueue > 0 && state.SampleBufferQueue.Count > buffersToQueue + 1)
+        {
+            Console.WriteLine("Warning: Producing more buffers than are being played: Dropping buffer.");
+            state.SampleBufferQueue.Dequeue();
+        }
         for (var i = 0; i < buffersToQueue; i++)
         {
             fixed (uint* ptr = &soundBuffers[oldestBufferInQueue])
