@@ -110,6 +110,10 @@ public unsafe class Window
     private int pauseTextHandle;
     private int savedTextHandle;
     private int loadedTextHandle;
+    private int mutedTextHandle;
+    private int unmutedTextHandle;
+
+    private int[] volumeTextHandles = new int[11];
     private const long snackbarDuration = 2000;
     private int snackbarTextHandle;
     private readonly Stopwatch snackbarTimer = new();
@@ -147,6 +151,19 @@ public unsafe class Window
         pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
         savedTextHandle = uiLayer.CreateText("saved", 15, (20 - 5) / 2, new(Rgb.white), new(Rgb.darkGray));
         loadedTextHandle = uiLayer.CreateText("loaded", 15, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
+        mutedTextHandle = uiLayer.CreateText("muted", 15, (20 - 5) / 2, new(Rgb.white), new(Rgb.darkGray));
+        unmutedTextHandle = uiLayer.CreateText("unmuted", 15, (20 - 7) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[0] = uiLayer.CreateText("volume: 0%", 15, (20 - 10) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[1] = uiLayer.CreateText("volume: 10%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[2] = uiLayer.CreateText("volume: 20%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[3] = uiLayer.CreateText("volume: 30%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[4] = uiLayer.CreateText("volume: 40%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[5] = uiLayer.CreateText("volume: 50%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[6] = uiLayer.CreateText("volume: 60%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[7] = uiLayer.CreateText("volume: 70%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[8] = uiLayer.CreateText("volume: 80%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[9] = uiLayer.CreateText("volume: 90%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        volumeTextHandles[10] = uiLayer.CreateText("volume: 100%", 15, (20 - 12) / 2, new(Rgb.white), new(Rgb.darkGray));
 
         var startDir = Directory.GetCurrentDirectory();
 
@@ -183,6 +200,9 @@ public unsafe class Window
         gameboy?.Joypad.KeyUp(key);
         picker?.OnKeyReleased(key);
     }
+
+    private float currentVolume = 1f;
+    private bool isMuted = false;
 
     private void OnKeyPressed(IKeyboard _, Key key, int __)
     {
@@ -225,6 +245,40 @@ public unsafe class Window
         else if (key is Key.Number9)
         {
             SaveSnapshot();
+        }
+        else if (key is Key.M)
+        {
+            if (isPlaying)
+            {
+                if (isMuted && currentVolume is 0)
+                {
+                    currentVolume = 1f;
+                }
+
+                isMuted = !isMuted;
+                al.SetSourceProperty(soundSource, SourceFloat.Gain, isMuted ? 0 : currentVolume);
+                ShowSnackbarText(isMuted ? mutedTextHandle : unmutedTextHandle);
+            }
+        }
+        else if (key is Key.Up)
+        {
+            if (isPlaying && !isMuted)
+            {
+                currentVolume += 0.1f;
+                currentVolume = Math.Clamp(currentVolume, 0, 1);
+                al.SetSourceProperty(soundSource, SourceFloat.Gain, currentVolume);
+                ShowSnackbarText(volumeTextHandles[(int)(currentVolume * 10)]);
+            }
+        }
+        else if (key is Key.Down)
+        {
+            if (isPlaying && !isMuted)
+            {
+                currentVolume -= 0.1f;
+                currentVolume = Math.Clamp(currentVolume, 0, 1);
+                al.SetSourceProperty(soundSource, SourceFloat.Gain, currentVolume);
+                ShowSnackbarText(volumeTextHandles[(int)(currentVolume * 10)]);
+            }
         }
 
         if (wasOpen is true)
