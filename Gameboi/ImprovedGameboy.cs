@@ -55,10 +55,16 @@ public class ImprovedGameboy
 
     public Action<byte, Rgba[]>? OnPixelRowReady;
 
+    private double speed = 1f;
+    public void SetPlaySpeed(double speed)
+    {
+        this.speed = speed;
+    }
+
     public void PlayFrame()
     {
         var ticksElapsedThisFrame = 0;
-        while (ticksElapsedThisFrame < TicksPerFrame)
+        while (ticksElapsedThisFrame < (TicksPerFrame * speed))
         {
             ticksElapsedThisFrame++;
 

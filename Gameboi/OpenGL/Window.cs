@@ -113,6 +113,7 @@ public unsafe class Window
     private int mutedTextHandle;
     private int unmutedTextHandle;
     private readonly int[] volumeTextHandles = new int[11];
+    private readonly int[] speedTextHandles = new int[7];
     private const long snackbarDuration = 2000;
     private int snackbarTextHandle;
     private readonly Stopwatch snackbarTimer = new();
@@ -163,7 +164,13 @@ public unsafe class Window
         volumeTextHandles[8] = uiLayer.CreateText("volume: 80%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
         volumeTextHandles[9] = uiLayer.CreateText("volume: 90%", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
         volumeTextHandles[10] = uiLayer.CreateText("volume: 100%", 15, (20 - 12) / 2, new(Rgb.white), new(Rgb.darkGray));
-
+        speedTextHandles[0] = uiLayer.CreateText("speed: 0.125x", 15, (20 - 13) / 2, new(Rgb.white), new(Rgb.darkGray));
+        speedTextHandles[1] = uiLayer.CreateText("speed: 0.25x", 15, (20 - 12) / 2, new(Rgb.white), new(Rgb.darkGray));
+        speedTextHandles[2] = uiLayer.CreateText("speed: 0.5x", 15, (20 - 11) / 2, new(Rgb.white), new(Rgb.darkGray));
+        speedTextHandles[3] = uiLayer.CreateText("speed: normal", 15, (20 - 13) / 2, new(Rgb.white), new(Rgb.darkGray));
+        speedTextHandles[4] = uiLayer.CreateText("speed: 2x", 15, (20 - 9) / 2, new(Rgb.white), new(Rgb.darkGray));
+        speedTextHandles[5] = uiLayer.CreateText("speed: 4x", 15, (20 - 9) / 2, new(Rgb.white), new(Rgb.darkGray));
+        speedTextHandles[6] = uiLayer.CreateText("speed: 8x", 15, (20 - 9) / 2, new(Rgb.white), new(Rgb.darkGray));
         var startDir = Directory.GetCurrentDirectory();
 
         if (File.Exists(configFile))
@@ -279,12 +286,54 @@ public unsafe class Window
                 ShowSnackbarText(volumeTextHandles[(int)(currentVolume * 10)]);
             }
         }
+        else if (key is Key.Right)
+        {
+            if (isPlaying)
+            {
+                playSpeed *= 2;
+                playSpeed = Math.Clamp(playSpeed, 0.125, 8);
+                gameboy?.SetPlaySpeed(playSpeed);
+                ShowSnackbarText(playSpeed switch
+                {
+                    0.125 => speedTextHandles[0],
+                    0.25 => speedTextHandles[1],
+                    0.5 => speedTextHandles[2],
+                    1 => speedTextHandles[3],
+                    2 => speedTextHandles[4],
+                    4 => speedTextHandles[5],
+                    8 => speedTextHandles[6],
+                    _ => throw new Exception("Invalid play speed")
+                });
+            }
+        }
+        else if (key is Key.Left)
+        {
+            if (isPlaying)
+            {
+                playSpeed *= 0.5f;
+                playSpeed = Math.Clamp(playSpeed, 0.125, 8);
+                gameboy?.SetPlaySpeed(playSpeed);
+                ShowSnackbarText(playSpeed switch
+                {
+                    0.125 => speedTextHandles[0],
+                    0.25 => speedTextHandles[1],
+                    0.5 => speedTextHandles[2],
+                    1 => speedTextHandles[3],
+                    2 => speedTextHandles[4],
+                    4 => speedTextHandles[5],
+                    8 => speedTextHandles[6],
+                    _ => throw new Exception("Invalid play speed")
+                });
+            }
+        }
 
         if (wasOpen is true)
         {
             picker?.OnKeyPressed(key);
         }
     }
+
+    private double playSpeed = 1f;
 
     private void SaveSnapshot()
     {
@@ -334,6 +383,8 @@ public unsafe class Window
     public void ChangeGame(RomCartridge game)
     {
         isPlaying = false;
+        playSpeed = 1f;
+
         SaveCurrentGame();
 
         var gameHeader = new GameHeader(game.Rom);
