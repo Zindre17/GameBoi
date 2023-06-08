@@ -112,8 +112,7 @@ public unsafe class Window
     private int loadedTextHandle;
     private int mutedTextHandle;
     private int unmutedTextHandle;
-
-    private int[] volumeTextHandles = new int[11];
+    private readonly int[] volumeTextHandles = new int[11];
     private const long snackbarDuration = 2000;
     private int snackbarTextHandle;
     private readonly Stopwatch snackbarTimer = new();
