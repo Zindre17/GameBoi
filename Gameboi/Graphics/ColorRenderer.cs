@@ -1,10 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Gameboi.Graphics;
 using Gameboi.Memory.Io;
 
-namespace Gameboi.Hardware;
+namespace Gameboi.Graphics;
 
 public class ColorRenderer : IRenderer
 {

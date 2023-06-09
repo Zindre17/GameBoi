@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using Gameboi.Cartridges;
-using Gameboi.Graphics;
 using Gameboi.Memory.Io;
 using Gameboi.Memory.Specials;
-using static Gameboi.Hardware.LcdConstants;
+using static Gameboi.Graphics.LcdConstants;
 
-namespace Gameboi.Hardware;
+namespace Gameboi.Graphics;
 
 public class Lcd
 {
