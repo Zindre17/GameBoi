@@ -237,14 +237,14 @@ internal class IoLogic
         var oldTac = new Tac(state.Tac);
         var newTac = new Tac(value);
 
-        var wasMultiplexerHigh = ImprovedTimer.IsMultiplexerHigh(oldTac.TimerSpeedSelect, state.TimerCounter);
+        var wasMultiplexerHigh = Timer.IsMultiplexerHigh(oldTac.TimerSpeedSelect, state.TimerCounter);
 
         if (oldTac.IsTimerEnabled && wasMultiplexerHigh)
         {
-            var isMultiplexerLow = ImprovedTimer.IsMultiplexerLow(newTac.TimerSpeedSelect, state.TimerCounter);
+            var isMultiplexerLow = Timer.IsMultiplexerLow(newTac.TimerSpeedSelect, state.TimerCounter);
             if (!newTac.IsTimerEnabled || isMultiplexerLow)
             {
-                ImprovedTimer.IncrementTima(state);
+                Timer.IncrementTima(state);
                 return value;
             }
         }
@@ -255,13 +255,13 @@ internal class IoLogic
     private byte DivWriteLogic(byte value)
     {
         var tac = new Tac(state.Tac);
-        var IsMultiplexerHigh = ImprovedTimer.IsMultiplexerHigh(tac.TimerSpeedSelect, state.TimerCounter);
+        var IsMultiplexerHigh = Timer.IsMultiplexerHigh(tac.TimerSpeedSelect, state.TimerCounter);
         if (IsMultiplexerHigh && tac.IsTimerEnabled)
         {
-            ImprovedTimer.IncrementTima(state);
+            Timer.IncrementTima(state);
         }
 
-        if (ImprovedTimer.IsSoundClockMultiplexerHigh(state.TimerCounter, state.IsInDoubleSpeedMode))
+        if (Timer.IsSoundClockMultiplexerHigh(state.TimerCounter, state.IsInDoubleSpeedMode))
         {
             state.SoundTicks += 1;
         }

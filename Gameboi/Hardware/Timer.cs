@@ -4,11 +4,11 @@ using Gameboi.Memory.Specials;
 
 namespace Gameboi.Hardware;
 
-public class ImprovedTimer
+public class Timer
 {
     private readonly SystemState state;
 
-    public ImprovedTimer(SystemState state) => this.state = state;
+    public Timer(SystemState state) => this.state = state;
 
     public void Tick()
     {

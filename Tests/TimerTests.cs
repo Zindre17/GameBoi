@@ -11,7 +11,7 @@ public class TimerTests
     [TestMethod]
     public void Tick()
     {
-        var timer = new ImprovedTimer(state);
+        var timer = new Gameboi.Hardware.Timer(state);
 
         state.TimerCounter = 0;
         state.Tima = 0;

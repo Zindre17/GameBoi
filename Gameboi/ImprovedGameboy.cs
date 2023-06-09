@@ -13,7 +13,7 @@ public class ImprovedGameboy
 
     // Io
     private readonly Lcd lcd;
-    private readonly ImprovedTimer timer;
+    private readonly Timer timer;
     private readonly Dma dma;
     private readonly VramDma vramDma;
     private readonly Controller joypad;
@@ -42,7 +42,7 @@ public class ImprovedGameboy
         {
             OnPixelRowReady?.Invoke(line, data);
         };
-        timer = new ImprovedTimer(state);
+        timer = new Timer(state);
         joypad = new Controller(state);
         serial = new SerialTransfer(state);
 
