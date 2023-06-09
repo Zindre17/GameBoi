@@ -8,7 +8,6 @@ namespace Gameboi;
 public class Gameboy
 {
     private readonly CPU cpu = new();
-    private readonly LCD lcd = new();
     private readonly Controller controller = new();
     private readonly DMA dma = new();
     private readonly Bus bus = new();
@@ -18,15 +17,10 @@ public class Gameboy
 
     public Gameboy()
     {
-        lcd.OnLineLoaded += (line, data) =>
-        {
-            OnPixelRowReady?.Invoke(line, data);
-        };
         bus.Connect(cpu);
         bus.Connect(timer);
         bus.Connect(controller);
         bus.Connect(dma);
-        bus.Connect(lcd);
     }
 
     public void Play()
@@ -69,7 +63,6 @@ public class Gameboy
         try
         {
             game = Cartridge.LoadGame(path);
-            lcd.UseColorScreen(game.IsColorGame);
             game.Connect(bus);
             cpu.Restart(game.IsColorGame);
             TurnOn();
