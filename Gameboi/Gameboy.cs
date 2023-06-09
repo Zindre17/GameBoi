@@ -2,7 +2,6 @@ using System;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Gameboi.Hardware;
-using Gameboi.Sound;
 
 namespace Gameboi;
 
@@ -12,7 +11,6 @@ public class Gameboy
     private readonly LCD lcd = new();
     private readonly Controller controller = new();
     private readonly DMA dma = new();
-    private readonly SPU spu = new();
     private readonly Bus bus = new();
     private readonly Timer timer = new();
 
@@ -25,7 +23,6 @@ public class Gameboy
             OnPixelRowReady?.Invoke(line, data);
         };
         bus.Connect(cpu);
-        bus.Connect(spu);
         bus.Connect(timer);
         bus.Connect(controller);
         bus.Connect(dma);
@@ -62,20 +59,6 @@ public class Gameboy
         cpu.ChangeSpeed(faster);
     }
 
-    public void ChangeVolume(bool up)
-    {
-        if (up)
-        {
-            spu.VolumeUp();
-        }
-        else
-        {
-            spu.VolumeDown();
-        }
-    }
-
-    public void ToggleMute() => spu.ToggleMute();
-
     public string? LoadGame(string path)
     {
         if (game is not null)
@@ -102,7 +85,6 @@ public class Gameboy
     public void PlayForOneFrame()
     {
         cpu.Loop(0);
-        spu.Loop(0);
     }
 
     private bool isOn = false;
