@@ -23,7 +23,7 @@ public static class TileMap
         return vram[tileMapIndex + tileMapStartAddress];
     }
 
-    public static ImprovedBackgroundAttributes GetTileAttributes(byte[] vram, bool useHighTileMapArea, int tileMapIndex)
+    public static BackgroundAttributes GetTileAttributes(byte[] vram, bool useHighTileMapArea, int tileMapIndex)
     {
         var tileMapStartAddress = useHighTileMapArea ? HighTileMapAreaStart : LowTileMapAreaStart;
 

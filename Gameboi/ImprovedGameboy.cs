@@ -12,10 +12,10 @@ public class ImprovedGameboy
     private readonly SystemState state;
 
     // Io
-    private readonly ImprovedLcd lcd;
+    private readonly Lcd lcd;
     private readonly ImprovedTimer timer;
     private readonly Dma dma;
-    private readonly OldVramDmaWithNewState vramDma;
+    private readonly VramDma vramDma;
     private readonly Joypad joypad;
     private readonly SerialTransfer serial;
     private readonly Spu spu;
@@ -35,9 +35,9 @@ public class ImprovedGameboy
         cpu.Init();
 
         dma = new Dma(state, bus);
-        vramDma = new OldVramDmaWithNewState(state, bus);
+        vramDma = new VramDma(state, bus);
 
-        lcd = new ImprovedLcd(state, vramDma);
+        lcd = new Lcd(state, vramDma);
         lcd.OnLineReady += (line, data) =>
         {
             OnPixelRowReady?.Invoke(line, data);

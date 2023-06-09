@@ -2,30 +2,7 @@ using System;
 
 namespace Gameboi.Graphics;
 
-public readonly struct ImprovedPalette
-{
-    private readonly byte value;
-
-    public ImprovedPalette(byte value) => this.value = value;
-
-    private const byte BitsPerColor = 2;
-
-    public Rgb DecodeColorIndex(int colorIndex)
-    {
-        var colorCode = (value >> (colorIndex * BitsPerColor)) & 3;
-        return colorCode switch
-        {
-            0 => Rgb.white,
-            1 => Rgb.lightGray,
-            2 => Rgb.darkGray,
-            _ => Rgb.black,
-        };
-    }
-
-    public static implicit operator ImprovedPalette(byte value) => new(value);
-}
-
-public readonly struct ImprovedColorPalette
+public readonly struct ColorPalette
 {
     private readonly byte[] paletteData;
     private const byte BitsPerColorChannel = 5;
@@ -33,7 +10,7 @@ public readonly struct ImprovedColorPalette
     private const byte ColorsPerPalette = 4;
     private const int BytesPerPalette = ColorsPerPalette * BytesPerColor;
 
-    public ImprovedColorPalette(byte[] data) => paletteData = data;
+    public ColorPalette(byte[] data) => paletteData = data;
 
     public Rgb DecodeColorIndex(int palette, int colorIndex)
     {

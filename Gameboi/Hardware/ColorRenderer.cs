@@ -19,7 +19,7 @@ public class ColorRenderer : IRenderer
     private readonly Rgba[] pixelLine = new Rgba[ScreenWidth];
     private readonly (int, int)[] backgroundAndWindowColors = new (int, int)[ScreenWidth];
 
-    public Rgba[] GeneratePixelLine(IEnumerable<(ImprovedSprite, int)> spritesOnScanLine)
+    public Rgba[] GeneratePixelLine(IEnumerable<(Sprite, int)> spritesOnScanLine)
     {
         LcdControl lcdControl = state.LcdControl;
 
@@ -40,7 +40,7 @@ public class ColorRenderer : IRenderer
             ProcessSpritesLine(spritesOnScanLine);
         }
 
-        var palette = new ImprovedColorPalette(state.BackgroundColorPaletteData);
+        var palette = new ColorPalette(state.BackgroundColorPaletteData);
 
         for (var i = 0; i < ScreenWidth; i++)
         {
@@ -143,15 +143,15 @@ public class ColorRenderer : IRenderer
         state.LcdLinesOfWindowDrawnThisFrame++;
     }
 
-    private (ImprovedTile, ImprovedBackgroundAttributes) GetTileData(bool useHighTileMapArea, bool useLowTileDataArea, int tileMapIndex)
+    private (Tile, BackgroundAttributes) GetTileData(bool useHighTileMapArea, bool useLowTileDataArea, int tileMapIndex)
     {
         var tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, useHighTileMapArea, tileMapIndex);
         var attributes = TileMap.GetTileAttributes(state.VideoRam, useHighTileMapArea, tileMapIndex);
 
-        return (ImprovedTileData.GetTileData(state.VideoRam, useLowTileDataArea, tileDataIndex, attributes.VramBankNr), attributes);
+        return (TileData.GetTileData(state.VideoRam, useLowTileDataArea, tileDataIndex, attributes.VramBankNr), attributes);
     }
 
-    private void ProcessSpritesLine(IEnumerable<(ImprovedSprite, int)> spritesOnScanLine)
+    private void ProcessSpritesLine(IEnumerable<(Sprite, int)> spritesOnScanLine)
     {
         LcdControl control = state.LcdControl;
 
@@ -165,7 +165,7 @@ public class ColorRenderer : IRenderer
                 ? (byte)(sprite.TileIndex & 0xfe)
                 : sprite.TileIndex;
             var tileAttribute = TileMap.GetTileAttributes(state.VideoRam, false, tileDataIndex);
-            var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, tileDataIndex, state.VideoRamOffset);
+            var tileData = TileData.GetSpriteTileData(state.VideoRam, tileDataIndex, state.VideoRamOffset);
 
             var tileRow = spriteTileRow;
 
@@ -178,11 +178,11 @@ public class ColorRenderer : IRenderer
             {
                 tileRow -= 8;
                 tileDataIndex = (byte)(sprite.TileIndex | 1);
-                tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, tileDataIndex, state.VideoRamOffset);
+                tileData = TileData.GetSpriteTileData(state.VideoRam, tileDataIndex, state.VideoRamOffset);
                 tileAttribute = TileMap.GetTileAttributes(state.VideoRam, false, tileDataIndex);
             }
 
-            var palette = new ImprovedColorPalette(state.ObjectColorPaletteData);
+            var palette = new ColorPalette(state.ObjectColorPaletteData);
 
             var screenStartIndex = sprite.X - TileSize;
             for (var tileColumn = 0; tileColumn < TileSize; tileColumn++)
@@ -219,7 +219,7 @@ public class ColorRenderer : IRenderer
             }
         }
 
-        bool IsSpriteVisible(ImprovedSprite sprite) => sprite.X is >= 0 and < ScreenWidth + 8;
+        bool IsSpriteVisible(Sprite sprite) => sprite.X is >= 0 and < ScreenWidth + 8;
 
         bool IsOffScreen(int screenIndex) => screenIndex is < 0 or >= ScreenWidth;
     }

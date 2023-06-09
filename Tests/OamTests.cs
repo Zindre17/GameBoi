@@ -11,7 +11,7 @@ public class OamTests
     public void GetSprites()
     {
         byte number = 0;
-        foreach (var sprite in ImprovedOam.GetSprites(oam))
+        foreach (var sprite in Oam.GetSprites(oam))
         {
             oam[number * 4] = number;
             oam[(number * 4) + 1] = (byte)(number * 2);

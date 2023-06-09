@@ -2,7 +2,7 @@ using Gameboi.Hardware;
 
 namespace Gameboi.Graphics;
 
-public class OldVramDmaWithNewState
+public class VramDma
 {
     ushort Source => (ushort)((state.HDMA1 << 8) | state.HDMA2 & 0xF0);
     ushort Destination => (ushort)(((state.HDMA3 | 0x80) << 8) | state.HDMA4 & 0xF0);
@@ -10,7 +10,7 @@ public class OldVramDmaWithNewState
     private readonly SystemState state;
     private readonly ImprovedBus bus;
 
-    public OldVramDmaWithNewState(SystemState state, ImprovedBus bus)
+    public VramDma(SystemState state, ImprovedBus bus)
     {
         this.state = state;
         this.bus = bus;

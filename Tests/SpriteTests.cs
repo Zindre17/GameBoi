@@ -10,8 +10,8 @@ public class SpriteTests
     [TestMethod]
     public void SpriteNr()
     {
-        var sprite1 = new ImprovedSprite(oam, 1);
-        var sprite2 = new ImprovedSprite(oam, 2);
+        var sprite1 = new Sprite(oam, 1);
+        var sprite2 = new Sprite(oam, 2);
 
         Assert.AreEqual(1, sprite1.SpriteNr);
         Assert.AreEqual(2, sprite2.SpriteNr);
@@ -22,8 +22,8 @@ public class SpriteTests
     {
         oam[0] = 10;
         oam[4] = 20;
-        var sprite = new ImprovedSprite(oam, 0);
-        var nextSprite = new ImprovedSprite(oam, 1);
+        var sprite = new Sprite(oam, 0);
+        var nextSprite = new Sprite(oam, 1);
 
         Assert.AreEqual(10, sprite.Y);
         Assert.AreEqual(20, nextSprite.Y);
@@ -33,7 +33,7 @@ public class SpriteTests
     public void X()
     {
         oam[1] = 11;
-        var sprite = new ImprovedSprite(oam, 0);
+        var sprite = new Sprite(oam, 0);
 
         Assert.AreEqual(11, sprite.X);
     }
@@ -42,7 +42,7 @@ public class SpriteTests
     public void TileIndex()
     {
         oam[2] = 12;
-        var sprite = new ImprovedSprite(oam, 0);
+        var sprite = new Sprite(oam, 0);
 
         Assert.AreEqual(12, sprite.TileIndex);
     }
@@ -81,7 +81,7 @@ public class SpriteTests
     public void ColorPalette()
     {
         oam[3] = 0xff;
-        var sprite = new ImprovedSprite(oam, 0);
+        var sprite = new Sprite(oam, 0);
 
         Assert.AreEqual(7, sprite.ColorPalette);
 
@@ -89,9 +89,9 @@ public class SpriteTests
         Assert.AreEqual(0, sprite.ColorPalette);
     }
 
-    private void TestFlag(Func<ImprovedSprite, bool> selector, int expectedBitPosition)
+    private void TestFlag(Func<Sprite, bool> selector, int expectedBitPosition)
     {
-        var sprite = new ImprovedSprite(oam, 0);
+        var sprite = new Sprite(oam, 0);
 
         oam[3] = 1 << 0;
         Assert.AreEqual(expectedBitPosition is 0, selector(sprite));

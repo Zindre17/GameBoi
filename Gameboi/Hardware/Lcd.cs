@@ -8,13 +8,13 @@ using static Gameboi.Hardware.LcdConstants;
 
 namespace Gameboi.Hardware;
 
-public class ImprovedLcd : IClocked
+public class Lcd
 {
     private readonly SystemState state;
-    private readonly OldVramDmaWithNewState vramDma;
+    private readonly VramDma vramDma;
     private readonly IRenderer renderer;
 
-    public ImprovedLcd(SystemState state, OldVramDmaWithNewState vramDma)
+    public Lcd(SystemState state, VramDma vramDma)
     {
         this.state = state;
         this.vramDma = vramDma;
@@ -128,12 +128,12 @@ public class ImprovedLcd : IClocked
         }
     }
 
-    private readonly List<(ImprovedSprite, int)> spritesOnScanLine = new();
+    private readonly List<(Sprite, int)> spritesOnScanLine = new();
     private void SearchOam()
     {
         spritesOnScanLine.Clear();
 
-        foreach (var sprite in ImprovedOam.GetSprites(state.Oam))
+        foreach (var sprite in Oam.GetSprites(state.Oam))
         {
             if (!SpriteShowsOnScanLine(sprite, out var spriteTileRow))
             {
@@ -151,7 +151,7 @@ public class ImprovedLcd : IClocked
     private const byte NormalSpriteHeight = 8;
     private const byte DoublelSpriteHeight = NormalSpriteHeight * 2;
 
-    private bool SpriteShowsOnScanLine(ImprovedSprite sprite, out int tileRow)
+    private bool SpriteShowsOnScanLine(Sprite sprite, out int tileRow)
     {
         var spriteStart = sprite.Y - DoublelSpriteHeight;
         if (spriteStart > 143 || sprite.Y < 0)
@@ -175,7 +175,7 @@ public class ImprovedLcd : IClocked
     private Rgba[] GetPixelLine()
     {
         var result = new Rgba[ScreenWidth];
-        var palette = new ImprovedPalette(state.BackgroundPalette);
+        var palette = new Palette(state.BackgroundPalette);
 
         for (var i = 0; i < ScreenWidth; i++)
         {

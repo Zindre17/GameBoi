@@ -2,10 +2,10 @@ using Gameboi.Extensions;
 
 namespace Gameboi.Graphics;
 
-public readonly struct ImprovedBackgroundAttributes
+public readonly struct BackgroundAttributes
 {
     private readonly byte data;
-    public ImprovedBackgroundAttributes(byte data) => this.data = data;
+    public BackgroundAttributes(byte data) => this.data = data;
 
     public int PalletNr => data & 7;
     public int VramBankNr => (data >> 3) & 1;

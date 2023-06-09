@@ -8,7 +8,7 @@ namespace Gameboi.Hardware;
 
 public interface IRenderer
 {
-    Rgba[] GeneratePixelLine(IEnumerable<(ImprovedSprite, int)> sprites);
+    Rgba[] GeneratePixelLine(IEnumerable<(Sprite, int)> sprites);
 }
 
 public class Renderer : IRenderer
@@ -24,7 +24,7 @@ public class Renderer : IRenderer
     private readonly Rgba[] pixelLine = new Rgba[ScreenWidth];
     private readonly int[] backgroundAndWindowColors = new int[ScreenWidth];
 
-    public Rgba[] GeneratePixelLine(IEnumerable<(ImprovedSprite, int)> spritesOnScanLine)
+    public Rgba[] GeneratePixelLine(IEnumerable<(Sprite, int)> spritesOnScanLine)
     {
         LcdControl lcdControl = state.LcdControl;
 
@@ -45,7 +45,7 @@ public class Renderer : IRenderer
             ProcessSpritesLine(spritesOnScanLine);
         }
 
-        var palette = new ImprovedPalette(state.BackgroundPalette);
+        var palette = new Palette(state.BackgroundPalette);
 
         for (var i = 0; i < ScreenWidth; i++)
         {
@@ -128,13 +128,13 @@ public class Renderer : IRenderer
         state.LcdLinesOfWindowDrawnThisFrame++;
     }
 
-    private ImprovedTile GetTileData(bool useHighTileMapArea, bool useLowTileDataArea, int tileMapIndex)
+    private Tile GetTileData(bool useHighTileMapArea, bool useLowTileDataArea, int tileMapIndex)
     {
         var tileDataIndex = TileMap.GetTileDataIndex(state.VideoRam, useHighTileMapArea, tileMapIndex);
-        return ImprovedTileData.GetTileData(state.VideoRam, useLowTileDataArea, tileDataIndex);
+        return TileData.GetTileData(state.VideoRam, useLowTileDataArea, tileDataIndex);
     }
 
-    private void ProcessSpritesLine(IEnumerable<(ImprovedSprite, int)> spritesOnScanLine)
+    private void ProcessSpritesLine(IEnumerable<(Sprite, int)> spritesOnScanLine)
     {
         LcdControl control = state.LcdControl;
 
@@ -147,7 +147,7 @@ public class Renderer : IRenderer
                 continue;
             }
 
-            var tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, control.IsDoubleSpriteSize
+            var tileData = TileData.GetSpriteTileData(state.VideoRam, control.IsDoubleSpriteSize
                 ? (byte)(sprite.TileIndex & 0xfe)
                 : sprite.TileIndex);
 
@@ -155,7 +155,7 @@ public class Renderer : IRenderer
             if (tileRow > 7)
             {
                 tileRow -= 8;
-                tileData = ImprovedTileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1));
+                tileData = TileData.GetSpriteTileData(state.VideoRam, (byte)(sprite.TileIndex | 1));
             }
 
             if (sprite.Yflip)
@@ -163,7 +163,7 @@ public class Renderer : IRenderer
                 tileRow = 7 - tileRow;
             }
 
-            ImprovedPalette palette = sprite.UsePalette1
+            Palette palette = sprite.UsePalette1
                 ? state.ObjectPalette1
                 : state.ObjectPalette0;
 
@@ -194,7 +194,7 @@ public class Renderer : IRenderer
             }
         }
 
-        bool IsSpriteVisible(ImprovedSprite sprite) => sprite.X is >= 0 and < ScreenWidth + 8;
+        bool IsSpriteVisible(Sprite sprite) => sprite.X is >= 0 and < ScreenWidth + 8;
 
         bool IsOffScreen(int screenIndex) => screenIndex is < 0 or >= ScreenWidth;
     }

@@ -10,7 +10,7 @@ namespace Tests;
 public class ImprovedLcdTests
 {
     private readonly SystemState state;
-    private readonly ImprovedLcd lcd;
+    private readonly Lcd lcd;
 
     public ImprovedLcdTests()
     {
@@ -18,7 +18,7 @@ public class ImprovedLcdTests
         var fakeGame = new byte[0x150];
         state.ChangeGame(fakeGame, fakeGame);
         var bus = new ImprovedBus(state, new NoMemoryBankController(state));
-        var vramdma = new OldVramDmaWithNewState(state, bus);
+        var vramdma = new VramDma(state, bus);
         lcd = new(state, vramdma);
         state.Reset();
     }

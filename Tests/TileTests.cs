@@ -14,7 +14,7 @@ public class TileTests
         data[0] = 0x3c;
         data[1] = 0x7e;
 
-        var tile1 = new ImprovedTile(data, 0);
+        var tile1 = new Tile(data, 0);
 
         Assert.AreEqual(0b00, tile1.GetColorIndex(0, 0));
         Assert.AreEqual(0b10, tile1.GetColorIndex(0, 1));
@@ -29,7 +29,7 @@ public class TileTests
         data[16] = 0b1011_1010;
         data[17] = 0b0101_1101;
 
-        var tile2 = new ImprovedTile(data, 16);
+        var tile2 = new Tile(data, 16);
 
         Assert.AreEqual(0b01, tile2.GetColorIndex(0, 0));
         Assert.AreEqual(0b10, tile2.GetColorIndex(0, 1));

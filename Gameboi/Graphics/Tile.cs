@@ -1,11 +1,11 @@
 namespace Gameboi.Graphics;
 
-public readonly struct ImprovedTile
+public readonly struct Tile
 {
     private readonly byte[] data;
     private readonly int startAddress;
 
-    public ImprovedTile(byte[] data, int startAddress)
+    public Tile(byte[] data, int startAddress)
     {
         this.data = data;
         this.startAddress = startAddress;

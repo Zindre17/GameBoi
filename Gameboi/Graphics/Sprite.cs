@@ -2,7 +2,7 @@ using Gameboi.Extensions;
 
 namespace Gameboi.Graphics;
 
-public readonly struct ImprovedSprite
+public readonly struct Sprite
 {
     private const byte SpriteSizeInBytes = 4;
 
@@ -10,7 +10,7 @@ public readonly struct ImprovedSprite
     private readonly int startAddress;
     private readonly int spriteNr;
 
-    public ImprovedSprite(byte[] oam, int spriteNr)
+    public Sprite(byte[] oam, int spriteNr)
     {
         this.oam = oam;
         this.spriteNr = spriteNr;
