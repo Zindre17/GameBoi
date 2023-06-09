@@ -1,9 +1,10 @@
+using Gameboi.Io;
 using Gameboi.Memory.Specials;
 using Silk.NET.Input;
 
 namespace Gameboi.Hardware;
 
-public class Joypad
+public class Controller
 {
     private readonly SystemState state;
 
@@ -19,7 +20,7 @@ public class Joypad
     private byte pad = 0xff;
     private byte buttons = 0xff;
 
-    public Joypad(SystemState state)
+    public Controller(SystemState state)
     {
         this.state = state;
     }
@@ -58,12 +59,12 @@ public class Joypad
 
     public void CheckInputs()
     {
-        var p1 = new ImprovedP1(state.P1);
-        if (p1.P14 == p1.P15) return;
+        var controller = new ControllerState(state.P1);
+        if (controller.IsInPadMode == controller.IsInButtonMode) return;
 
-        var currentPresses = p1.P15 ? buttons : pad;
+        var currentPresses = controller.IsInButtonMode ? buttons : pad;
 
-        if (p1.CurrentPresses != currentPresses)
+        if (controller.CurrentPresses != currentPresses)
         {
             state.P1 = currentPresses;
             var interruptRequests = new InterruptState(state.InterruptFlags);

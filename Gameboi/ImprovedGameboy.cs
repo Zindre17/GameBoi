@@ -16,7 +16,7 @@ public class ImprovedGameboy
     private readonly ImprovedTimer timer;
     private readonly Dma dma;
     private readonly VramDma vramDma;
-    private readonly Joypad joypad;
+    private readonly Controller joypad;
     private readonly SerialTransfer serial;
     private readonly Spu spu;
 
@@ -43,7 +43,7 @@ public class ImprovedGameboy
             OnPixelRowReady?.Invoke(line, data);
         };
         timer = new ImprovedTimer(state);
-        joypad = new Joypad(state);
+        joypad = new Controller(state);
         serial = new SerialTransfer(state);
 
         spu = new Spu(state);
@@ -51,7 +51,7 @@ public class ImprovedGameboy
 
     private const int TicksPerFrame = 70224;
 
-    public Joypad Joypad => joypad;
+    public Controller Controller => joypad;
 
     public Action<byte, Rgba[]>? OnPixelRowReady;
 

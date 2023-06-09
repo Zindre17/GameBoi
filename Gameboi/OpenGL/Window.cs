@@ -203,7 +203,7 @@ public unsafe class Window
 
     private void OnKeyReleased(IKeyboard _, Key key, int __)
     {
-        gameboy?.Joypad.KeyUp(key);
+        gameboy?.Controller.KeyUp(key);
         picker?.OnKeyReleased(key);
     }
 
@@ -212,7 +212,7 @@ public unsafe class Window
 
     private void OnKeyPressed(IKeyboard _, Key key, int __)
     {
-        gameboy?.Joypad.KeyDown(key);
+        gameboy?.Controller.KeyDown(key);
 
         var wasOpen = picker?.IsOpen;
 
