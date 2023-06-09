@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Gameboi.Cartridges;
-using Gameboi.Memory.Io;
+using Gameboi.Io;
 using Gameboi.Memory.Specials;
 using static Gameboi.Graphics.LcdConstants;
 

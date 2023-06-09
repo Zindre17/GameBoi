@@ -1,7 +1,7 @@
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Gameboi.Hardware;
-using Gameboi.Memory.Io;
+using Gameboi.Io;
 using static Gameboi.Graphics.LcdConstants;
 
 namespace Tests;

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Gameboi.Memory.Io;
+using Gameboi.Io;
 
 namespace Gameboi.Graphics;
 

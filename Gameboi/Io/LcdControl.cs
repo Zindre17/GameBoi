@@ -1,6 +1,6 @@
 using Gameboi.Extensions;
 
-namespace Gameboi.Memory.Io;
+namespace Gameboi.Io;
 
 public readonly struct LcdControl
 {
