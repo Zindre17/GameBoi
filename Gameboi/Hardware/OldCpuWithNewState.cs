@@ -173,38 +173,6 @@ public class OldCpuWithNewState
         state.TicksLeftOfInstruction += 20;
     }
 
-    public void RequestInterrupt(InterruptType type)
-    {
-        switch (type)
-        {
-            case InterruptType.VBlank:
-                {
-                    state.InterruptFlags = IF.WithVerticalBlankUnset();
-                    break;
-                }
-            case InterruptType.LCDC:
-                {
-                    state.InterruptFlags = IF.WithLcdStatusUnset();
-                    break;
-                }
-            case InterruptType.Timer:
-                {
-                    state.InterruptFlags = IF.WithTimerUnset();
-                    break;
-                }
-            case InterruptType.Link:
-                {
-                    state.InterruptFlags = IF.WithSerialPortUnset();
-                    break;
-                }
-            case InterruptType.Joypad:
-                {
-                    state.InterruptFlags = IF.WithJoypadUnset();
-                    break;
-                }
-        }
-    }
-
     #endregion
 
 
