@@ -9,14 +9,12 @@ public class Gameboy
 {
     private readonly CPU cpu = new();
     private readonly Bus bus = new();
-    private readonly Timer timer = new();
 
     private Cartridge? game;
 
     public Gameboy()
     {
         bus.Connect(cpu);
-        bus.Connect(timer);
     }
 
     public void Play()
