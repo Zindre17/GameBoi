@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+
 namespace Gameboi.Cartridges;
 
 public class GameHeader
