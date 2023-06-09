@@ -1,4 +1,5 @@
 using Gameboi.Extensions;
+using Gameboi.Io;
 using Gameboi.Memory.Io;
 using Gameboi.Memory.Specials;
 using static Gameboi.IoIndices;

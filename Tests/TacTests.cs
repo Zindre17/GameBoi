@@ -1,4 +1,4 @@
-using Gameboi.Memory.Io;
+using Gameboi.Io;
 
 namespace Tests;
 

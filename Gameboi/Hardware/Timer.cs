@@ -1,5 +1,5 @@
 using Gameboi.Extensions;
-using Gameboi.Memory.Io;
+using Gameboi.Io;
 using Gameboi.Memory.Specials;
 
 namespace Gameboi.Hardware;
