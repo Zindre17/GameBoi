@@ -1,15 +1,15 @@
 using System;
 using Gameboi.Extensions;
 
-namespace Gameboi.Sound.channels;
+namespace Gameboi.Sound;
 
-public class ImprovedChannel3
+public class Channel3
 {
     private readonly SystemState state;
 
     private int FrequencyData => state.NR33 | ((state.NR34 & 0x07) << 8);
 
-    public ImprovedChannel3(SystemState state)
+    public Channel3(SystemState state)
     {
         this.state = state;
     }
@@ -43,7 +43,7 @@ public class ImprovedChannel3
     public short[] GetNextSamples(int sampleCount)
     {
         var samples = new short[sampleCount];
-        var nr52 = new SimpleNr52(state.NR52);
+        var nr52 = new Nr52(state.NR52);
         if (!nr52.IsChannelOn(2) || !state.NR30.IsBitSet(7))
         {
             return samples;

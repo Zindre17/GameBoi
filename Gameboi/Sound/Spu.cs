@@ -1,17 +1,16 @@
 using System;
-using Gameboi.Sound.channels;
 
 namespace Gameboi.Sound;
 
-public class OldSpuWithNewState
+public class Spu
 {
-    private readonly ImprovedChannel1 channel1;
-    private readonly ImprovedChannel2 channel2;
-    private readonly ImprovedChannel3 channel3;
-    private readonly ImprovedChannel4 channel4;
+    private readonly Channel1 channel1;
+    private readonly Channel2 channel2;
+    private readonly Channel3 channel3;
+    private readonly Channel4 channel4;
     private readonly SystemState state;
 
-    public OldSpuWithNewState(SystemState state)
+    public Spu(SystemState state)
     {
         this.state = state;
         channel1 = new(state);
@@ -44,7 +43,7 @@ public class OldSpuWithNewState
 
     private void AddNextSampleBatch(int sampleCount)
     {
-        var nr52 = new SimpleNr52(state.NR52);
+        var nr52 = new Nr52(state.NR52);
         if (!nr52.IsSoundOn)
         {
             return;
@@ -57,11 +56,11 @@ public class OldSpuWithNewState
 
         var samples = new short[sampleCount * 2];
 
-        var nr50 = new SimpleNr50(state.NR50);
+        var nr50 = new Nr50(state.NR50);
         var out1volume = nr50.VolumeOut1 / 7d;
         var out2volume = nr50.VolumeOut2 / 7d;
 
-        var nr51 = new SimpleNr51(state.NR51);
+        var nr51 = new Nr51(state.NR51);
 
         int index = 0;
         for (int i = 0; i < sampleCount; i++)

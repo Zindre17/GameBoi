@@ -1,13 +1,13 @@
 using System;
 using Gameboi.Extensions;
 
-namespace Gameboi.Sound.channels;
+namespace Gameboi.Sound;
 
-public class ImprovedChannel4
+public class Channel4
 {
     private readonly SystemState state;
 
-    public ImprovedChannel4(SystemState state)
+    public Channel4(SystemState state)
     {
         this.state = state;
     }
@@ -17,7 +17,7 @@ public class ImprovedChannel4
         if (state.PreviousSoundTicks.IsBitSet(2)
             && !state.SoundTicks.IsBitSet(2))
         {
-            var envelope = new SimpleEnvelope(state.Channel4Envelope);
+            var envelope = new Envelope(state.Channel4Envelope);
             if (envelope.IsActive)
             {
                 state.TicksSinceLastChannel4Envelope++;
@@ -56,12 +56,12 @@ public class ImprovedChannel4
     {
         var samples = new short[sampleCount];
 
-        var nr52 = new SimpleNr52(state.NR52);
+        var nr52 = new Nr52(state.NR52);
         if (!nr52.IsChannelOn(3))
         {
             return samples;
         }
-        var nr43 = new SimpleNr43(state.NR43);
+        var nr43 = new Nr43(state.NR43);
         var divider = nr43.ClockDivider;
         if ((int)divider is 0)
         {
@@ -71,7 +71,7 @@ public class ImprovedChannel4
         var frequency = 0x40_000 / (divider * (1 << nr43.ClockShift));
         var lfsrPerSample = frequency / Statics.WavSettings.SAMPLE_RATE;
 
-        var volume = new SimpleEnvelope(state.Channel4Envelope).InitialVolume;
+        var volume = new Envelope(state.Channel4Envelope).InitialVolume;
         var remainingShifts = lfsrPerSample;
         var sample = volume * (state.Lfsr & 1);
         for (var i = 0; i < sampleCount; i++)

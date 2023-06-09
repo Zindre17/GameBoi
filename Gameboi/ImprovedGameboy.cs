@@ -18,7 +18,7 @@ public class ImprovedGameboy
     private readonly OldVramDmaWithNewState vramDma;
     private readonly Joypad joypad;
     private readonly SerialTransfer serial;
-    private readonly OldSpuWithNewState spu;
+    private readonly Spu spu;
 
     // cpu and bus
     private readonly OldCpuWithNewState cpu;
@@ -46,7 +46,7 @@ public class ImprovedGameboy
         joypad = new Joypad(state);
         serial = new SerialTransfer(state);
 
-        spu = new OldSpuWithNewState(state);
+        spu = new Spu(state);
     }
 
     private const int TicksPerFrame = 70224;

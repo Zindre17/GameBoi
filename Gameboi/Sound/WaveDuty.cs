@@ -1,10 +1,10 @@
 namespace Gameboi.Sound;
 
-public readonly struct SimpleWaveDuty
+public readonly struct WaveDuty
 {
     private readonly byte data;
 
-    public SimpleWaveDuty(byte data) => this.data = data;
+    public WaveDuty(byte data) => this.data = data;
 
     private int Duty => data >> 6;
     private int SoundLength => data & 0x3F;

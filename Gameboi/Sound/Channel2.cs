@@ -1,40 +1,28 @@
 using System;
 using Gameboi.Extensions;
 
-namespace Gameboi.Sound.channels;
+namespace Gameboi.Sound;
 
-public class ImprovedChannel1
+public class Channel2
 {
     private readonly SystemState state;
 
-    public ImprovedChannel1(SystemState state) => this.state = state;
+    public Channel2(SystemState state) => this.state = state;
 
-    public int FrequencyData => state.NR13 | ((state.NR14 & 0x07) << 8);
+    public int FrequencyData => state.NR23 | ((state.NR24 & 0x07) << 8);
 
     public void Tick()
     {
-        if (state.PreviousSoundTicks.IsBitSet(1)
-            && !state.SoundTicks.IsBitSet(1))
-        {
-            var sweep = new SimpleSweep(state);
-            state.TicksSinceLastSweep++;
-            if (state.TicksSinceLastSweep >= sweep.SweepTime)
-            {
-                state.TicksSinceLastSweep = 0;
-                sweep.UpdateFrequency();
-            }
-        }
-
         if (state.PreviousSoundTicks.IsBitSet(2)
             && !state.SoundTicks.IsBitSet(2))
         {
-            var envelope = new SimpleEnvelope(state.Channel1Envelope);
+            var envelope = new Envelope(state.Channel2Envelope);
             if (envelope.IsActive)
             {
-                state.TicksSinceLastChannel1Envelope++;
-                if (state.TicksSinceLastChannel1Envelope >= envelope.StepLength)
+                state.TicksSinceLastChannel2Envelope++;
+                if (state.TicksSinceLastChannel2Envelope >= envelope.StepLength)
                 {
-                    state.TicksSinceLastChannel1Envelope = 0;
+                    state.TicksSinceLastChannel2Envelope = 0;
                     var currentVolume = envelope.InitialVolume;
                     if (envelope.IsIncrease)
                     {
@@ -46,19 +34,19 @@ public class ImprovedChannel1
                         currentVolume -= 1;
                         currentVolume = Math.Max(currentVolume, 0);
                     }
-                    state.Channel1Envelope = (byte)((currentVolume << 4) | (state.Channel1Envelope & 0x0F));
+                    state.Channel2Envelope = (byte)((currentVolume << 4) | (state.Channel2Envelope & 0x0F));
                 }
             }
         }
 
-        if (state.Channel1Duration > 0
+        if (state.Channel2Duration > 0
             && state.PreviousSoundTicks.IsBitSet(0)
             && !state.SoundTicks.IsBitSet(0))
         {
-            state.Channel1Duration -= 1;
-            if (state.Channel1Duration is 0)
+            state.Channel2Duration -= 1;
+            if (state.Channel2Duration is 0)
             {
-                state.NR52 = (byte)(state.NR52 & 0xFE);
+                state.NR52 = (byte)(state.NR52 & 0b1111_1101);
             }
         }
     }
@@ -67,8 +55,8 @@ public class ImprovedChannel1
     public short[] GetNextSamples(int count)
     {
         short[] samples = new short[count];
-        var nr52 = new SimpleNr52(state.NR52);
-        if (!nr52.IsChannelOn(0))
+        var nr52 = new Nr52(state.NR52);
+        if (!nr52.IsChannelOn(1))
         {
             return samples;
         }
@@ -76,10 +64,10 @@ public class ImprovedChannel1
         var frequency = 0x20000 / (0x800 - FrequencyData);
         var samplesPerPeriod = Math.Max((int)(Statics.WavSettings.SAMPLE_RATE / frequency), 2);
 
-        var waveDuty = new SimpleWaveDuty(state.NR11);
+        var waveDuty = new WaveDuty(state.NR21);
         var lowToHigh = Math.Max(1, (int)(samplesPerPeriod * waveDuty.GetDuty()));
 
-        var envelope = new SimpleEnvelope(state.Channel1Envelope);
+        var envelope = new Envelope(state.Channel2Envelope);
         var volume = envelope.InitialVolume;
 
         sampleNr %= samplesPerPeriod;

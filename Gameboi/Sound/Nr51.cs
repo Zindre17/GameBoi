@@ -2,11 +2,11 @@ using Gameboi.Extensions;
 
 namespace Gameboi.Sound;
 
-public readonly struct SimpleNr51
+public readonly struct Nr51
 {
     private readonly byte data;
 
-    public SimpleNr51(byte data) => this.data = data;
+    public Nr51(byte data) => this.data = data;
 
     public bool Is1Out1 => data.IsBitSet(0);
     public bool Is2Out1 => data.IsBitSet(1);

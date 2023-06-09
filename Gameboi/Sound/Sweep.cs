@@ -2,11 +2,11 @@ using Gameboi.Extensions;
 
 namespace Gameboi.Sound;
 
-public readonly struct SimpleSweep
+public readonly struct Sweep
 {
     private readonly SystemState state;
 
-    public SimpleSweep(SystemState state) => this.state = state;
+    public Sweep(SystemState state) => this.state = state;
 
     private byte Data => state.NR10;
 
