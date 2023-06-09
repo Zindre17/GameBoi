@@ -7,9 +7,9 @@ namespace Gameboi.Hardware;
 public class InstructionSet
 {
     private readonly SystemState state;
-    private readonly ImprovedBus bus;
+    private readonly Bus bus;
 
-    public InstructionSet(SystemState state, ImprovedBus bus)
+    public InstructionSet(SystemState state, Bus bus)
     {
         this.state = state;
         this.bus = bus;

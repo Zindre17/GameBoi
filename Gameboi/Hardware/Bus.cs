@@ -3,13 +3,13 @@ using Gameboi.Cartridges;
 
 namespace Gameboi.Hardware;
 
-public class ImprovedBus
+public class Bus
 {
     private readonly SystemState state;
     private readonly IoLogic ioLogic;
     private readonly IMemoryBankControllerLogic mbc;
 
-    public ImprovedBus(SystemState state, IMemoryBankControllerLogic mbcLogic)
+    public Bus(SystemState state, IMemoryBankControllerLogic mbcLogic)
     {
         this.state = state;
         ioLogic = new(state);

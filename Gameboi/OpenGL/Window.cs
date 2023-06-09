@@ -26,7 +26,7 @@ public unsafe class Window
     private StartScreen? startScreen;
     private FilePicker? picker;
 
-    private ImprovedGameboy? gameboy;
+    private Gameboy? gameboy;
     private readonly SystemState state = new();
     private bool hasStartedAGame;
 
@@ -412,7 +412,7 @@ public unsafe class Window
 
 
         var mbcLogic = MbcFactory.GetMbcLogic(game.Type, state);
-        gameboy = new ImprovedGameboy(state, mbcLogic);
+        gameboy = new Gameboy(state, mbcLogic);
         gameboy.OnPixelRowReady += UploadPixelRow;
 
         isPlaying = true;

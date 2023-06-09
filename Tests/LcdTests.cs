@@ -17,7 +17,7 @@ public class ImprovedLcdTests
         state = new();
         var fakeGame = new byte[0x150];
         state.ChangeGame(fakeGame, fakeGame);
-        var bus = new ImprovedBus(state, new NoMemoryBankController(state));
+        var bus = new Bus(state, new NoMemoryBankController(state));
         var vramdma = new VramDma(state, bus);
         lcd = new(state, vramdma);
         state.Reset();

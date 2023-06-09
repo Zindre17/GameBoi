@@ -5,10 +5,10 @@ using static Gameboi.Statics.InterruptAddresses;
 
 namespace Gameboi.Hardware;
 
-public class OldCpuWithNewState
+public class Cpu
 {
     private readonly SystemState state;
-    private readonly ImprovedBus bus;
+    private readonly Bus bus;
 
     private InterruptState IE => new(state.InterruptEnableRegister);
     private InterruptState IF => new(state.InterruptFlags);
@@ -688,7 +688,7 @@ public class OldCpuWithNewState
     #endregion
 
 
-    public OldCpuWithNewState(SystemState state, ImprovedBus bus)
+    public Cpu(SystemState state, Bus bus)
     {
         this.state = state;
         this.bus = bus;

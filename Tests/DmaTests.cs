@@ -9,12 +9,12 @@ public class DmaTests
 {
     private readonly SystemState state = new();
     private readonly Dma dma;
-    private readonly ImprovedBus bus;
+    private readonly Bus bus;
 
 
     public DmaTests()
     {
-        bus = new ImprovedBus(state, new NoMemoryBankController(state));
+        bus = new Bus(state, new NoMemoryBankController(state));
         dma = new(state, bus);
     }
 

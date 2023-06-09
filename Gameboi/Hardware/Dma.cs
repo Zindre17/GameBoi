@@ -3,13 +3,13 @@ namespace Gameboi.Hardware;
 public class Dma
 {
     private readonly SystemState state;
-    private readonly ImprovedBus bus;
+    private readonly Bus bus;
 
     private const byte ByteTransferCount = 0xa0;
     private const byte TicksPerTransfer = 4;
     private const int DmaDurationInTicks = ByteTransferCount * TicksPerTransfer;
 
-    public Dma(SystemState state, ImprovedBus bus)
+    public Dma(SystemState state, Bus bus)
     {
         this.state = state;
         this.bus = bus;

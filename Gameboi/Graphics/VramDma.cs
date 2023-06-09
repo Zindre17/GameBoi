@@ -8,9 +8,9 @@ public class VramDma
     ushort Destination => (ushort)(((state.HDMA3 | 0x80) << 8) | state.HDMA4 & 0xF0);
 
     private readonly SystemState state;
-    private readonly ImprovedBus bus;
+    private readonly Bus bus;
 
-    public VramDma(SystemState state, ImprovedBus bus)
+    public VramDma(SystemState state, Bus bus)
     {
         this.state = state;
         this.bus = bus;

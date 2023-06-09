@@ -3,13 +3,13 @@ using Gameboi.Memory.Specials;
 
 namespace Gameboi.Hardware;
 
-public class ImprovedCpu
+public class ExperimentalCpu
 {
     private readonly SystemState state;
-    private readonly ImprovedBus bus;
+    private readonly Bus bus;
     private readonly InstructionSet instructionSet;
 
-    public ImprovedCpu(SystemState state, ImprovedBus bus, InstructionSet instructionSet)
+    public ExperimentalCpu(SystemState state, Bus bus, InstructionSet instructionSet)
     {
         this.state = state;
         this.bus = bus;

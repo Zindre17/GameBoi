@@ -10,7 +10,7 @@ public class VideoRamBankingTests
     public void Banking()
     {
         var state = new SystemState();
-        var bus = new ImprovedBus(state, new NoMemoryBankController(state));
+        var bus = new Bus(state, new NoMemoryBankController(state));
 
         bus.Write(0x8000, 1);
         bus.Write(0xff4f, 1);

@@ -8,7 +8,7 @@ namespace Tests;
 public class BusTests
 {
     private readonly SystemState state;
-    private readonly ImprovedBus bus;
+    private readonly Bus bus;
 
     public BusTests()
     {

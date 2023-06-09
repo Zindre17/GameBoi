@@ -6,7 +6,7 @@ using Gameboi.Sound;
 
 namespace Gameboi;
 
-public class ImprovedGameboy
+public class Gameboy
 {
     // State
     private readonly SystemState state;
@@ -21,17 +21,17 @@ public class ImprovedGameboy
     private readonly Spu spu;
 
     // cpu and bus
-    private readonly OldCpuWithNewState cpu;
+    private readonly Cpu cpu;
 
-    public ImprovedGameboy(
+    public Gameboy(
         SystemState state,
         IMemoryBankControllerLogic mbc
         )
     {
         this.state = state;
-        var bus = new ImprovedBus(state, mbc);
+        var bus = new Bus(state, mbc);
 
-        cpu = new OldCpuWithNewState(state, bus);
+        cpu = new Cpu(state, bus);
         cpu.Init();
 
         dma = new Dma(state, bus);
