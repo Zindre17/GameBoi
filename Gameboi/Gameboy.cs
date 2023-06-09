@@ -8,7 +8,6 @@ namespace Gameboi;
 public class Gameboy
 {
     private readonly CPU cpu = new();
-    private readonly Controller controller = new();
     private readonly DMA dma = new();
     private readonly Bus bus = new();
     private readonly Timer timer = new();
@@ -19,7 +18,6 @@ public class Gameboy
     {
         bus.Connect(cpu);
         bus.Connect(timer);
-        bus.Connect(controller);
         bus.Connect(dma);
     }
 
@@ -72,8 +70,6 @@ public class Gameboy
         catch (Exception) { }
         return null;
     }
-
-    public Controller Controller => controller;
 
     public void PlayForOneFrame()
     {
