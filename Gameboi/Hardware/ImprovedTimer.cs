@@ -4,7 +4,7 @@ using Gameboi.Memory.Specials;
 
 namespace Gameboi.Hardware;
 
-public class ImprovedTimer : IClocked
+public class ImprovedTimer
 {
     private readonly SystemState state;
 
