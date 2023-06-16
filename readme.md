@@ -2,10 +2,10 @@
 This project is an attempt at making a gameboy emulator(in C#), and is also my first attempt at making any emulator.
 
 ## Compatability
-It is only runnable on Windows as of now, due to using WinForms for creating UI. I Plan on updating to MAUI when that becomes available. Then it will also be runnable on Mac and Linux. 
+It should work on Windows, linux and macOS. It has been tested on Windows11 and Ubuntu 22.04.2 LTS.
 
 ## Issues
-Some games does not function correctly. Of games tested, Pokemon Yellow have some sprite issues, and I suspect it has something to do with my MBC5-implementation.
+Some games does not function correctly.
 
 ## Controls
 * __ESC -__ Load game ROM
@@ -16,29 +16,35 @@ Some games does not function correctly. Of games tested, Pokemon Yellow have som
 * __Rigth Shift -__ Select-button
 
 ### Extras
-* __1 -__ Toggle background on/off
-* __2 -__ Toggle window on/off
-* __3 -__ Toggle sprites on/off
 * __Right Arrow -__ Speed up (x2 per step, with a max of x8)
-* __Left Arrow -__ Slow down (/2 per step, with a min of x0.25)
+* __Left Arrow -__ Slow down (/2 per step, with a min of x0.125)
+* __Up Arrow -__ Volume up by 10%
+* __Down Arrow -__ Volume down by 10%
+* __M -__ Toggle mute sound
+* __Space -__ Toggle pause emulation
 
 
 ## Future development plans
 _These are not ordered by priority!_
+Emulator 
 - [x] Expand to GBC
 - [x] Fix slow animations bug
-- [ ] Implement RTC registers
-- [ ] Implement full state snapshots
-- [ ] Fix MBC issues
+- [x] Implement RTC registers (Done, but not fully. They just return the current time.)
+- [x] Implement full state snapshots
+- [x] Use cross-platform rendering of some sorts (OpenGL)
+- [x] Cross platform sound
+- [x] Improve Sound
+- [ ] Improve performance
+- [ ] Add Link Cable functionality (locally and over internet)
+- [ ] Add Gameboy color's color mode for original Gameboy games (switchable preset palettes)
+- [ ] Add configurable controls
+
+Game specific issues
   - [x] Fix Pokemon Yellow rendering issues (black boxes)
   - [x] Fix Link's Awakening save-slots all maxed out on startup
-  - [ ] Fix Pokemon Trading Card Game not starting
+  - [x] Fix Pokemon Trading Card Game not starting
   - [ ] Fix Pokemon Crystal rendering issues after intro + crash after new game initiation
-  - [ ] Fix Link's Awakening background displays wrong tiles after dialog boxes dissapear
-- [ ] ~~Switch to MAUI~~ Use cross-platform rendering of some sorts
-- [ ] Improve performance
-- [ ] Improve Sound
-- [ ] Add Link Cable functionality (locally and over internet)
+  - [x] Fix Link's Awakening background displays wrong tiles after dialog boxes dissapear
 
 
 ## Information sources and other useful links
