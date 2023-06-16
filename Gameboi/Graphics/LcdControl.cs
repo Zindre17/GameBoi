@@ -1,6 +1,6 @@
 using Gameboi.Extensions;
 
-namespace Gameboi.Io;
+namespace Gameboi.Graphics;
 
 public readonly struct LcdControl
 {
