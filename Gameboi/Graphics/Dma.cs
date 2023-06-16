@@ -1,4 +1,6 @@
-namespace Gameboi.Hardware;
+using Gameboi.Hardware;
+
+namespace Gameboi.Graphics;
 
 public class Dma
 {
