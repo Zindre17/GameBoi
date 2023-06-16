@@ -2,7 +2,7 @@ using Gameboi.Io;
 using Gameboi.Processor;
 using Silk.NET.Input;
 
-namespace Gameboi.Hardware;
+namespace Gameboi.Controls;
 
 public class Controller
 {

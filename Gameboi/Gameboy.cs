@@ -1,5 +1,6 @@
 using System;
 using Gameboi.Cartridges;
+using Gameboi.Controls;
 using Gameboi.Graphics;
 using Gameboi.Hardware;
 using Gameboi.Processor;

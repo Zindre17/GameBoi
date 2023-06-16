@@ -1,6 +1,6 @@
 using Gameboi.Extensions;
 
-namespace Gameboi.Io;
+namespace Gameboi.Controls;
 
 // AKA: P1
 public readonly struct ControllerState
