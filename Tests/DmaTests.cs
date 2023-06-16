@@ -1,6 +1,5 @@
-using Gameboi;
 using Gameboi.Cartridges;
-using Gameboi.Hardware;
+using Gameboi.Graphics;
 
 namespace Tests;
 

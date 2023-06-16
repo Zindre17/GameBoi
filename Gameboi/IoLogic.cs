@@ -4,7 +4,7 @@ using Gameboi.Processor;
 using Gameboi.Timing;
 using static Gameboi.IoIndices;
 
-namespace Gameboi.Hardware;
+namespace Gameboi;
 
 internal class IoLogic
 {

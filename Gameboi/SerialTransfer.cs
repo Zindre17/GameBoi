@@ -1,6 +1,6 @@
 using Gameboi.Processor;
 
-namespace Gameboi.Hardware;
+namespace Gameboi;
 
 public class SerialTransfer
 {

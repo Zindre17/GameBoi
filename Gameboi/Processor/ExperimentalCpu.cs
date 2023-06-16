@@ -1,5 +1,4 @@
 using Gameboi.Extensions;
-using Gameboi.Hardware;
 
 namespace Gameboi.Processor;
 

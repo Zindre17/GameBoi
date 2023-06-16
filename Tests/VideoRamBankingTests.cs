@@ -1,5 +1,4 @@
 using Gameboi.Cartridges;
-using Gameboi.Hardware;
 
 namespace Tests;
 

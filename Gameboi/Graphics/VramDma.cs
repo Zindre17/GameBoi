@@ -1,5 +1,3 @@
-using Gameboi.Hardware;
-
 namespace Gameboi.Graphics;
 
 public class VramDma

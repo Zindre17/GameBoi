@@ -1,7 +1,7 @@
 using System;
 using Gameboi.Cartridges;
 
-namespace Gameboi.Hardware;
+namespace Gameboi;
 
 public class Bus
 {
