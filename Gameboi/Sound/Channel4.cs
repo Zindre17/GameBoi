@@ -69,7 +69,7 @@ public class Channel4
         }
 
         var frequency = 0x40_000 / (divider * (1 << nr43.ClockShift));
-        var lfsrPerSample = frequency / Statics.WavSettings.SAMPLE_RATE;
+        var lfsrPerSample = frequency / SoundConstants.SampleRate;
 
         var volume = new Envelope(state.Channel4Envelope).InitialVolume;
         var remainingShifts = lfsrPerSample;

@@ -74,7 +74,7 @@ public class Channel1
         }
 
         var frequency = 0x20000 / (0x800 - FrequencyData);
-        var samplesPerPeriod = Math.Max((int)(Statics.WavSettings.SAMPLE_RATE / frequency), 2);
+        var samplesPerPeriod = Math.Max(SoundConstants.SampleRate / frequency, 2);
 
         var waveDuty = new WaveDuty(state.NR11);
         var lowToHigh = Math.Max(1, (int)(samplesPerPeriod * waveDuty.GetDuty()));

@@ -1,6 +1,6 @@
 using System;
 using Gameboi.Extensions;
-using static Gameboi.Statics.InterruptAddresses;
+using static Gameboi.Processor.InterruptAddresses;
 
 namespace Gameboi.Processor;
 

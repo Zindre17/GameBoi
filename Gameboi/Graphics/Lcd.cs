@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Gameboi.Cartridges;
 using Gameboi.Processor;
-using Gameboi.Timing;
 using static Gameboi.Graphics.LcdConstants;
 
 namespace Gameboi.Graphics;

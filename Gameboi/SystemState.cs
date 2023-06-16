@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Gameboi.Extensions;
-using Gameboi.Statics;
+using Gameboi.Graphics;
 using static Gameboi.IoIndices;
 
 namespace Gameboi;
@@ -78,7 +78,7 @@ public class SystemState
     public bool IsHalted { get; set; } = false;
     public bool IsInDoubleSpeedMode => SpeedControl.IsBitSet(7);
 
-    public int LcdRemainingTicksInMode { get; set; } = ScreenTimings.mode2Clocks;
+    public int LcdRemainingTicksInMode { get; set; } = LcdConstants.SearchingOamDurationInTicks;
     public int LcdLinesOfWindowDrawnThisFrame { get; set; } = 0;
     public bool LcdWindowTriggered { get; set; } = false;
     public bool WasPreviousLcdInterruptLineHigh { get; set; } = false;
@@ -257,7 +257,7 @@ public class SystemState
 
         LcdControl = 0x91;
         LcdStatus = 0x82;
-        LcdRemainingTicksInMode = ScreenTimings.mode2Clocks;
+        LcdRemainingTicksInMode = LcdConstants.SearchingOamDurationInTicks;
         LcdLinesOfWindowDrawnThisFrame = 0;
         LcdWindowTriggered = false;
         WasPreviousLcdInterruptLineHigh = false;

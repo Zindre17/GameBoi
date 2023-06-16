@@ -52,7 +52,7 @@ public class Channel3
         // NOTE: half the frequency of channel 1 and 2
         var frequency = 0x10000 / (double)(0x800 - FrequencyData);
         var frequencyPerWaveSample = frequency * 32d;
-        var samplesPerWaveRamSample = Statics.WavSettings.SAMPLE_RATE / frequencyPerWaveSample;
+        var samplesPerWaveRamSample = SoundConstants.SampleRate / frequencyPerWaveSample;
 
         var volumeShift = GetVolumeShift();
 
