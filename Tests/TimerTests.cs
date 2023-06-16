@@ -1,6 +1,3 @@
-using Gameboi;
-using Gameboi.Hardware;
-
 namespace Tests;
 
 [TestClass]
@@ -11,7 +8,7 @@ public class TimerTests
     [TestMethod]
     public void Tick()
     {
-        var timer = new Gameboi.Hardware.Timer(state);
+        var timer = new Gameboi.Timing.Timer(state);
 
         state.TimerCounter = 0;
         state.Tima = 0;

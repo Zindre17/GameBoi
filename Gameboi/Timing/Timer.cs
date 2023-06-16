@@ -1,8 +1,7 @@
 using Gameboi.Extensions;
-using Gameboi.Io;
 using Gameboi.Processor;
 
-namespace Gameboi.Hardware;
+namespace Gameboi.Timing;
 
 public class Timer
 {

@@ -1,6 +1,6 @@
 using Gameboi.Extensions;
 
-namespace Gameboi.Io;
+namespace Gameboi.Timing;
 
 public readonly struct Tac
 {

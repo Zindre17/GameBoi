@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Gameboi.Io;
+using Gameboi.Timing;
 
 namespace Gameboi.Graphics;
 

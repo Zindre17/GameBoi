@@ -1,7 +1,7 @@
 using Gameboi.Extensions;
 using Gameboi.Graphics;
-using Gameboi.Io;
 using Gameboi.Processor;
+using Gameboi.Timing;
 using static Gameboi.IoIndices;
 
 namespace Gameboi.Hardware;

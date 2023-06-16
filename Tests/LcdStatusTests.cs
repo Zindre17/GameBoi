@@ -1,4 +1,5 @@
-using Gameboi.Io;
+using Gameboi.Graphics;
+using Gameboi.Timing;
 
 namespace Tests;
 

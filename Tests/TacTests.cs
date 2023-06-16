@@ -1,4 +1,4 @@
-using Gameboi.Io;
+using Gameboi.Timing;
 
 namespace Tests;
 
