@@ -94,19 +94,32 @@ public sealed class UiLayer : IDisposable
 
     public int FillScreen(Rgba color)
     {
-        var quad = new ColoredQuad(-1, -1, 1, 1, 0, 0, 0, 0, new(), color);
-        var newIndices = GetIndicesForQuad(quads.Count);
+        var id = CreateSolidRectangle(-1, -1, 1, 1, color);
+        ShowText(id);
+        return id;
+    }
+
+    public int CreateSolidTiles(int startRow, int startColumn, int width, int height, Rgba color)
+    {
+        var yStart = 1f - (tileHeight * startRow);
+        var yEnd = yStart - (tileHeight * height);
+
+        var xStart = -1f + (tileWidth * startColumn);
+        var xEnd = xStart + (tileWidth * width);
+
+        return CreateSolidRectangle(xStart, yStart, xEnd, yEnd, color);
+    }
+
+    public int CreateSolidRectangle(float xStart, float yStart, float xEnd, float yEnd, Rgba color)
+    {
+        var quad = new ColoredQuad(xStart, yStart, xEnd, yEnd, 0, 0, 0, 0, new(), color);
 
         var id = currentId;
-        loadedText[id] = (true, quad, 1);
+        loadedText[id] = (false, quad, 1);
         currentId += 1;
 
         vertexBuffer.FeedSubData(quad.verticesData, quads.Count * ColoredQuad.SizeInBytes);
         quads.Add(quad);
-
-        indexBuffer.FeedSubData(newIndices, indices.Count * sizeof(uint));
-        indices.AddRange(newIndices);
-        orderedVisibleQuads.Add(quad);
 
         return id;
     }
@@ -127,6 +140,16 @@ public sealed class UiLayer : IDisposable
         var xEnd = xStart + tileWidth;
 
         var newQuads = new List<ColoredQuad>();
+
+        if (backgroundColor != new Rgba())
+        {
+            var backgroundXstart = -1f + (tileWidth * Math.Max(0, column - 1));
+            var backgroundXend = backgroundXstart + (tileWidth * (text.Length + 2));
+            var backgroundYstart = 1f - (tileHeight * Math.Max(row - 1, 0));
+            var backgroundYend = backgroundYstart - (tileHeight * 3);
+            var quad = new ColoredQuad(backgroundXstart, backgroundYstart, backgroundXend, backgroundYend, 0, 0, 0, 0, new(), backgroundColor);
+            newQuads.Add(quad);
+        }
 
         foreach (var character in text.ToLower())
         {
@@ -162,7 +185,7 @@ public sealed class UiLayer : IDisposable
             var fontXstart = fontWidthUnit * charIndex;
             var fontXend = fontXstart + fontWidthUnit;
 
-            newQuads.Add(new ColoredQuad(xStart, yStart, xEnd, yEnd, fontXstart, 0, fontXend, 1, textColor, backgroundColor));
+            newQuads.Add(new ColoredQuad(xStart, yStart, xEnd, yEnd, fontXstart, 0, fontXend, 1, textColor, new()));
 
             xStart += tileWidth;
             xEnd += tileWidth;

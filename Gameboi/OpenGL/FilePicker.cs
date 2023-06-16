@@ -23,6 +23,7 @@ public class FilePicker
 
     private readonly List<int> itemHandles = new();
     private readonly List<int> selectorHandles = new();
+    private readonly List<int> selectorBackgroundHandles = new();
 
     private readonly int backgroundHandle;
     private readonly List<(DirectoryItemType, string)> dirItems = new();
@@ -41,7 +42,8 @@ public class FilePicker
 
         for (var i = 0; i < 18; i++)
         {
-            selectorHandles.Add(selectorLayer.CreateText("*                   ", i, 0, new(0, 0, 0, 128), new(0, 0, 0, 50)));
+            selectorBackgroundHandles.Add(selectorLayer.CreateSolidTiles(i, 0, 20, 1, new(0, 0, 0, 50)));
+            selectorHandles.Add(selectorLayer.CreateText("*", i, 0, new(0, 0, 0, 128)));
         }
         LoadDirectory(startDirectory);
     }
@@ -212,7 +214,7 @@ public class FilePicker
     private void UpdateSelectionIndex(int newIndex)
     {
         selectorLayer.HideText(selectorHandles[currentIndex - scrollOffset]);
-
+        selectorLayer.HideText(selectorBackgroundHandles[currentIndex - scrollOffset]);
         if (newIndex < 0)
         {
             currentIndex = dirItems.Count - 1;
@@ -241,6 +243,7 @@ public class FilePicker
 
         itemLayer.Translate(0, scrollOffset);
         selectorLayer.ShowText(selectorHandles[currentIndex - scrollOffset]);
+        selectorLayer.ShowText(selectorBackgroundHandles[currentIndex - scrollOffset]);
     }
 
     public void Render()
