@@ -2,6 +2,7 @@ using System;
 using Gameboi.Cartridges;
 using Gameboi.Graphics;
 using Gameboi.Hardware;
+using Gameboi.Processor;
 using Gameboi.Sound;
 
 namespace Gameboi;

@@ -1,5 +1,5 @@
 using Gameboi.Io;
-using Gameboi.Memory.Specials;
+using Gameboi.Processor;
 using Silk.NET.Input;
 
 namespace Gameboi.Hardware;

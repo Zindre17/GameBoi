@@ -1,9 +1,9 @@
 using System;
 using Gameboi.Extensions;
-using Gameboi.Memory.Specials;
+using Gameboi.Hardware;
 using static Gameboi.Statics.InterruptAddresses;
 
-namespace Gameboi.Hardware;
+namespace Gameboi.Processor;
 
 public class Cpu
 {

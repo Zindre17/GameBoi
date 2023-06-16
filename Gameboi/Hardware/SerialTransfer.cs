@@ -1,4 +1,4 @@
-using Gameboi.Memory.Specials;
+using Gameboi.Processor;
 
 namespace Gameboi.Hardware;
 

@@ -1,6 +1,6 @@
 using Gameboi.Extensions;
 
-namespace Gameboi.Memory.Specials;
+namespace Gameboi.Processor;
 
 public enum InterruptVector : ushort
 {

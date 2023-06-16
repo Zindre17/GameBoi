@@ -1,7 +1,7 @@
 using Gameboi.Extensions;
-using Gameboi.Memory.Specials;
+using Gameboi.Hardware;
 
-namespace Gameboi.Hardware;
+namespace Gameboi.Processor;
 
 public class ExperimentalCpu
 {

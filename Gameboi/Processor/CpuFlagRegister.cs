@@ -1,4 +1,4 @@
-namespace Gameboi.Memory.Specials;
+namespace Gameboi.Processor;
 
 public enum CpuFlags : byte
 {
