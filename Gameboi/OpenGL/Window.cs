@@ -110,6 +110,7 @@ public unsafe class Window
     private int pauseTextHandle;
     private int savedTextHandle;
     private int loadedTextHandle;
+    private int noSnapshotToLoadTextHandle;
     private int mutedTextHandle;
     private int unmutedTextHandle;
     private readonly int[] volumeTextHandles = new int[11];
@@ -151,6 +152,7 @@ public unsafe class Window
         pauseTextHandle = uiLayer.CreateText("paused", 8, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
         savedTextHandle = uiLayer.CreateText("saved", 15, (20 - 5) / 2, new(Rgb.white), new(Rgb.darkGray));
         loadedTextHandle = uiLayer.CreateText("loaded", 15, (20 - 6) / 2, new(Rgb.white), new(Rgb.darkGray));
+        noSnapshotToLoadTextHandle = uiLayer.CreateText("No snapshot to load", 15, (20 - 19) / 2, new(Rgb.white), new(Rgb.darkGray));
         mutedTextHandle = uiLayer.CreateText("muted", 15, (20 - 5) / 2, new(Rgb.white), new(Rgb.darkGray));
         unmutedTextHandle = uiLayer.CreateText("unmuted", 15, (20 - 7) / 2, new(Rgb.white), new(Rgb.darkGray));
         volumeTextHandles[0] = uiLayer.CreateText("volume: 0%", 15, (20 - 10) / 2, new(Rgb.white), new(Rgb.darkGray));
@@ -352,8 +354,6 @@ public unsafe class Window
 
     private void LoadSnapshot()
     {
-        ShowSnackbarText(loadedTextHandle);
-
         var dir = $"{Directory.GetCurrentDirectory()}/snapshots";
         Directory.CreateDirectory(dir);
 
@@ -361,8 +361,14 @@ public unsafe class Window
         var title = gameHeader.GetTitle();
 
         var file = $"{dir}/{title}.snpsht";
+        if (File.Exists(file) is false)
+        {
+            ShowSnackbarText(noSnapshotToLoadTextHandle);
+            return;
+        }
 
         state.LoadState(File.ReadAllBytes(file));
+        ShowSnackbarText(loadedTextHandle);
     }
 
     private void ShowSnackbarText(int textHandle)
