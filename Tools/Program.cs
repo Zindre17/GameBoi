@@ -1,5 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using GB_Emulator.Tools;
+using Gameboi.Tools;
 
 var file = args[0];
 

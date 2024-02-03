@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace GB_Emulator.Tools;
+namespace Gameboi.Tools;
 
 public class HumanReadableCodeGenerator
 {
