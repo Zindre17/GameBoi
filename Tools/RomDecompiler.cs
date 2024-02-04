@@ -18,35 +18,35 @@ internal class RomDecompiler
 
     private bool InProgress => state is State.Reading || branches.Any();
 
-    private void EnqueueBranch(int address, string label) => branches.Enqueue(new(address, label));
-    private void EnqueueEntryPoint() => EnqueueBranch(0x100, "EntryPoint");
+    private void AddBranch(int address, string label) => branches.Enqueue(new(address, label));
+    private void AddEntryPoint() => AddBranch(0x100, "EntryPoint");
 
-    private void EnqueueRestartPoints()
+    private void AddRestartPoints()
     {
-        EnqueueBranch(0x0, "Restart 0x00");
-        EnqueueBranch(0x8, "Restart 0x08");
-        EnqueueBranch(0x10, "Restart 0x10");
-        EnqueueBranch(0x18, "Restart 0x18");
-        EnqueueBranch(0x20, "Restart 0x20");
-        EnqueueBranch(0x28, "Restart 0x28");
-        EnqueueBranch(0x30, "Restart 0x30");
-        EnqueueBranch(0x38, "Restart 0x38");
+        AddBranch(0x0, "Restart 0x00");
+        AddBranch(0x8, "Restart 0x08");
+        AddBranch(0x10, "Restart 0x10");
+        AddBranch(0x18, "Restart 0x18");
+        AddBranch(0x20, "Restart 0x20");
+        AddBranch(0x28, "Restart 0x28");
+        AddBranch(0x30, "Restart 0x30");
+        AddBranch(0x38, "Restart 0x38");
     }
 
-    private void EnqueueInterruptPoints()
+    private void AddInterruptPoints()
     {
-        EnqueueBranch(0x40, "Vblank");
-        EnqueueBranch(0x48, "LcdStat");
-        EnqueueBranch(0x50, "Timer");
-        EnqueueBranch(0x58, "Serial");
-        EnqueueBranch(0x60, "Joypad");
+        AddBranch(0x40, "Vblank");
+        AddBranch(0x48, "LcdStat");
+        AddBranch(0x50, "Timer");
+        AddBranch(0x58, "Serial");
+        AddBranch(0x60, "Joypad");
     }
 
     public void InterpretRom()
     {
-        EnqueueEntryPoint();
-        EnqueueRestartPoints();
-        EnqueueInterruptPoints();
+        AddEntryPoint();
+        AddRestartPoints();
+        AddInterruptPoints();
 
         while (InProgress)
         {
