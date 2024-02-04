@@ -13,12 +13,20 @@ internal class RomDecompiler
     }
 
     private readonly Stack<Branch> branches = new();
+    private readonly HashSet<int> visitedAddresses = new();
     private State state = State.Stopped;
     private readonly FileStream file;
 
     private bool InProgress => state is State.Reading || branches.Any();
 
-    private void AddBranch(int address, string label) => branches.Push(new(address, label));
+    private void AddBranch(int address, string label)
+    {
+        if (visitedAddresses.Contains(address))
+        {
+            return;
+        }
+        branches.Push(new(address, label));
+    }
     private Branch TakeOutNextBranch() => branches.Pop();
 
     private void AddEntryPoint() => AddBranch(0x100, "EntryPoint");
@@ -63,7 +71,16 @@ internal class RomDecompiler
 
             OutputDecompiledOperation(position, opCode, argument);
 
-            if (IsJump(opCode))
+            if (IsRelativeJump(opCode))
+            {
+                if (argument is Argument arg)
+                {
+                    AddBranch((int)(arg.Value + file.Position), "Jump from 0x" + position.ToString("X4"));
+                }
+                state = State.Stopped;
+            }
+
+            if (IsAbsoluteJump(opCode))
             {
                 if (argument is Argument arg)
                 {
@@ -99,14 +116,24 @@ internal class RomDecompiler
         };
     }
 
-    private int ReadByte() => file.ReadByte();
-    private int ReadSignedByte() => (sbyte)file.ReadByte();
-    private int ReadAddress() => file.ReadByte() | file.ReadByte() << 8;
+    private int ReadByte()
+    {
+        AddVisitedAddress((int)file.Position);
+        return file.ReadByte();
+    }
+
+    private int ReadSignedByte() => (sbyte)ReadByte();
+    private int ReadAddress() => ReadByte() | ReadByte() << 8;
+
+    private void AddVisitedAddress(int address)
+    {
+        visitedAddresses.Add(address);
+    }
 
     private void StartReadingNextBranch()
     {
         var branch = TakeOutNextBranch();
-        Console.WriteLine($"--------- {branch.Label} ---------");
+        Console.WriteLine($"\n--------- {branch.Label} ---------");
         file.Position = branch.Address;
         state = State.Reading;
     }
@@ -117,7 +144,8 @@ internal class RomDecompiler
         Stopped
     }
 
-    private static bool IsJump(int opCode) => opCode is 0x18 or 0xc3 or 0xc7 or 0xcf or 0xd7 or 0xdf or 0xe7 or 0xe9 or 0xef or 0xf7 or 0xff;
+    private static bool IsRelativeJump(int opCode) => opCode is 0x18;
+    private static bool IsAbsoluteJump(int opCode) => opCode is 0xc3 or 0xc7 or 0xcf or 0xd7 or 0xdf or 0xe7 or 0xe9 or 0xef or 0xf7 or 0xff;
     private static bool IsReturn(int opCode) => opCode is 0xc9 or 0xd9;
 }
 
