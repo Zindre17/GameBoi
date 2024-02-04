@@ -3,5 +3,8 @@ using Gameboi.Tools;
 
 var file = args[0];
 
-var codeGen = new HumanReadableCodeGenerator();
-codeGen.InterpretRom(file);
+// var codeGen = new HumanReadableCodeGenerator();
+// codeGen.InterpretRom(file);
+
+var decompiler = new RomDecompiler(file);
+decompiler.InterpretRom();
