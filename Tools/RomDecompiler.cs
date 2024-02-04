@@ -12,13 +12,15 @@ internal class RomDecompiler
         file = File.OpenRead(romPath);
     }
 
-    private readonly Queue<Branch> branches = new();
+    private readonly Stack<Branch> branches = new();
     private State state = State.Stopped;
     private readonly FileStream file;
 
     private bool InProgress => state is State.Reading || branches.Any();
 
-    private void AddBranch(int address, string label) => branches.Enqueue(new(address, label));
+    private void AddBranch(int address, string label) => branches.Push(new(address, label));
+    private Branch TakeOutNextBranch() => branches.Pop();
+
     private void AddEntryPoint() => AddBranch(0x100, "EntryPoint");
 
     private void AddRestartPoints()
@@ -103,7 +105,7 @@ internal class RomDecompiler
 
     private void StartReadingNextBranch()
     {
-        var branch = branches.Dequeue();
+        var branch = TakeOutNextBranch();
         Console.WriteLine($"--------- {branch.Label} ---------");
         file.Position = branch.Address;
         state = State.Reading;
