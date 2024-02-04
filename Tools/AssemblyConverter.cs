@@ -430,7 +430,7 @@ public class AssemblyConverter
             case 0xC6:
                 return "A += d8";
             case 0xC7:
-                return "PC = 0";
+                return "Call 0x00 (restart)";
             case 0xC8:
                 return "if( zero ) return";
             case 0xC9:
@@ -446,7 +446,7 @@ public class AssemblyConverter
             case 0xCE:
                 return "A += d8 with carry";
             case 0xCF:
-                return "PC = 8";
+                return "Call 0x08 (restart)";
 
 
             case 0xD0:
@@ -464,7 +464,7 @@ public class AssemblyConverter
             case 0xD6:
                 return "A -= d8";
             case 0xD7:
-                return "PC = 0x10";
+                return "Call 0x10 (restart)";
             case 0xD8:
                 return "if( carry ) return";
             case 0xD9:
@@ -480,7 +480,7 @@ public class AssemblyConverter
             case 0xDE:
                 return "A -= d8 with carry";
             case 0xDF:
-                return "PC = 0x18";
+                return "Call 0x18 (restart)";
 
 
             case 0xE0:
@@ -498,7 +498,7 @@ public class AssemblyConverter
             case 0xE6:
                 return "A &= d8";
             case 0xE7:
-                return "PC = 0x20";
+                return "Call 0x20 (restart)";
             case 0xE8:
                 return "SP += (sbyte)d8";
             case 0xE9:
@@ -514,7 +514,7 @@ public class AssemblyConverter
             case 0xEE:
                 return "A ^= d8";
             case 0xEF:
-                return "PC = 0x28";
+                return "Call 0x28 (restart)";
 
 
             case 0xF0:
@@ -532,7 +532,7 @@ public class AssemblyConverter
             case 0xF6:
                 return "A |= d8";
             case 0xF7:
-                return "PC = 0x30";
+                return "Call 0x30 (restart)";
             case 0xF8:
                 return "HL = SP + (sbyte)d8";
             case 0xF9:
@@ -548,7 +548,7 @@ public class AssemblyConverter
             case 0xFE:
                 return "A == d8";
             case 0xFF:
-                return "PC = 0x38";
+                return "Call 0x38 (restart)";
         }
     }
 }
