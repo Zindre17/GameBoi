@@ -55,13 +55,18 @@ internal class RomDecompiler
                 StartReadingNextBranch();
             }
 
-            var opCode = ReadByte();
-            var argument = GetInstructionArgument(opCode);
-            var assemblyString = AssemblyConverter.ToString(opCode, argument);
-            Console.WriteLine($"0x{file.Position - 1:X4}: 0x{opCode:X2} - {assemblyString}");
+            var position = file.Position;
+            var opCode = ReadOpCode();
+            var argument = ReadArgument(opCode);
+
+            OutputDecompiledOperation(position, opCode, argument);
 
             if (IsJump(opCode))
             {
+                if (argument is Argument arg)
+                {
+                    AddBranch(arg.Value, "Jump from 0x" + position.ToString("X4"));
+                }
                 state = State.Stopped;
             }
             if (IsReturn(opCode))
@@ -71,7 +76,15 @@ internal class RomDecompiler
         }
     }
 
-    private IArgument GetInstructionArgument(int opCode)
+    private static void OutputDecompiledOperation(long position, int opCode, IArgument argument)
+    {
+        var assemblyString = AssemblyConverter.ToString(opCode, argument);
+        Console.WriteLine($"0x{position:X4}: 0x{opCode:X2} - {assemblyString}");
+    }
+
+    private int ReadOpCode() => ReadByte();
+
+    private IArgument ReadArgument(int opCode)
     {
         var argumentType = AssemblyConverter.GetInstructionArgumentType(opCode);
         return argumentType switch
