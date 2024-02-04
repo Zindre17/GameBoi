@@ -1,15 +1,79 @@
 namespace Gameboi.Tools;
 
-public class AssemblyConverter
+internal enum ArgumentType
 {
-    public static string ToString(byte opCode)
+    Address,
+    Byte,
+    SignedByte,
+    None
+}
+
+internal interface IArgument
+{
+    int Value { get; }
+}
+
+internal record Argument(int Value) : IArgument;
+internal record NoneArgument : IArgument
+{
+    private NoneArgument() { }
+    public static NoneArgument Instance { get; } = new();
+
+    public int Value => throw new InvalidOperationException($"{nameof(NoneArgument)} has no {nameof(Value)}");
+}
+
+
+internal class AssemblyConverter
+{
+    public static ArgumentType GetInstructionArgumentType(int opCode) => opCode switch
     {
+        > 0xff => throw new ArgumentOutOfRangeException(nameof(opCode)),
+
+        0x01 or 0x08 or
+        0x11 or
+        0x21 or
+        0x31 or
+        0xc2 or 0xc3 or 0xc4 or 0xca or 0xcc or 0xcd or
+        0xd2 or 0xd4 or 0xda or 0xdc or
+        0xea or
+        0xfa => ArgumentType.Address,
+
+        0x06 or 0x0e or
+        0x10 or 0x16 or 0x1e or
+        0x26 or 0x2e or
+        0x36 or 0x3e or
+        0xc6 or 0xce or
+        0xd6 or 0xde or
+        0xe0 or 0xe6 or 0xee or
+        0xf0 or 0xf6 or 0xfe => ArgumentType.Byte,
+
+        0x18 or 0x20 or 0x28 or 0x30 or 0x38 or 0xe8 or 0xf8 => ArgumentType.SignedByte,
+
+        _ => ArgumentType.None
+    };
+
+    public static string ToString(int opCode, IArgument argument)
+    {
+        if (opCode > 0xff) throw new ArgumentOutOfRangeException(nameof(opCode));
+
+        const string defaultD16 = "d16";
+        const string defaultD8 = "d8";
+
+        var d16 = defaultD16;
+        var d8 = defaultD8;
+
+        if (argument is Argument arg)
+        {
+            d16 = "0x" + arg.Value.ToString("X4");
+            d8 = "0x" + arg.Value.ToString("X2");
+        }
+
         switch (opCode)
         {
             case 0x00:
                 return "NOP";
             case 0x01:
-                return "BC = d16";
+                return $"BC = {d16}";
             case 0x02:
                 return "[BC] = A";
             case 0x03:
@@ -19,11 +83,11 @@ public class AssemblyConverter
             case 0x05:
                 return "B--";
             case 0x06:
-                return "B = d8";
+                return $"B = {d8}";
             case 0x07:
                 return "A <<= 1 (wrap-around)";
             case 0x08:
-                return "[d16] = SP";
+                return $"[{d16}] = SP";
             case 0x09:
                 return "HL = HL + BC";
             case 0x0A:
@@ -35,15 +99,15 @@ public class AssemblyConverter
             case 0x0D:
                 return "C--";
             case 0x0E:
-                return "C = d8";
+                return $"C = {d8}";
             case 0x0F:
                 return "A >>= 1 (wrap-around)";
 
 
             case 0x10:
-                return "Stop d8";
+                return $"Stop {d8}";
             case 0x11:
-                return "DE = d16";
+                return $"DE = {d16}";
             case 0x12:
                 return "[DE] = A";
             case 0x13:
@@ -53,11 +117,11 @@ public class AssemblyConverter
             case 0x15:
                 return "D--";
             case 0x16:
-                return "D = d8";
+                return $"D = {d8}";
             case 0x17:
                 return "A <<= 1";
             case 0x18:
-                return "PC += (sbyte)d8";
+                return $"PC += (sbyte){d8}";
             case 0x19:
                 return "HL += DE";
             case 0x1A:
@@ -69,15 +133,15 @@ public class AssemblyConverter
             case 0x1D:
                 return "E--";
             case 0x1E:
-                return "E = d8";
+                return $"E = {d8}";
             case 0x1F:
                 return "A >>= 1";
 
 
             case 0x20:
-                return "if( not zero ) PC += (sbyte)d8 ";
+                return $"if( not zero ) PC += (sbyte){d8} ";
             case 0x21:
-                return "HL = d16";
+                return $"HL = {d16}";
             case 0x22:
                 return "[HL++] = A";
             case 0x23:
@@ -87,11 +151,11 @@ public class AssemblyConverter
             case 0x25:
                 return "H--";
             case 0x26:
-                return "H = d8";
+                return $"H = {d8}";
             case 0x27:
                 return "DAA";
             case 0x28:
-                return "if( zero ) PC += (sbyte)d8 ";
+                return $"if( zero ) PC += (sbyte){d8} ";
             case 0x29:
                 return "HL += HL";
             case 0x2A:
@@ -103,15 +167,15 @@ public class AssemblyConverter
             case 0x2D:
                 return "L--";
             case 0x2E:
-                return "L = d8";
+                return $"L = {d8}";
             case 0x2F:
                 return "Complement A";
 
 
             case 0x30:
-                return "if( not carry ) PC += (sbyte)d8 ";
+                return $"if( not carry ) PC += (sbyte){d8} ";
             case 0x31:
-                return "SP = d16";
+                return $"SP = {d16}";
             case 0x32:
                 return "[HL--] = A";
             case 0x33:
@@ -121,11 +185,11 @@ public class AssemblyConverter
             case 0x35:
                 return "[HL]--";
             case 0x36:
-                return "[HL] = d8";
+                return $"[HL] = {d8}";
             case 0x37:
                 return "Set carry flag";
             case 0x38:
-                return "if( carry ) PC += (sbyte)d8 ";
+                return $"if( carry ) PC += (sbyte){d8} ";
             case 0x39:
                 return "HL += SP";
             case 0x3A:
@@ -137,7 +201,7 @@ public class AssemblyConverter
             case 0x3D:
                 return "A--";
             case 0x3E:
-                return "A = d8";
+                return $"A = {d8}";
             case 0x3F:
                 return "Flip carry flag";
 
@@ -420,15 +484,15 @@ public class AssemblyConverter
             case 0xC1:
                 return "BC = Pop(SP)";
             case 0xC2:
-                return "if( not zero ) PC = d16";
+                return $"if( not zero ) PC = {d16}";
             case 0xC3:
-                return "PC = d16";
+                return $"PC = {d16}";
             case 0xC4:
-                return "if( not zero ) Call d16";
+                return $"if( not zero ) Call {d16}";
             case 0xC5:
                 return "Push BC";
             case 0xC6:
-                return "A += d8";
+                return $"A += {d8}";
             case 0xC7:
                 return "Call 0x00 (restart)";
             case 0xC8:
@@ -436,15 +500,15 @@ public class AssemblyConverter
             case 0xC9:
                 return "return";
             case 0xCA:
-                return "if( zero ) PC = d16";
+                return $"if( zero ) PC = {d16}";
             case 0xCB:
                 return "Prefix CB (bit operations)";
             case 0xCC:
-                return "if( zero ) Call d16";
+                return $"if( zero ) Call {d16}";
             case 0xCD:
-                return "Call d16";
+                return $"Call {d16}";
             case 0xCE:
-                return "A += d8 with carry";
+                return $"A += {d8} with carry";
             case 0xCF:
                 return "Call 0x08 (restart)";
 
@@ -454,15 +518,15 @@ public class AssemblyConverter
             case 0xD1:
                 return "DE = Pop(SP)";
             case 0xD2:
-                return "if( not carry ) PC = d16";
+                return $"if( not carry ) PC = {d16}";
             case 0xD3:
                 return "Illegal instruction";
             case 0xD4:
-                return "if( not carry ) Call d16";
+                return $"if( not carry ) Call {d16}";
             case 0xD5:
                 return "Push DE";
             case 0xD6:
-                return "A -= d8";
+                return $"A -= {d8}";
             case 0xD7:
                 return "Call 0x10 (restart)";
             case 0xD8:
@@ -470,21 +534,21 @@ public class AssemblyConverter
             case 0xD9:
                 return "return and enable interrupt";
             case 0xDA:
-                return "if( carry ) PC = d16";
+                return $"if( carry ) PC = {d16}";
             case 0xDB:
                 return "Illegal instruction";
             case 0xDC:
-                return "if( carry ) Call d16";
+                return $"if( carry ) Call {d16}";
             case 0xDD:
                 return "Illegal instruction";
             case 0xDE:
-                return "A -= d8 with carry";
+                return $"A -= {d8} with carry";
             case 0xDF:
                 return "Call 0x18 (restart)";
 
 
             case 0xE0:
-                return "[0xFF00 + d8] = A";
+                return $"[0xFF00 + {d8}] = A";
             case 0xE1:
                 return "HL = Pop(SP)";
             case 0xE2:
@@ -496,15 +560,15 @@ public class AssemblyConverter
             case 0xE5:
                 return "Push HL";
             case 0xE6:
-                return "A &= d8";
+                return $"A &= {d8}";
             case 0xE7:
                 return "Call 0x20 (restart)";
             case 0xE8:
-                return "SP += (sbyte)d8";
+                return $"SP += (sbyte){d8}";
             case 0xE9:
                 return "PC = HL";
             case 0xEA:
-                return "[d16] = A";
+                return $"[{d16}] = A";
             case 0xEB:
                 return "Illegal instruction";
             case 0xEC:
@@ -512,13 +576,13 @@ public class AssemblyConverter
             case 0xED:
                 return "Illegal instruction";
             case 0xEE:
-                return "A ^= d8";
+                return $"A ^= {d8}";
             case 0xEF:
                 return "Call 0x28 (restart)";
 
 
             case 0xF0:
-                return "A = [0xFF00 + d8]";
+                return $"A = [0xFF00 + {d8}]";
             case 0xF1:
                 return "AF = Pop(SP)";
             case 0xF2:
@@ -530,15 +594,15 @@ public class AssemblyConverter
             case 0xF5:
                 return "Push AF";
             case 0xF6:
-                return "A |= d8";
+                return $"A |= {d8}";
             case 0xF7:
                 return "Call 0x30 (restart)";
             case 0xF8:
-                return "HL = SP + (sbyte)d8";
+                return $"HL = SP + (sbyte){d8}";
             case 0xF9:
                 return "SP = HL";
             case 0xFA:
-                return "A = [d16]";
+                return $"A = [{d16}]";
             case 0xFB:
                 return "Enable interrupt";
             case 0xFC:
@@ -546,9 +610,10 @@ public class AssemblyConverter
             case 0xFD:
                 return "Illegal instruction";
             case 0xFE:
-                return "A == d8";
+                return $"A == {d8}";
             case 0xFF:
                 return "Call 0x38 (restart)";
+            default: throw new ArgumentOutOfRangeException(nameof(opCode));
         }
     }
 }
