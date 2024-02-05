@@ -131,14 +131,17 @@ internal class AssemblyConverter
 
         const string defaultD16 = "d16";
         const string defaultD8 = "d8";
+        const string defaultS8 = "s8";
 
         var d16 = defaultD16;
         var d8 = defaultD8;
+        var s8 = defaultS8;
 
         if (argument is Argument arg)
         {
             d16 = $"0x{arg.Value:X4} ({GetMemoryLocationString(arg.Value)})";
             d8 = $"0x{arg.Value:X2}";
+            s8 = $"{arg.Value}";
         }
 
         switch (opCode)
@@ -194,7 +197,7 @@ internal class AssemblyConverter
             case 0x17:
                 return "A <<= 1";
             case 0x18:
-                return $"PC += (sbyte){d8}";
+                return $"PC += {s8}";
             case 0x19:
                 return "HL += DE";
             case 0x1A:
@@ -212,7 +215,7 @@ internal class AssemblyConverter
 
 
             case 0x20:
-                return $"if( not zero ) PC += (sbyte){d8} ";
+                return $"if( not zero ) PC += {s8} ";
             case 0x21:
                 return $"HL = {d16}";
             case 0x22:
@@ -228,7 +231,7 @@ internal class AssemblyConverter
             case 0x27:
                 return "DAA";
             case 0x28:
-                return $"if( zero ) PC += (sbyte){d8} ";
+                return $"if( zero ) PC += {s8} ";
             case 0x29:
                 return "HL += HL";
             case 0x2A:
@@ -246,7 +249,7 @@ internal class AssemblyConverter
 
 
             case 0x30:
-                return $"if( not carry ) PC += (sbyte){d8} ";
+                return $"if( not carry ) PC += {s8} ";
             case 0x31:
                 return $"SP = {d16}";
             case 0x32:
@@ -262,7 +265,7 @@ internal class AssemblyConverter
             case 0x37:
                 return "Set carry flag";
             case 0x38:
-                return $"if( carry ) PC += (sbyte){d8} ";
+                return $"if( carry ) PC += {s8} ";
             case 0x39:
                 return "HL += SP";
             case 0x3A:
@@ -637,7 +640,7 @@ internal class AssemblyConverter
             case 0xE7:
                 return "Call 0x20 (restart)";
             case 0xE8:
-                return $"SP += (sbyte){d8}";
+                return $"SP += {s8}";
             case 0xE9:
                 return "PC = HL";
             case 0xEA:
@@ -671,7 +674,7 @@ internal class AssemblyConverter
             case 0xF7:
                 return "Call 0x30 (restart)";
             case 0xF8:
-                return $"HL = SP + (sbyte){d8}";
+                return $"HL = SP + {s8}";
             case 0xF9:
                 return "SP = HL";
             case 0xFA:
