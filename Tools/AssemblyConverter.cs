@@ -52,6 +52,25 @@ internal class AssemblyConverter
         _ => ArgumentType.None
     };
 
+    public static string GetMemoryLocationString(int address)
+    {
+        return address switch
+        {
+            < 0x8000 => "ROM",
+            < 0xA000 => "Video RAM",
+            < 0xC000 => "RAM",
+            < 0xD000 => "Work RAM",
+            < 0xE000 => "Work RAM",
+            < 0xF000 => "Work RAM",
+            < 0xFE00 => "Work RAM",
+            < 0xFEA0 => "OAM",
+            < 0xFF00 => "Unused",
+            < 0xFF80 => "I/O",
+            < 0xFFFF => "High RAM",
+            _ => "Interrupt Enable Register",
+        };
+    }
+
     public static string ToString(int opCode, IArgument argument)
     {
         if (opCode > 0xff) throw new ArgumentOutOfRangeException(nameof(opCode));
@@ -64,8 +83,8 @@ internal class AssemblyConverter
 
         if (argument is Argument arg)
         {
-            d16 = "0x" + arg.Value.ToString("X4");
-            d8 = "0x" + arg.Value.ToString("X2");
+            d16 = $"0x{arg.Value:X4} ({GetMemoryLocationString(arg.Value)})";
+            d8 = $"0x{arg.Value:X2}";
         }
 
         switch (opCode)
@@ -548,7 +567,7 @@ internal class AssemblyConverter
 
 
             case 0xE0:
-                return $"[0xFF00 + {d8}] = A";
+                return $"[0xFF00 + {d8} ({GetMemoryLocationString(0xff00 + argument.Value)})] = A";
             case 0xE1:
                 return "HL = Pop(SP)";
             case 0xE2:
@@ -582,7 +601,7 @@ internal class AssemblyConverter
 
 
             case 0xF0:
-                return $"A = [0xFF00 + {d8}]";
+                return $"A = [0xFF00 + {d8} ({GetMemoryLocationString(0xff00 + argument.Value)})]";
             case 0xF1:
                 return "AF = Pop(SP)";
             case 0xF2:
