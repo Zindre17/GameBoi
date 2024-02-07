@@ -70,14 +70,14 @@ internal class RomDecompiler
 
             if (IsRamAddressArea(position))
             {
-                Console.WriteLine($"0x{position:X4}: RAM area. Aborting branch.");
+                Output(position, "RAM area. Aborting branch.");
                 state = State.Stopped;
                 continue;
             }
 
             if (IsOutOfBusRange(position))
             {
-                Console.WriteLine($"0x{position:X4}: Out of bus range");
+                Output(position, "Out of bus range");
                 state = State.Stopped;
                 continue;
             }
@@ -86,7 +86,7 @@ internal class RomDecompiler
 
             if (IsProbablyUnusedMemory(position, opCode))
             {
-                Console.WriteLine("Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
+                Output(position, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
                 state = State.Stopped;
                 continue;
             }
@@ -131,8 +131,11 @@ internal class RomDecompiler
     private static void OutputDecompiledOperation(int position, int opCode, IArgument argument)
     {
         var assemblyString = AssemblyConverter.ToString(opCode, argument);
-        Console.WriteLine($"0x{position:X4}: 0x{opCode:X2} - {assemblyString}");
+        Output(position, $"0x{opCode:X2} - {assemblyString}");
     }
+
+    private static void Output(int position, string message) => Output($"0x{position:X4}: {message}");
+    private static void Output(string message) => Console.WriteLine(message);
 
     private int ReadOpCode() => ReadByte();
 
@@ -166,7 +169,7 @@ internal class RomDecompiler
     private void StartReadingNextBranch()
     {
         currentBranch = TakeOutNextBranch();
-        Console.WriteLine($"\n--------- {currentBranch} ---------");
+        Output($"\n--------- {currentBranch} ---------");
         file.Position = currentBranch.Address;
         state = State.Reading;
     }
