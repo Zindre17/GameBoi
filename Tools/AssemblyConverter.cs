@@ -578,7 +578,45 @@ internal class AssemblyConverter
             case 0xCA:
                 return $"if( zero ) PC = {d16}";
             case 0xCB:
-                return "Prefix CB (bit operations)";
+                var first2Bits = argument.Value >> 6;
+                var register = (argument.Value & 0b111) switch
+                {
+                    0 => "B",
+                    1 => "C",
+                    2 => "D",
+                    3 => "E",
+                    4 => "H",
+                    5 => "L",
+                    6 => "[HL]",
+                    7 => "A",
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+                if (first2Bits is 0)
+                {
+                    return (argument.Value >> 3) switch
+                    {
+                        0 => $"RLC {register}",
+                        1 => $"RRC {register}",
+                        2 => $"RL {register}",
+                        3 => $"RR {register}",
+                        4 => $"SLA {register}",
+                        5 => $"SRA {register}",
+                        6 => $"SWAP {register}",
+                        7 => $"SRL {register}",
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                }
+                else
+                {
+                    var bit = (argument.Value >> 3) & 0b111;
+                    return first2Bits switch
+                    {
+                        1 => $"test {register}[{bit}]",
+                        2 => $"{register}[{bit}] = 0",
+                        3 => $"{register}[{bit}] = 1",
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+                }
             case 0xCC:
                 return $"if( zero ) Call {d16}";
             case 0xCD:
