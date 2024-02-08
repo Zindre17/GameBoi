@@ -1,22 +1,18 @@
 namespace Gameboi.Tools;
 
-internal class RomDecompiler
+internal class RomDecompiler : IDisposable
 {
-
-    public RomDecompiler(string romPath)
+    public RomDecompiler(RomReader reader)
     {
-        if (!File.Exists(romPath))
-        {
-            throw new FileNotFoundException("The file does not exist", romPath);
-        }
-        file = File.OpenRead(romPath);
+        this.reader = reader;
     }
 
     private readonly Stack<Branch> branches = new();
     private readonly HashSet<int> visitedAddresses = new();
     private State state = State.Stopped;
-    private readonly FileStream file;
+    private readonly RomReader reader;
     private Branch currentBranch = null!;
+    private int programCounter;
 
     private bool InProgress => state is State.Reading || branches.Any();
 
@@ -66,40 +62,40 @@ internal class RomDecompiler
                 StartReadingNextBranch();
             }
 
-            var position = (int)file.Position;
+            var instructionStartPosition = programCounter;
 
-            if (IsRamAddressArea(position))
+            if (IsRamAddressArea(instructionStartPosition))
             {
-                Output(position, "RAM area. Aborting branch.");
+                Output(instructionStartPosition, "RAM area. Aborting branch.");
                 state = State.Stopped;
                 continue;
             }
 
-            if (IsOutOfBusRange(position))
+            if (IsOutOfBusRange(instructionStartPosition))
             {
-                Output(position, "Out of bus range");
+                Output(instructionStartPosition, "Out of bus range");
                 state = State.Stopped;
                 continue;
             }
 
             var opCode = ReadOpCode();
 
-            if (IsProbablyUnusedMemory(position, opCode))
+            if (IsProbablyUnusedMemory(instructionStartPosition, opCode))
             {
-                Output(position, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
+                Output(instructionStartPosition, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
                 state = State.Stopped;
                 continue;
             }
 
             var argument = ReadArgument(opCode);
 
-            OutputDecompiledOperation(position, opCode, argument);
+            OutputDecompiledOperation(instructionStartPosition, opCode, argument);
 
             if (IsCall(opCode))
             {
                 if (argument is Argument arg)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, "Called from 0x" + position.ToString("X4"));
+                    AddBranch(arg.Value, currentBranch.Label, "Called from 0x" + instructionStartPosition.ToString("X4"));
                 }
             }
 
@@ -107,7 +103,7 @@ internal class RomDecompiler
             {
                 if (argument is Argument arg)
                 {
-                    AddBranch((int)(arg.Value + file.Position), currentBranch.Label, "Jumped from 0x" + position.ToString("X4"));
+                    AddBranch(arg.Value + programCounter, currentBranch.Label, "Jumped from 0x" + instructionStartPosition.ToString("X4"));
                 }
                 state = State.Stopped;
             }
@@ -116,7 +112,7 @@ internal class RomDecompiler
             {
                 if (argument is Argument arg)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, "Jump from 0x" + position.ToString("X4"));
+                    AddBranch(arg.Value, currentBranch.Label, "Jump from 0x" + instructionStartPosition.ToString("X4"));
                 }
                 state = State.Stopped;
             }
@@ -154,12 +150,28 @@ internal class RomDecompiler
 
     private int ReadByte()
     {
-        AddVisitedAddress((int)file.Position);
-        return file.ReadByte();
+        AddVisitedAddress(programCounter);
+        var location = GetRomLocation(programCounter++);
+        return reader.ReadByte(location);
+    }
+
+    private static RomLocation GetRomLocation(int address)
+    {
+        if (address > 0x8000) throw new NotImplementedException();
+
+        if (address > 0x4000) return new RomLocation(1, address - 0x4000);
+
+        return new RomLocation(0, address);
     }
 
     private int ReadSignedByte() => (sbyte)ReadByte();
-    private int ReadAddress() => ReadByte() | ReadByte() << 8;
+    private int ReadAddress()
+    {
+        var location = GetRomLocation(programCounter);
+        visitedAddresses.Add(programCounter++);
+        visitedAddresses.Add(programCounter++);
+        return reader.ReadAddress(location);
+    }
 
     private void AddVisitedAddress(int address)
     {
@@ -170,7 +182,7 @@ internal class RomDecompiler
     {
         currentBranch = TakeOutNextBranch();
         Output($"\n--------- {currentBranch} ---------");
-        file.Position = currentBranch.Address;
+        programCounter = currentBranch.Address;
         state = State.Reading;
     }
 
@@ -188,7 +200,14 @@ internal class RomDecompiler
     private static bool IsOutOfBusRange(int address) => address is < 0 or > 0xffff;
     private bool IsProbablyUnusedMemory(int address, int opCode) => IsStartOfBranch(address) && opCode is 0xff;
     private bool IsStartOfBranch(int address) => address == currentBranch.Address;
+
+    public void Dispose()
+    {
+        reader.Dispose();
+    }
 }
+
+internal readonly record struct RomLocation(int Bank, int Address);
 
 internal record Branch(int Address, string Label, string? Comment = null)
 {

@@ -3,8 +3,14 @@ using Gameboi.Tools;
 
 var file = args[0];
 
+if (!File.Exists(file))
+{
+    Console.WriteLine("File does not exist");
+    return;
+}
+
 // var codeGen = new HumanReadableCodeGenerator();
 // codeGen.InterpretRom(file);
 
-var decompiler = new RomDecompiler(file);
+using var decompiler = new RomDecompiler(new(file));
 decompiler.InterpretRom();
