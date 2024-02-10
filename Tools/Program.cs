@@ -12,5 +12,5 @@ if (!File.Exists(file))
 // var codeGen = new HumanReadableCodeGenerator();
 // codeGen.InterpretRom(file);
 
-using var decompiler = new RomDecompiler(new(file));
+using var decompiler = new RomDecompiler(new(file), DecompilerWriter.CreateConsoleWriter());
 decompiler.InterpretRom();

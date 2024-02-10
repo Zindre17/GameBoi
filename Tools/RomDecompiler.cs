@@ -2,15 +2,17 @@ namespace Gameboi.Tools;
 
 internal class RomDecompiler : IDisposable
 {
-    public RomDecompiler(RomReader reader)
+    public RomDecompiler(RomReader reader, DecompilerWriter writer)
     {
         this.reader = reader;
+        this.writer = writer;
     }
 
     private readonly Stack<Branch> branches = new();
     private readonly HashSet<int> visitedAddresses = new();
     private State state = State.Stopped;
     private readonly RomReader reader;
+    private readonly DecompilerWriter writer;
     private Branch currentBranch = null!;
     private int programCounter;
 
@@ -66,14 +68,14 @@ internal class RomDecompiler : IDisposable
 
             if (IsRamAddressArea(instructionStartPosition))
             {
-                Output(instructionStartPosition, "RAM area. Aborting branch.");
+                WriteComment(instructionStartPosition, "RAM area. Aborting branch.");
                 state = State.Stopped;
                 continue;
             }
 
             if (IsOutOfBusRange(instructionStartPosition))
             {
-                Output(instructionStartPosition, "Out of bus range");
+                WriteComment(instructionStartPosition, "Out of bus range");
                 state = State.Stopped;
                 continue;
             }
@@ -82,14 +84,14 @@ internal class RomDecompiler : IDisposable
 
             if (IsProbablyUnusedMemory(instructionStartPosition, opCode))
             {
-                Output(instructionStartPosition, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
+                WriteComment(instructionStartPosition, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
                 state = State.Stopped;
                 continue;
             }
 
             var argument = ReadArgument(opCode);
 
-            OutputDecompiledOperation(instructionStartPosition, opCode, argument);
+            WriteInstruction(new(instructionStartPosition, opCode, argument));
 
             if (IsCall(opCode))
             {
@@ -124,14 +126,10 @@ internal class RomDecompiler : IDisposable
         }
     }
 
-    private static void OutputDecompiledOperation(int position, int opCode, IArgument argument)
-    {
-        var assemblyString = AssemblyConverter.ToString(opCode, argument);
-        Output(position, $"0x{opCode:X2} - {assemblyString}");
-    }
-
-    private static void Output(int position, string message) => Output($"0x{position:X4}: {message}");
-    private static void Output(string message) => Console.WriteLine(message);
+    private void WriteInstruction(Instruction instruction) => writer.WriteInstruction(instruction);
+    private void WriteLabel(string label) => writer.WriteLabel(label);
+    private void WriteComment(int position, string message) => WriteComment($"0x{position:X4}: {message}");
+    private void WriteComment(string message) => writer.WriteComment(message);
 
     private int ReadOpCode() => ReadByte();
 
@@ -181,7 +179,7 @@ internal class RomDecompiler : IDisposable
     private void StartReadingNextBranch()
     {
         currentBranch = TakeOutNextBranch();
-        Output($"\n--------- {currentBranch} ---------");
+        WriteLabel(currentBranch.ToString());
         programCounter = currentBranch.Address;
         state = State.Reading;
     }
