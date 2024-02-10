@@ -30,7 +30,7 @@ internal class DecompilerWriter
 
     public void WriteInstruction(Instruction instruction)
     {
-        var code = AssemblyConverter.ToString(instruction.OpCode, instruction.Argument);
+        var code = AssemblyConverter.Decompile(instruction.OpCode, instruction.Argument);
         destination.WriteLine($"0x{instruction.Address:X4}: 0x{instruction.OpCode:X2} - {code}");
     }
 }

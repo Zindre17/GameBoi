@@ -125,7 +125,7 @@ internal class AssemblyConverter
         };
     }
 
-    public static string ToString(int opCode, IArgument argument)
+    public static string Decompile(int opCode, IArgument argument)
     {
         if (opCode > 0xff) throw new ArgumentOutOfRangeException(nameof(opCode));
 
