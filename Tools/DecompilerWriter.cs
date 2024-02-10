@@ -15,10 +15,7 @@ internal class DecompilerWriter
     public static DecompilerWriter CreateFileWriter(string filePath) => new(new FileOutputDestination(filePath));
     public static DecompilerWriter CreateConsoleWriter() => new(new ConsoleOutputDestination());
 
-    public void WriteComment(string comment)
-    {
-        destination.WriteLine(comment);
-    }
+    public void WriteComment(string comment) => destination.WriteLine(comment);
 
     public void WriteLabel(string label)
     {
@@ -28,11 +25,7 @@ internal class DecompilerWriter
         destination.WriteLine($"\n{fill} {label} {fill}{(odd ? "-" : "")}");
     }
 
-    public void WriteInstruction(Instruction instruction)
-    {
-        var code = AssemblyConverter.Decompile(instruction.OpCode, instruction.Argument);
-        destination.WriteLine($"0x{instruction.Address:X4}: 0x{instruction.OpCode:X2} - {code}");
-    }
+    public void WriteInstruction(Instruction instruction) => destination.WriteLine(instruction.ToString());
 }
 
 internal interface IOutputDestination : IDisposable
