@@ -1,28 +1,5 @@
 namespace Gameboi.Tools;
 
-internal enum ArgumentType
-{
-    Address,
-    Byte,
-    SignedByte,
-    None
-}
-
-internal interface IArgument
-{
-    int Value { get; }
-}
-
-internal record Argument(int Value) : IArgument;
-internal record NoneArgument : IArgument
-{
-    private NoneArgument() { }
-    public static NoneArgument Instance { get; } = new();
-
-    public int Value => throw new InvalidOperationException($"{nameof(NoneArgument)} has no {nameof(Value)}");
-}
-
-
 internal class AssemblyConverter
 {
     public static ArgumentType GetInstructionArgumentType(int opCode) => opCode switch

@@ -129,49 +129,19 @@ internal class RomDecompiler : IDisposable
 
     private Instruction ReadNextInstruction()
     {
-        var startingAddress = programCounter;
-        var opCode = ReadOpCode();
-        return new(startingAddress, opCode, ReadArgument(opCode));
-    }
-
-    private int ReadOpCode() => ReadByte();
-
-    private IArgument ReadArgument(int opCode)
-    {
-        var argumentType = AssemblyConverter.GetInstructionArgumentType(opCode);
-        return argumentType switch
-        {
-            ArgumentType.None => NoneArgument.Instance,
-            ArgumentType.Byte => new Argument(ReadByte()),
-            ArgumentType.SignedByte => new Argument(ReadSignedByte()),
-            ArgumentType.Address => new Argument(ReadAddress()),
-            _ => throw new NotImplementedException()
-        };
-    }
-
-    private int ReadByte()
-    {
         AddVisitedAddress(programCounter);
-        var location = GetRomLocation(programCounter++);
-        return reader.ReadByte(location);
+        var instruction = reader.ReadInstruction(GetRomLocation());
+        programCounter += instruction.Length;
+        return instruction;
     }
 
-    private static RomLocation GetRomLocation(int address)
+    private RomLocation GetRomLocation()
     {
-        if (address > 0x8000) throw new NotImplementedException();
+        if (programCounter > 0x8000) throw new NotImplementedException();
 
-        if (address > 0x4000) return new RomLocation(1, address - 0x4000);
+        if (programCounter > 0x4000) return new RomLocation(1, programCounter - 0x4000);
 
-        return new RomLocation(0, address);
-    }
-
-    private int ReadSignedByte() => (sbyte)ReadByte();
-    private int ReadAddress()
-    {
-        var location = GetRomLocation(programCounter);
-        visitedAddresses.Add(programCounter++);
-        visitedAddresses.Add(programCounter++);
-        return reader.ReadAddress(location);
+        return new RomLocation(0, programCounter);
     }
 
     private void AddVisitedAddress(int address)

@@ -13,17 +13,27 @@ internal class RomReader : IDisposable
 
     private readonly FileStream file;
 
-    public int ReadByte(RomLocation location)
+    public Instruction ReadInstruction(RomLocation location)
     {
-        file.Position = location.Bank * 0x4000 + location.Address;
-        return file.ReadByte();
+        UpdatePosition(location);
+        var locationAddress = file.Position;
+        var opCode = file.ReadByte();
+        return new Instruction((int)locationAddress, opCode, ReadArgument(opCode));
     }
 
-    public int ReadAddress(RomLocation location)
+    private IArgument ReadArgument(int opCode) => AssemblyConverter.GetInstructionArgumentType(opCode) switch
     {
-        file.Position = location.Bank * 0x4000 + location.Address;
-        return file.ReadByte() | (file.ReadByte() << 8);
-    }
+        ArgumentType.None => NoneArgument.Instance,
+        ArgumentType.Byte => Argument.Byte(ReadByte()),
+        ArgumentType.SignedByte => Argument.SignedByte((sbyte)ReadByte()),
+        ArgumentType.Address => Argument.Address(ReadAddress()),
+        _ => throw new NotImplementedException()
+    };
+
+    private void UpdatePosition(RomLocation location) => file.Position = location.Bank * 0x4000 + location.Address;
+
+    private int ReadAddress() => file.ReadByte() | (file.ReadByte() << 8);
+    private int ReadByte() => file.ReadByte();
 
     public void Dispose()
     {
