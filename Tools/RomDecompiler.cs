@@ -64,62 +64,58 @@ internal class RomDecompiler : IDisposable
                 StartReadingNextBranch();
             }
 
-            var instructionStartPosition = programCounter;
-
-            if (IsRamAddressArea(instructionStartPosition))
+            if (IsRamAddressArea())
             {
-                WriteComment(instructionStartPosition, "RAM area. Aborting branch.");
+                WriteComment(programCounter, "RAM area. Aborting branch.");
                 state = State.Stopped;
                 continue;
             }
 
-            if (IsOutOfBusRange(instructionStartPosition))
+            if (IsOutOfBusRange())
             {
-                WriteComment(instructionStartPosition, "Out of bus range");
+                WriteComment(programCounter, "Out of bus range");
                 state = State.Stopped;
                 continue;
             }
 
-            var opCode = ReadOpCode();
+            var instruction = ReadNextInstruction();
 
-            if (IsProbablyUnusedMemory(instructionStartPosition, opCode))
+            if (IsProbablyUnusedMemory(instruction))
             {
-                WriteComment(instructionStartPosition, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
+                WriteComment(instruction.Address, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
                 state = State.Stopped;
                 continue;
             }
 
-            var argument = ReadArgument(opCode);
+            WriteInstruction(instruction);
 
-            WriteInstruction(new(instructionStartPosition, opCode, argument));
-
-            if (IsCall(opCode))
+            if (instruction.IsCall())
             {
-                if (argument is Argument arg)
+                if (instruction.Argument is Argument arg)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, "Called from 0x" + instructionStartPosition.ToString("X4"));
+                    AddBranch(arg.Value, currentBranch.Label, $"Called from 0x{instruction.Address:X4}");
                 }
             }
 
-            if (IsRelativeJump(opCode))
+            if (instruction.IsRelativeJump())
             {
-                if (argument is Argument arg)
+                if (instruction.Argument is Argument arg)
                 {
-                    AddBranch(arg.Value + programCounter, currentBranch.Label, "Jumped from 0x" + instructionStartPosition.ToString("X4"));
+                    AddBranch(arg.Value + programCounter, currentBranch.Label, $"Jumped from 0x{instruction.Address:X4}");
                 }
                 state = State.Stopped;
             }
 
-            if (IsAbsoluteJump(opCode))
+            if (instruction.IsAbsoluteJump())
             {
-                if (argument is Argument arg)
+                if (instruction.Argument is Argument arg)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, "Jump from 0x" + instructionStartPosition.ToString("X4"));
+                    AddBranch(arg.Value, currentBranch.Label, $"Jump from 0x{instruction.Address:X4}");
                 }
                 state = State.Stopped;
             }
 
-            if (IsReturn(opCode))
+            if (instruction.IsReturn())
             {
                 state = State.Stopped;
             }
@@ -130,6 +126,13 @@ internal class RomDecompiler : IDisposable
     private void WriteLabel(string label) => writer.WriteLabel(label);
     private void WriteComment(int position, string message) => WriteComment($"0x{position:X4}: {message}");
     private void WriteComment(string message) => writer.WriteComment(message);
+
+    private Instruction ReadNextInstruction()
+    {
+        var startingAddress = programCounter;
+        var opCode = ReadOpCode();
+        return new(startingAddress, opCode, ReadArgument(opCode));
+    }
 
     private int ReadOpCode() => ReadByte();
 
@@ -190,13 +193,9 @@ internal class RomDecompiler : IDisposable
         Stopped
     }
 
-    private static bool IsRelativeJump(int opCode) => opCode is 0x18;
-    private static bool IsAbsoluteJump(int opCode) => opCode is 0xc3 or 0xcf or 0xe9;
-    private static bool IsReturn(int opCode) => opCode is 0xc9 or 0xd9;
-    private static bool IsCall(int opCode) => opCode is 0xc4 or 0xc7 or 0xcc or 0xcd or 0xcf or 0xd4 or 0xd7 or 0xdc or 0xdf or 0xe7 or 0xef or 0xf7 or 0xff;
-    private static bool IsRamAddressArea(int address) => address is >= 0x8000;
-    private static bool IsOutOfBusRange(int address) => address is < 0 or > 0xffff;
-    private bool IsProbablyUnusedMemory(int address, int opCode) => IsStartOfBranch(address) && opCode is 0xff;
+    private bool IsRamAddressArea() => programCounter is >= 0x8000;
+    private bool IsOutOfBusRange() => programCounter is < 0 or > 0xffff;
+    private bool IsProbablyUnusedMemory(Instruction instruction) => IsStartOfBranch(instruction.Address) && instruction.OpCode is 0xff;
     private bool IsStartOfBranch(int address) => address == currentBranch.Address;
 
     public void Dispose()
