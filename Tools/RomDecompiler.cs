@@ -15,10 +15,11 @@ internal class RomDecompiler : IDisposable
     private readonly DecompilerWriter writer;
     private Branch currentBranch = null!;
     private int programCounter;
+    private bool autoBranching = true;
 
     private bool InProgress => state is State.Reading || branches.Any();
 
-    private void AddBranch(int address, string label, string? comment = null)
+    public void AddBranch(int address, string label, string? comment = null)
     {
         if (visitedAddresses.Contains(address))
         {
@@ -51,12 +52,15 @@ internal class RomDecompiler : IDisposable
         AddBranch(0x60, "Joypad");
     }
 
-    public void InterpretRom()
+    public void AddAllKnownEntryPoints()
     {
         AddEntryPoint();
         AddRestartPoints();
         AddInterruptPoints();
+    }
 
+    public void InterpretRom()
+    {
         while (InProgress)
         {
             if (state is State.Stopped)
@@ -91,7 +95,7 @@ internal class RomDecompiler : IDisposable
 
             if (instruction.IsCall())
             {
-                if (instruction.Argument is Argument arg)
+                if (instruction.Argument is Argument arg && autoBranching)
                 {
                     AddBranch(arg.Value, currentBranch.Label, $"Called from 0x{instruction.Address:X4}");
                 }
@@ -99,7 +103,7 @@ internal class RomDecompiler : IDisposable
 
             if (instruction.IsRelativeJump())
             {
-                if (instruction.Argument is Argument arg)
+                if (instruction.Argument is Argument arg && autoBranching)
                 {
                     AddBranch(arg.Value + programCounter, currentBranch.Label, $"Jumped from 0x{instruction.Address:X4}");
                 }
@@ -108,7 +112,7 @@ internal class RomDecompiler : IDisposable
 
             if (instruction.IsAbsoluteJump())
             {
-                if (instruction.Argument is Argument arg)
+                if (instruction.Argument is Argument arg && autoBranching)
                 {
                     AddBranch(arg.Value, currentBranch.Label, $"Jump from 0x{instruction.Address:X4}");
                 }
@@ -171,6 +175,11 @@ internal class RomDecompiler : IDisposable
     public void Dispose()
     {
         reader.Dispose();
+    }
+
+    internal void DisableAutoBranching()
+    {
+        autoBranching = false;
     }
 }
 
