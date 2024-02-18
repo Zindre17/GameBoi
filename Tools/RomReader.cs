@@ -16,9 +16,8 @@ internal class RomReader : IDisposable
     public Instruction ReadInstruction(RomLocation location)
     {
         UpdatePosition(location);
-        var locationAddress = file.Position;
         var opCode = file.ReadByte();
-        return new Instruction((int)locationAddress, opCode, ReadArgument(opCode));
+        return new Instruction(location, opCode, ReadArgument(opCode));
     }
 
     private IArgument ReadArgument(int opCode) => AssemblyConverter.GetInstructionArgumentType(opCode) switch

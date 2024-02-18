@@ -86,7 +86,7 @@ internal class RomDecompiler : IDisposable
 
             if (IsProbablyUnusedMemory(instruction))
             {
-                WriteComment(instruction.Address, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
+                WriteComment(instruction.Location, "Likeley bug in decompiler (if not an interrupt vector). 0xFF (restart 0x38) is default rom value for unused memory. Stopping.");
                 state = State.Stopped;
                 continue;
             }
@@ -97,7 +97,7 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, $"Called from 0x{instruction.Address:X4}");
+                    AddBranch(arg.Value, currentBranch.Label, $"Called from {instruction.Location}");
                 }
             }
 
@@ -105,7 +105,7 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(arg.Value + programCounter, currentBranch.Label, $"Jumped from 0x{instruction.Address:X4}");
+                    AddBranch(arg.Value + programCounter, currentBranch.Label, $"Jumped from {instruction.Location}");
                 }
                 state = State.Stopped;
             }
@@ -114,7 +114,7 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, $"Jump from 0x{instruction.Address:X4}");
+                    AddBranch(arg.Value, currentBranch.Label, $"Jump from {instruction.Location}");
                 }
                 state = State.Stopped;
             }
@@ -128,7 +128,8 @@ internal class RomDecompiler : IDisposable
 
     private void WriteInstruction(Instruction instruction) => writer.WriteInstruction(instruction);
     private void WriteLabel(string label) => writer.WriteLabel(label);
-    private void WriteComment(int position, string message) => WriteComment($"0x{position:X4}: {message}");
+    private void WriteComment(int address, string message) => WriteComment($"0x{address:X4}: {message}");
+    private void WriteComment(RomLocation location, string message) => WriteComment($"{location}: {message}");
     private void WriteComment(string message) => writer.WriteComment(message);
 
     private Instruction ReadNextInstruction()
@@ -169,7 +170,7 @@ internal class RomDecompiler : IDisposable
 
     private bool IsRamAddressArea() => programCounter is >= 0x8000;
     private bool IsOutOfBusRange() => programCounter is < 0 or > 0xffff;
-    private bool IsProbablyUnusedMemory(Instruction instruction) => IsStartOfBranch(instruction.Address) && instruction.OpCode is 0xff;
+    private bool IsProbablyUnusedMemory(Instruction instruction) => IsStartOfBranch(instruction.Location.Address) && instruction.OpCode is 0xff;
     private bool IsStartOfBranch(int address) => address == currentBranch.Address;
 
     public void Dispose()
@@ -183,7 +184,12 @@ internal class RomDecompiler : IDisposable
     }
 }
 
-internal readonly record struct RomLocation(int Bank, int Address);
+internal readonly record struct RomLocation(int Bank, int Address)
+{
+    public static RomLocation FromBusAddress(int address) => new(address / 0x4000, address % 0x4000);
+
+    public override string ToString() => $"0x{Bank:X2}-{Address:X4}";
+}
 
 internal record Branch(int Address, string Label, string? Comment = null)
 {

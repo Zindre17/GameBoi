@@ -1,6 +1,6 @@
 namespace Gameboi.Tools;
 
-internal readonly record struct Instruction(int Address, int OpCode, IArgument Argument)
+internal readonly record struct Instruction(RomLocation Location, int OpCode, IArgument Argument)
 {
     public int Length => 1 + Argument.ArgumentType switch
     {
@@ -11,7 +11,7 @@ internal readonly record struct Instruction(int Address, int OpCode, IArgument A
         _ => throw new ArgumentOutOfRangeException()
     };
 
-    public override string ToString() => $"0x{Address:X4}: 0x{OpCode:X2} - {AssemblyConverter.Decompile(OpCode, Argument)}";
+    public override string ToString() => $"{Location}: 0x{OpCode:X2} - {AssemblyConverter.Decompile(OpCode, Argument)}";
 
     public bool IsRelativeJump() => OpCode is 0x18;
     public bool IsAbsoluteJump() => OpCode is 0xc3 or 0xcf or 0xe9;
