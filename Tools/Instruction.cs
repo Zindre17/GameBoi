@@ -11,7 +11,7 @@ internal readonly record struct Instruction(RomLocation Location, int OpCode, IA
         _ => throw new ArgumentOutOfRangeException()
     };
 
-    public override string ToString() => $"{Location}: 0x{OpCode:X2} - {AssemblyConverter.Decompile(OpCode, Argument)}";
+    public override string ToString() => $"{Location}: 0x{OpCode:X2} - {AssemblyConverter.Decompile(OpCode, Location.Address + Length, Argument)}";
 
     public bool IsRelativeJump() => OpCode is 0x18;
     public bool IsAbsoluteJump() => OpCode is 0xc3 or 0xcf or 0xe9;
