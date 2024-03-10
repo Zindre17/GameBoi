@@ -177,7 +177,11 @@ public unsafe class Window
 
         if (File.Exists(configFile))
         {
-            startDir = File.ReadLines(configFile).First().Split("=")[1];
+            var prevDir = File.ReadLines(configFile).First().Split("=")[1];
+            if (Directory.Exists(prevDir))
+            {
+                startDir = prevDir;
+            }
         }
 
         picker = new FilePicker(gl, startDir);
