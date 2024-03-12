@@ -24,11 +24,12 @@ if (interactive)
 
     int address = 0;
 
-    Input.Enter("\nWhere would you like to start?",
+    Input.Enter("Where would you like to start?",
          res => int.TryParse(res, System.Globalization.NumberStyles.AllowHexSpecifier, null, out address),
          "Invalid address - Must be a valid hex number [0-9A-Fa-f]{1,4}");
 
     using var decompiler = new RomDecompiler(new(file), DecompilerWriter.CreateConsoleWriter());
+    Console.CancelKeyPress += (_, _) => decompiler.Dispose();
     decompiler.DisableAutoBranching();
     decompiler.AddBranch(address, "Manual Start");
     decompiler.InterpretRom();
@@ -54,6 +55,7 @@ else
     // codeGen.InterpretRom(file);
 
     using var decompiler = new RomDecompiler(new(file), DecompilerWriter.CreateConsoleWriter());
+    Console.CancelKeyPress += (_, _) => decompiler.Dispose();
     if (singleBlock)
     {
         decompiler.DisableAutoBranching();

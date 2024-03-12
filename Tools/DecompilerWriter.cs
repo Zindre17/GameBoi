@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Gameboi.Tools;
 
-internal class DecompilerWriter
+internal class DecompilerWriter : IDisposable
 {
     private readonly IOutputDestination destination;
 
@@ -26,6 +26,11 @@ internal class DecompilerWriter
     }
 
     public void WriteInstruction(Instruction instruction) => destination.WriteLine(instruction.ToString());
+
+    public void Dispose()
+    {
+        destination.Dispose();
+    }
 }
 
 internal interface IOutputDestination : IDisposable
@@ -44,6 +49,7 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
 
     public void Dispose()
     {
+        file.Flush();
         file.Dispose();
     }
 

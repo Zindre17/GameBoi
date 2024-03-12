@@ -176,6 +176,7 @@ internal class RomDecompiler : IDisposable
     public void Dispose()
     {
         reader.Dispose();
+        writer.Dispose();
     }
 
     internal void DisableAutoBranching()
