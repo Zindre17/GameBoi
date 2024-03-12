@@ -28,7 +28,7 @@ if (interactive)
          res => int.TryParse(res, System.Globalization.NumberStyles.AllowHexSpecifier, null, out address),
          "Invalid address - Must be a valid hex number [0-9A-Fa-f]{1,4}");
 
-    using var decompiler = new RomDecompiler(new(file), DecompilerWriter.CreateConsoleWriter());
+    using var decompiler = new RomDecompiler(new(file), DecompilerWriter.CreateDuoWriter("test.txt"));
     Console.CancelKeyPress += (_, _) => decompiler.Dispose();
     decompiler.DisableAutoBranching();
     decompiler.AddBranch(address, "Manual Start");

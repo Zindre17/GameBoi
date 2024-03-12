@@ -14,6 +14,7 @@ internal class DecompilerWriter : IDisposable
 
     public static DecompilerWriter CreateFileWriter(string filePath) => new(new FileOutputDestination(filePath));
     public static DecompilerWriter CreateConsoleWriter() => new(new ConsoleOutputDestination());
+    public static DecompilerWriter CreateDuoWriter(string filePath) => new(new DuoOutputDestination(new FileOutputDestination(filePath), new ConsoleOutputDestination()));
 
     public void WriteComment(string comment) => destination.WriteLine(comment);
 
@@ -36,6 +37,30 @@ internal class DecompilerWriter : IDisposable
 internal interface IOutputDestination : IDisposable
 {
     void WriteLine(string text);
+}
+
+internal class DuoOutputDestination : IOutputDestination
+{
+    private readonly IOutputDestination first;
+    private readonly IOutputDestination second;
+
+    public DuoOutputDestination(IOutputDestination first, IOutputDestination second)
+    {
+        this.first = first;
+        this.second = second;
+    }
+
+    public void Dispose()
+    {
+        first.Dispose();
+        second.Dispose();
+    }
+
+    public void WriteLine(string text)
+    {
+        first.WriteLine(text);
+        second.WriteLine(text);
+    }
 }
 
 internal class FileOutputDestination : IOutputDestination, IDisposable
