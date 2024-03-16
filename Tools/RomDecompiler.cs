@@ -70,14 +70,14 @@ internal class RomDecompiler : IDisposable
 
             if (IsRamAddressArea())
             {
-                WriteComment(programCounter, "RAM area. Aborting branch.");
+                WriteComment(new(0, programCounter), "RAM area. Aborting branch.");
                 state = State.Stopped;
                 continue;
             }
 
             if (IsOutOfBusRange())
             {
-                WriteComment(programCounter, "Out of bus range");
+                WriteComment(new(0, programCounter), "Out of bus range");
                 state = State.Stopped;
                 continue;
             }
@@ -127,10 +127,8 @@ internal class RomDecompiler : IDisposable
     }
 
     private void WriteInstruction(Instruction instruction) => writer.WriteInstruction(instruction);
-    private void WriteLabel(string label) => writer.WriteLabel(label);
-    private void WriteComment(int address, string message) => WriteComment($"0x{address:X4}: {message}");
-    private void WriteComment(RomLocation location, string message) => WriteComment($"{location}: {message}");
-    private void WriteComment(string message) => writer.WriteComment(message);
+    private void WriteLabel(RomLocation location, string label) => writer.WriteLabel(location, label);
+    private void WriteComment(RomLocation location, string message) => writer.WriteComment(location, message);
 
     private Instruction ReadNextInstruction()
     {
@@ -157,9 +155,9 @@ internal class RomDecompiler : IDisposable
     private void StartReadingNextBranch()
     {
         currentBranch = TakeOutNextBranch();
-        WriteLabel(currentBranch.ToString());
         programCounter = currentBranch.Address;
         state = State.Reading;
+        WriteLabel(GetRomLocation(), currentBranch.ToString());
     }
 
     private enum State

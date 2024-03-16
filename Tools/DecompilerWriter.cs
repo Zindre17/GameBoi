@@ -16,14 +16,14 @@ internal class DecompilerWriter : IDisposable
     public static DecompilerWriter CreateConsoleWriter() => new(new ConsoleOutputDestination());
     public static DecompilerWriter CreateDuoWriter(string filePath) => new(new DuoOutputDestination(new FileOutputDestination(filePath), new ConsoleOutputDestination()));
 
-    public void WriteComment(string comment) => destination.WriteComment(comment);
+    public void WriteComment(RomLocation location, string comment) => destination.WriteComment(location, comment);
 
-    public void WriteLabel(string label)
+    public void WriteLabel(RomLocation location, string label)
     {
         var fillLength = (MaxLabelWidth - label.Length) / 2;
         var odd = (MaxLabelWidth - label.Length) % 2 == 1;
         var fill = new string('-', fillLength - 1);
-        destination.WriteComment($"\n{fill} {label} {fill}{(odd ? "-" : "")}");
+        destination.WriteComment(location, $"\n{fill} {label} {fill}{(odd ? "-" : "")}");
     }
 
     public void WriteInstruction(Instruction instruction) => destination.WriteInstruction(instruction);
@@ -37,7 +37,7 @@ internal class DecompilerWriter : IDisposable
 internal interface IOutputDestination : IDisposable
 {
     void WriteInstruction(Instruction instruction);
-    void WriteComment(string text);
+    void WriteComment(RomLocation location, string text);
 }
 
 internal class DuoOutputDestination : IOutputDestination
@@ -57,10 +57,10 @@ internal class DuoOutputDestination : IOutputDestination
         second.Dispose();
     }
 
-    public void WriteComment(string text)
+    public void WriteComment(RomLocation location, string text)
     {
-        first.WriteComment(text);
-        second.WriteComment(text);
+        first.WriteComment(location, text);
+        second.WriteComment(location, text);
     }
 
     public void WriteInstruction(Instruction instruction)
@@ -95,7 +95,11 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
 
     private record FileLine(int Position, int Length)
     {
+        public int LineEnd => Position + Length;
+
         public FileLine Move(int offset) => new(Position + offset, Length);
+
+        internal FileLine Extend(int length) => new(Position, Length + length);
     }
     public FileOutputDestination(string filePath)
     {
@@ -125,22 +129,7 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
         }
         else
         {
-            var insertPosition = (int)file.Length;
-
-            file.SetLength(file.Length + text.Length);
-            foreach (var i in Enumerable.Range(0, index.Count).Reverse())
-            {
-                var (key, fileLine) = index.ElementAt(i);
-                if (key > newKey)
-                {
-                    insertPosition = fileLine.Position;
-                    index[key] = MoveLine(fileLine, text.Length);
-                }
-                else
-                {
-                    break;
-                }
-            }
+            var insertPosition = ShiftContentBelowBy(newKey, text.Length);
 
             file.Seek(insertPosition, SeekOrigin.Begin);
         }
@@ -149,11 +138,55 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
         file.Write(Encoding.UTF8.GetBytes(text));
     }
 
-    public void WriteComment(string text)
+    public void WriteComment(RomLocation location, string text)
     {
-        // TODO: re-enable this when comments are supported in ordered files.
-        return;
-        file.Write(Encoding.UTF8.GetBytes(text + "\n"));
+        var newKey = new FileOrderKey(location, true);
+        text += "\n";
+        if (index.ContainsKey(newKey))
+        {
+            // Append to existing comment
+            var fileLine = index[newKey];
+            ShiftContentBelowBy(newKey, text.Length);
+            file.Seek(fileLine.LineEnd, SeekOrigin.Begin);
+            file.Write(Encoding.UTF8.GetBytes(text));
+            index[newKey] = fileLine.Extend(text.Length);
+        }
+        else
+        {
+            // Insert new comment
+            if (!index.Any() || index.Last().Key <= newKey)
+            {
+                file.Seek(0, SeekOrigin.End);
+            }
+            else
+            {
+                var insertPosition = ShiftContentBelowBy(newKey, text.Length);
+                file.Seek(insertPosition, SeekOrigin.Begin);
+            }
+
+            index.TryAdd(newKey, new((int)file.Position, text.Length));
+            file.Write(Encoding.UTF8.GetBytes(text));
+        }
+    }
+
+    private int ShiftContentBelowBy(FileOrderKey target, int length)
+    {
+        var insertPosition = (int)file.Length;
+        file.SetLength(file.Length + length);
+        foreach (var i in Enumerable.Range(0, index.Count).Reverse())
+        {
+            var (key, fileLine) = index.ElementAt(i);
+            if (key > target)
+            {
+                insertPosition = fileLine.Position;
+                index[key] = MoveLine(fileLine, length);
+            }
+            else
+            {
+                break;
+            }
+        }
+        return insertPosition;
     }
 
     private FileLine MoveLine(FileLine fileLine, int offset)
@@ -185,7 +218,7 @@ internal class ConsoleOutputDestination : IOutputDestination
         Console.WriteLine(instruction.ToString());
     }
 
-    public void WriteComment(string text)
+    public void WriteComment(RomLocation _, string text)
     {
         Console.WriteLine(text);
     }
