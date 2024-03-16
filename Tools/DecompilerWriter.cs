@@ -73,7 +73,25 @@ internal class DuoOutputDestination : IOutputDestination
 internal class FileOutputDestination : IOutputDestination, IDisposable
 {
     private readonly FileStream file;
-    private readonly SortedList<RomLocation, FileLine> index = new();
+    private readonly SortedList<FileOrderKey, FileLine> index = new();
+
+    private readonly record struct FileOrderKey(RomLocation Location, bool IsComment) : IComparable<FileOrderKey>
+    {
+        public static bool operator <(FileOrderKey left, FileOrderKey right) => left.CompareTo(right) < 0;
+        public static bool operator >(FileOrderKey left, FileOrderKey right) => left.CompareTo(right) > 0;
+        public static bool operator <=(FileOrderKey left, FileOrderKey right) => left.CompareTo(right) <= 0;
+        public static bool operator >=(FileOrderKey left, FileOrderKey right) => left.CompareTo(right) >= 0;
+
+        public int CompareTo(FileOrderKey other)
+        {
+            var locationOrder = Location.CompareTo(other.Location);
+            if (locationOrder is not 0)
+            {
+                return locationOrder;
+            }
+            return other.IsComment.CompareTo(IsComment);
+        }
+    }
 
     private record FileLine(int Position, int Length)
     {
@@ -93,29 +111,30 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
 
     public void WriteInstruction(Instruction instruction)
     {
-        if (index.ContainsKey(instruction.Location))
+        var newKey = new FileOrderKey(instruction.Location, false);
+        if (index.ContainsKey(newKey))
         {
             return;
         }
 
         var text = instruction.ToString() + "\n";
 
-        if (!index.Any() || index.Last().Key <= instruction.Location)
+        if (!index.Any() || index.Last().Key <= newKey)
         {
             file.Seek(0, SeekOrigin.End);
         }
         else
         {
-            var insertPosition = index.First(i => i.Key > instruction.Location).Value.Position;
+            var insertPosition = (int)file.Length;
 
             file.SetLength(file.Length + text.Length);
             foreach (var i in Enumerable.Range(0, index.Count).Reverse())
             {
-                var (location, fileLine) = index.ElementAt(i);
-                if (location > instruction.Location)
+                var (key, fileLine) = index.ElementAt(i);
+                if (key > newKey)
                 {
                     insertPosition = fileLine.Position;
-                    index[location] = MoveLine(fileLine, text.Length);
+                    index[key] = MoveLine(fileLine, text.Length);
                 }
                 else
                 {
@@ -126,7 +145,7 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
             file.Seek(insertPosition, SeekOrigin.Begin);
         }
 
-        index.TryAdd(instruction.Location, new((int)file.Position, text.Length));
+        index.TryAdd(newKey, new((int)file.Position, text.Length));
         file.Write(Encoding.UTF8.GetBytes(text));
     }
 
