@@ -185,11 +185,25 @@ internal class RomDecompiler : IDisposable
     }
 }
 
-internal readonly record struct RomLocation(int Bank, int Address)
+internal readonly record struct RomLocation(int Bank, int Address) : IComparable<RomLocation>
 {
     public static RomLocation FromBusAddress(int address) => new(address / 0x4000, address % 0x4000);
 
+    public static bool operator >(RomLocation x, RomLocation y) => x.CompareTo(y) > 0;
+    public static bool operator <(RomLocation x, RomLocation y) => x.CompareTo(y) < 0;
+    public static bool operator >=(RomLocation x, RomLocation y) => x.CompareTo(y) >= 0;
+    public static bool operator <=(RomLocation x, RomLocation y) => x.CompareTo(y) <= 0;
+
     public override string ToString() => $"0x{Bank:X2}-{Address:X4}";
+
+    public int CompareTo(RomLocation other)
+    {
+        if (Bank == other.Bank)
+        {
+            return Address.CompareTo(other.Address);
+        }
+        return Bank.CompareTo(other.Bank);
+    }
 }
 
 internal record Branch(int Address, string Label, string? Comment = null)
