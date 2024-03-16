@@ -202,6 +202,12 @@ internal readonly record struct RomLocation(int Bank, int Address) : IComparable
         }
         return Bank.CompareTo(other.Bank);
     }
+
+    internal static RomLocation Parse(string line)
+    {
+        var parts = line.Split('-');
+        return new(int.Parse(parts[0][2..4], System.Globalization.NumberStyles.HexNumber), int.Parse(parts[1][..4], System.Globalization.NumberStyles.HexNumber));
+    }
 }
 
 internal record Branch(int Address, string Label, string? Comment = null)

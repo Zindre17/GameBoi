@@ -101,10 +101,66 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
 
         internal FileLine Extend(int length) => new(Position, Length + length);
     }
+
     public FileOutputDestination(string filePath)
     {
         file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        IndexExistingContent();
         file.Seek(0, SeekOrigin.End);
+    }
+
+    private void IndexExistingContent()
+    {
+        file.Seek(0, SeekOrigin.Begin);
+
+        var line = ReadLine();
+
+        string commentForNextInstruction = string.Empty;
+        int startPosition = 0;
+
+        while (line.Length > 0)
+        {
+            if (line.StartsWith('-') || line.StartsWith('\n'))
+            {
+                commentForNextInstruction += line;
+            }
+            else
+            {
+                var instruction = RomLocation.Parse(line);
+                if (commentForNextInstruction.Length > 0)
+                {
+                    var commentLine = new FileLine(startPosition, commentForNextInstruction.Length);
+                    index.TryAdd(new(instruction, true), commentLine);
+                    index.TryAdd(new(instruction, false), new(commentLine.LineEnd, line.Length));
+                }
+                else
+                {
+                    index.TryAdd(new(instruction, false), new(startPosition, line.Length));
+                }
+                commentForNextInstruction = string.Empty;
+                startPosition = (int)file.Position;
+            }
+            line = ReadLine();
+        }
+    }
+
+    private string ReadLine()
+    {
+        var currentLine = new List<byte>();
+        while (file.Position < file.Length)
+        {
+            var symbol = file.ReadByte();
+            if (symbol is -1)
+            {
+                break;
+            }
+            currentLine.Add((byte)symbol);
+            if ((char)symbol is '\n')
+            {
+                break;
+            }
+        }
+        return Encoding.UTF8.GetString(currentLine.ToArray());
     }
 
     public void Dispose()
