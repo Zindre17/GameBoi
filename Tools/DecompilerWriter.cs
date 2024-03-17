@@ -12,7 +12,7 @@ internal class DecompilerWriter : IDisposable
 
     public static DecompilerWriter CreateFileWriter(string filePath) => new(new FileOutputDestination(filePath));
     public static DecompilerWriter CreateConsoleWriter() => new(new ConsoleOutputDestination());
-    public static DecompilerWriter CreateDuoWriter(string filePath) => new(new DuoOutputDestination(new FileOutputDestination(filePath), new ConsoleOutputDestination()));
+    public static DecompilerWriter CreateDuoWriter(string filePath) => new(new DuoOutputDestination(new SplitFileOutputDestination(filePath), new ConsoleOutputDestination()));
 
     public void WriteComment(RomLocation location, string comment) => destination.WriteComment(location, comment);
 

@@ -2,6 +2,50 @@ using System.Text;
 
 namespace Gameboi.Tools;
 
+internal class SplitFileOutputDestination : IOutputDestination, IDisposable
+{
+    private readonly SortedList<int, FileOutputDestination> files = new();
+    private readonly string folderPath;
+
+    public SplitFileOutputDestination(string folderPath)
+    {
+        Directory.CreateDirectory(folderPath);
+        this.folderPath = folderPath;
+    }
+
+    public void Dispose()
+    {
+        foreach (var file in files.Values)
+        {
+            file.Dispose();
+        }
+    }
+
+    public void WriteComment(RomLocation location, string text)
+    {
+        var file = GetFile(location);
+        file.WriteComment(location, text);
+    }
+
+    public void WriteInstruction(Instruction instruction)
+    {
+        var file = GetFile(instruction.Location);
+        file.WriteInstruction(instruction);
+    }
+
+    private FileOutputDestination GetFile(RomLocation location)
+    {
+        return files.TryGetValue(location.Bank, out var existingFile) ? existingFile : CreateNewFile(location.Bank);
+    }
+
+    private FileOutputDestination CreateNewFile(int bank)
+    {
+        var newFile = new FileOutputDestination($"{folderPath}/bank_{bank}.asm");
+        files.Add(bank, newFile);
+        return newFile;
+    }
+}
+
 internal class FileOutputDestination : IOutputDestination, IDisposable
 {
     private readonly FileStream file;
