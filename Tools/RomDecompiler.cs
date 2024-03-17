@@ -9,7 +9,7 @@ internal class RomDecompiler : IDisposable
     }
 
     private readonly Stack<Branch> branches = new();
-    private readonly HashSet<int> visitedAddresses = new();
+    private readonly HashSet<RomLocation> visitedAddresses = new();
     private State state = State.Stopped;
     private readonly RomReader reader;
     private readonly DecompilerWriter writer;
@@ -19,44 +19,44 @@ internal class RomDecompiler : IDisposable
 
     private bool InProgress => state is State.Reading || branches.Any();
 
-    public void AddBranch(int address, string label, string? comment = null)
+    public void AddBranch(RomLocation location, string label, string? comment = null)
     {
-        if (visitedAddresses.Contains(address))
+        if (visitedAddresses.Contains(location))
         {
             return;
         }
-        branches.Push(new(address, label, comment));
+        branches.Push(new(location, label, comment));
     }
     private Branch TakeOutNextBranch() => branches.Pop();
 
-    private void AddEntryPoint() => AddBranch(0x100, "EntryPoint");
+    private void AddEntryPoint() => AddBranch(new(0, 0x100), "EntryPoint");
 
-    private void AddRestartPoints()
+    private void AddRestartPoints(int bank)
     {
-        AddBranch(0x0, "Restart 0x00");
-        AddBranch(0x8, "Restart 0x08");
-        AddBranch(0x10, "Restart 0x10");
-        AddBranch(0x18, "Restart 0x18");
-        AddBranch(0x20, "Restart 0x20");
-        AddBranch(0x28, "Restart 0x28");
-        AddBranch(0x30, "Restart 0x30");
-        AddBranch(0x38, "Restart 0x38");
+        AddBranch(new(bank, 0x0), "Restart 0x00");
+        AddBranch(new(bank, 0x8), "Restart 0x08");
+        AddBranch(new(bank, 0x10), "Restart 0x10");
+        AddBranch(new(bank, 0x18), "Restart 0x18");
+        AddBranch(new(bank, 0x20), "Restart 0x20");
+        AddBranch(new(bank, 0x28), "Restart 0x28");
+        AddBranch(new(bank, 0x30), "Restart 0x30");
+        AddBranch(new(bank, 0x38), "Restart 0x38");
     }
 
-    private void AddInterruptPoints()
+    private void AddInterruptPoints(int bank)
     {
-        AddBranch(0x40, "Vblank");
-        AddBranch(0x48, "LcdStat");
-        AddBranch(0x50, "Timer");
-        AddBranch(0x58, "Serial");
-        AddBranch(0x60, "Joypad");
+        AddBranch(new(bank, 0x40), "Vblank");
+        AddBranch(new(bank, 0x48), "LcdStat");
+        AddBranch(new(bank, 0x50), "Timer");
+        AddBranch(new(bank, 0x58), "Serial");
+        AddBranch(new(bank, 0x60), "Joypad");
     }
 
     public void AddAllKnownEntryPoints()
     {
         AddEntryPoint();
-        AddRestartPoints();
-        AddInterruptPoints();
+        AddRestartPoints(0);
+        AddInterruptPoints(0);
     }
 
     public void InterpretRom()
@@ -97,7 +97,7 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, $"Called from {instruction.Location}");
+                    AddBranch(GetRomLocation(arg.Value), currentBranch.Label, $"Called from {instruction.Location}");
                 }
             }
 
@@ -105,7 +105,7 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(arg.Value + programCounter, currentBranch.Label, $"Jumped from {instruction.Location}");
+                    AddBranch(GetRomLocation(arg.Value + programCounter), currentBranch.Label, $"Jumped from {instruction.Location}");
                 }
                 state = State.Stopped;
             }
@@ -114,7 +114,7 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(arg.Value, currentBranch.Label, $"Jump from {instruction.Location}");
+                    AddBranch(GetRomLocation(arg.Value), currentBranch.Label, $"Jump from {instruction.Location}");
                 }
                 state = State.Stopped;
             }
@@ -132,30 +132,38 @@ internal class RomDecompiler : IDisposable
 
     private Instruction ReadNextInstruction()
     {
-        AddVisitedAddress(programCounter);
+        AddVisitedAddress(GetRomLocation());
         var instruction = reader.ReadInstruction(GetRomLocation());
         programCounter += instruction.Length;
         return instruction;
     }
 
-    private RomLocation GetRomLocation()
+    private RomLocation GetRomLocation() => GetRomLocation(programCounter);
+
+    private static RomLocation GetRomLocation(int address)
     {
-        if (programCounter > 0x8000) throw new NotImplementedException();
+        if (address > 0x8000) throw new NotImplementedException();
 
-        if (programCounter > 0x4000) return new RomLocation(1, programCounter - 0x4000);
+        if (address > 0x4000) return new RomLocation(1, address - 0x4000);
 
-        return new RomLocation(0, programCounter);
+        return new RomLocation(0, address);
     }
 
-    private void AddVisitedAddress(int address)
+    private int GetAddress(RomLocation location)
     {
-        visitedAddresses.Add(address);
+        if (location.Bank > 1) throw new NotImplementedException();
+        return location.Bank * 0x4000 + location.Address;
+    }
+
+    private void AddVisitedAddress(RomLocation location)
+    {
+        visitedAddresses.Add(location);
     }
 
     private void StartReadingNextBranch()
     {
         currentBranch = TakeOutNextBranch();
-        programCounter = currentBranch.Address;
+        programCounter = GetAddress(currentBranch.Location);
         state = State.Reading;
         WriteLabel(GetRomLocation(), currentBranch.ToString());
     }
@@ -168,8 +176,8 @@ internal class RomDecompiler : IDisposable
 
     private bool IsRamAddressArea() => programCounter is >= 0x8000;
     private bool IsOutOfBusRange() => programCounter is < 0 or > 0xffff;
-    private bool IsProbablyUnusedMemory(Instruction instruction) => IsStartOfBranch(instruction.Location.Address) && instruction.OpCode is 0xff;
-    private bool IsStartOfBranch(int address) => address == currentBranch.Address;
+    private bool IsProbablyUnusedMemory(Instruction instruction) => IsStartOfBranch(instruction.Location) && instruction.OpCode is 0xff;
+    private bool IsStartOfBranch(RomLocation location) => location == currentBranch.Location;
 
     public void Dispose()
     {
@@ -210,7 +218,7 @@ internal readonly record struct RomLocation(int Bank, int Address) : IComparable
     }
 }
 
-internal record Branch(int Address, string Label, string? Comment = null)
+internal record Branch(RomLocation Location, string Label, string? Comment = null)
 {
     public override string ToString() => Comment is null ? Label : $"{Label}: {Comment}";
 };
