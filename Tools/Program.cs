@@ -16,7 +16,7 @@ if (!File.Exists(file))
     return;
 }
 
-
+var output = args.FirstOrDefault(a => a.StartsWith("--output=") || a.StartsWith("-o="))?.Split("=")[1] ?? "output";
 var interactive = args.Any(a => a is "--interactive" or "-i");
 if (interactive)
 {
@@ -28,7 +28,7 @@ if (interactive)
          res => int.TryParse(res, System.Globalization.NumberStyles.AllowHexSpecifier, null, out address),
          "Invalid address - Must be a valid hex number [0-9A-Fa-f]{1,4}");
 
-    using var decompiler = new RomDecompiler(new(file), DecompilerWriter.CreateDuoWriter("test"));
+    using var decompiler = new RomDecompiler(new(file), DecompilerWriter.CreateDuoWriter(output));
     Console.CancelKeyPress += (_, _) => decompiler.Dispose();
     decompiler.DisableAutoBranching();
     decompiler.AddBranch(address, "Manual Start");
