@@ -54,7 +54,6 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
     public FileOutputDestination(string filePath)
     {
         file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-        IndexExistingContent();
         file.Seek(0, SeekOrigin.End);
     }
 
@@ -120,6 +119,8 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
 
     public void WriteInstruction(Instruction instruction)
     {
+        IndexExistingContent();
+
         var newKey = new FileOrderKey(instruction.Location, false);
         if (index.ContainsKey(newKey))
         {
@@ -145,6 +146,8 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
 
     public void WriteComment(RomLocation location, string text)
     {
+        IndexExistingContent();
+
         var newKey = new FileOrderKey(location, true);
         text += "\n";
         if (index.ContainsKey(newKey))
