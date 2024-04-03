@@ -141,7 +141,7 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
         }
 
         index.TryAdd(newKey, new((int)file.Position, text.Length));
-        file.Write(Encoding.UTF8.GetBytes(text));
+        Write(text);
     }
 
     public void WriteComment(RomLocation location, string text)
@@ -173,8 +173,14 @@ internal class FileOutputDestination : IOutputDestination, IDisposable
             }
 
             index.TryAdd(newKey, new((int)file.Position, text.Length));
-            file.Write(Encoding.UTF8.GetBytes(text));
+            Write(text);
         }
+    }
+
+    private void Write(string text)
+    {
+        file.Write(Encoding.UTF8.GetBytes(text));
+        file.Flush();
     }
 
     private int ShiftContentBelowBy(FileOrderKey target, int length)
