@@ -14,7 +14,7 @@ internal class RomDecompiler : IDisposable
     private readonly RomReader reader;
     private readonly DecompilerWriter writer;
     private Branch currentBranch = null!;
-    private int programCounter;
+    private RomLocation currentLocation;
     private bool autoBranching = true;
 
     private bool InProgress => state is State.Reading || branches.Any();
@@ -68,16 +68,9 @@ internal class RomDecompiler : IDisposable
                 StartReadingNextBranch();
             }
 
-            if (IsRamAddressArea())
+            if (IsOutOfRomBankArea())
             {
-                WriteComment(new(0, programCounter), "RAM area. Aborting branch.");
-                state = State.Stopped;
-                continue;
-            }
-
-            if (IsOutOfBusRange())
-            {
-                WriteComment(new(0, programCounter), "Out of bus range");
+                WriteComment(currentLocation, "Outside ROM bank area. Aborting branch.");
                 state = State.Stopped;
                 continue;
             }
@@ -97,7 +90,8 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(GetRomLocation(arg.Value), currentBranch.Label, $"Called from {instruction.Location}");
+                    // TODO: this can be a bug if the jump is to a different bank
+                    AddBranch(new(currentLocation.Bank, arg.Value), currentBranch.Label, $"Called from {instruction.Location}");
                 }
             }
 
@@ -105,7 +99,7 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(GetRomLocation(arg.Value + programCounter), currentBranch.Label, $"Jumped from {instruction.Location}");
+                    AddBranch(currentLocation + arg.Value, currentBranch.Label, $"Jumped from {instruction.Location}");
                 }
                 state = State.Stopped;
             }
@@ -114,7 +108,8 @@ internal class RomDecompiler : IDisposable
             {
                 if (instruction.Argument is Argument arg && autoBranching)
                 {
-                    AddBranch(GetRomLocation(arg.Value), currentBranch.Label, $"Jump from {instruction.Location}");
+                    // TODO: this can be a bug if the jump is to a different bank
+                    AddBranch(new(currentLocation.Bank, arg.Value), currentBranch.Label, $"Jump from {instruction.Location}");
                 }
                 state = State.Stopped;
             }
@@ -132,27 +127,10 @@ internal class RomDecompiler : IDisposable
 
     private Instruction ReadNextInstruction()
     {
-        AddVisitedAddress(GetRomLocation());
-        var instruction = reader.ReadInstruction(GetRomLocation());
-        programCounter += instruction.Length;
+        AddVisitedAddress(currentLocation);
+        var instruction = reader.ReadInstruction(currentLocation);
+        currentLocation += instruction.Length;
         return instruction;
-    }
-
-    private RomLocation GetRomLocation() => GetRomLocation(programCounter);
-
-    private static RomLocation GetRomLocation(int address)
-    {
-        if (address > 0x8000) throw new NotImplementedException();
-
-        if (address > 0x4000) return new RomLocation(1, address - 0x4000);
-
-        return new RomLocation(0, address);
-    }
-
-    private int GetAddress(RomLocation location)
-    {
-        if (location.Bank > 1) throw new NotImplementedException();
-        return location.Bank * 0x4000 + location.Address;
     }
 
     private void AddVisitedAddress(RomLocation location)
@@ -163,9 +141,9 @@ internal class RomDecompiler : IDisposable
     private void StartReadingNextBranch()
     {
         currentBranch = TakeOutNextBranch();
-        programCounter = GetAddress(currentBranch.Location);
+        currentLocation = currentBranch.Location;
         state = State.Reading;
-        WriteLabel(GetRomLocation(), currentBranch.ToString());
+        WriteLabel(currentLocation, currentBranch.ToString());
     }
 
     private enum State
@@ -174,8 +152,7 @@ internal class RomDecompiler : IDisposable
         Stopped
     }
 
-    private bool IsRamAddressArea() => programCounter is >= 0x8000;
-    private bool IsOutOfBusRange() => programCounter is < 0 or > 0xffff;
+    private bool IsOutOfRomBankArea() => currentLocation.Address is >= 0x4000;
     private bool IsProbablyUnusedMemory(Instruction instruction) => IsStartOfBranch(instruction.Location) && instruction.OpCode is 0xff;
     private bool IsStartOfBranch(RomLocation location) => location == currentBranch.Location;
 
@@ -216,6 +193,8 @@ internal readonly record struct RomLocation(int Bank, int Address) : IComparable
         var parts = line.Split('-');
         return new(int.Parse(parts[0][2..4], System.Globalization.NumberStyles.HexNumber), int.Parse(parts[1][..4], System.Globalization.NumberStyles.HexNumber));
     }
+
+    public static RomLocation operator +(RomLocation location, int offset) => new(location.Bank, location.Address + offset);
 }
 
 internal record Branch(RomLocation Location, string Label, string? Comment = null)
