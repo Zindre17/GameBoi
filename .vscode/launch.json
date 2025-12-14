@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "C#: Tools Debug",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/Tools/Tools.csproj",
+            "linux": {
+                "args": [
+                    "-i",
+                    "/home/sindre/OneDrive/roms/Pokemon Red.gb"
+                ]
+            },
+            "args": [
+                "-i",
+                "/home/sindre/OneDrive/roms/Pokemon Red.gb"
+            ]
+        },
+        {
             "name": "Decompiler",
             "type": "coreclr",
             "request": "launch",
