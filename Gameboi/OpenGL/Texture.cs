@@ -9,6 +9,8 @@ public class Texture : IDisposable
     private readonly GLEnum target = GLEnum.Texture2D;
     private readonly GL gl;
     private readonly uint slot;
+    private readonly int nearest = (int)GLEnum.Nearest;
+    private readonly int clampToEdge = (int)GLEnum.ClampToEdge;
 
     private readonly uint width;
     private readonly uint height;
@@ -23,10 +25,10 @@ public class Texture : IDisposable
         id = gl.GenTexture();
         Bind();
 
-        gl.TexParameterI(target, GLEnum.TextureMinFilter, (int)GLEnum.Nearest);
-        gl.TexParameterI(target, GLEnum.TextureMagFilter, (int)GLEnum.Nearest);
-        gl.TexParameterI(target, GLEnum.TextureWrapS, (int)GLEnum.ClampToEdge);
-        gl.TexParameterI(target, GLEnum.TextureWrapT, (int)GLEnum.ClampToEdge);
+        gl.TexParameterI(target, GLEnum.TextureMagFilter, ref nearest);
+        gl.TexParameterI(target, GLEnum.TextureMinFilter, ref nearest);
+        gl.TexParameterI(target, GLEnum.TextureWrapS, ref clampToEdge);
+        gl.TexParameterI(target, GLEnum.TextureWrapT, ref clampToEdge);
 
         if (textureData is null)
         {

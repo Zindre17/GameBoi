@@ -84,7 +84,7 @@ public class BusTests
         Assert.AreEqual(2, bus.Read(0xfe50));
         Assert.AreEqual(3, bus.Read(0xfe9f));
 
-        Assert.ThrowsException<IndexOutOfRangeException>(() => state.Oam[0xa0]);
+        Assert.Throws<IndexOutOfRangeException>(() => state.Oam[0xa0]);
     }
 
     [TestMethod]
@@ -112,7 +112,7 @@ public class BusTests
         Assert.AreEqual(192 + 1, bus.Read(0xff00));
         Assert.AreEqual(2, bus.Read(0xff7f));
 
-        Assert.ThrowsException<IndexOutOfRangeException>(() => state.IoPorts[0x80]);
+        Assert.Throws<IndexOutOfRangeException>(() => state.IoPorts[0x80]);
     }
 
     [TestMethod]
@@ -124,7 +124,7 @@ public class BusTests
         Assert.AreEqual(1, bus.Read(0xff80));
         Assert.AreEqual(2, bus.Read(0xfffe));
 
-        Assert.ThrowsException<IndexOutOfRangeException>(() => state.HighRam[0x7f]);
+        Assert.Throws<IndexOutOfRangeException>(() => state.HighRam[0x7f]);
     }
 
     [TestMethod]
@@ -212,7 +212,7 @@ public class BusTests
         Assert.AreEqual(2, state.Oam[0x50]);
         Assert.AreEqual(3, state.Oam[0x9f]);
 
-        Assert.ThrowsException<IndexOutOfRangeException>(() => state.Oam[0xa0]);
+        Assert.Throws<IndexOutOfRangeException>(() => state.Oam[0xa0]);
     }
 
     [TestMethod]

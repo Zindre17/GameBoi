@@ -1,5 +1,3 @@
-using Gameboi;
-
 namespace Tests;
 
 [TestClass]
@@ -38,8 +36,8 @@ public class SystemStateTests
         Assert.AreEqual(0, state.CartridgeRam[0]);
         Assert.AreEqual(0, gameRam[0]);
 
-        Assert.ThrowsException<IndexOutOfRangeException>(() => state.CartridgeRom[1]);
-        Assert.ThrowsException<IndexOutOfRangeException>(() => state.CartridgeRam[1]);
+        Assert.Throws<IndexOutOfRangeException>(() => state.CartridgeRom[1]);
+        Assert.Throws<IndexOutOfRangeException>(() => state.CartridgeRam[1]);
     }
 
     [TestMethod]

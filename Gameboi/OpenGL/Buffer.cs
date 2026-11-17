@@ -117,7 +117,7 @@ public abstract class Buffer<T> : IDisposable where T : unmanaged
 
     public void Dispose()
     {
-        gl.DeleteBuffers(1, id);
+        gl.DeleteBuffers(1, ref id);
         GC.SuppressFinalize(this);
     }
 }
