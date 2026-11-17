@@ -1,7 +1,7 @@
 bin
 obj
-/roms
-/saves
-/snapshots
+**/roms
+**/saves
+**/snapshots
 /.vs
 gameboi.ini
